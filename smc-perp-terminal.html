@@ -228,6 +228,7 @@
   const MEXC_TF={ '15m':'Min15','1h':'Min60','4h':'Hour4','1d':'Day1' };
   const TF_SECONDS={ '15m':900,'1h':3600,'4h':14400,'1d':86400 };
   const HISTORY_BARS=2000;
+  const MIN_NET_R=1.5;
   let mtf={}, analyses={}, globalDecision=null, decision=null, activeTf='4h', activeData=[], activeAnalysis=null;
   let ws=null, reconnectTimer=null, restTimer=null, overlayRaf=0, generation=0;
   let priceLines=[], replayIndex=null, replayTimer=null, lastAnalysisAt=0, focusedTrade=null, journalTrades=[];
@@ -389,8 +390,9 @@
         ? [...p.highs].reverse().find(x=>x.index<trigger&&x.price>entry&&Math.max(...data.slice(x.index+1,trigger+1).map(c=>c.high),-Infinity)<x.price)
         : [...p.lows].reverse().find(x=>x.index<trigger&&x.price<entry&&Math.min(...data.slice(x.index+1,trigger+1).map(c=>c.low),Infinity)>x.price);
       if(!targetPivot){reject('Alınmamış karşı likidite hedefi yok');continue}
+      const costR=(entry*totalCostBps()/10000)/risk;
       const targetR=Math.abs(targetPivot.price-entry)/risk;
-      if(targetR<1.5){reject('Karşı likidite 1.5R’den yakın');continue}
+      if(targetR-costR<MIN_NET_R){reject('Maliyet sonrası karşı likidite 1.5R’den yakın');continue}
       const plannedR=Math.min(2,targetR),tp=side==='LONG'?entry+risk*plannedR:entry-risk*plannedR;
       let entryIndex=-1;
       const retestStart=Math.max(trigger,fvg.index)+1,retestEnd=Math.min(data.length-1,retestStart+18);
@@ -402,7 +404,6 @@
         if(fills&&confirmation){entryIndex=i;break}
       }
       if(entryIndex<0){reject('FVG %50 gerçek dolum + retest onayı yok');continue}
-      const costR=(entry*totalCostBps()/10000)/risk;
       const result=tradeOutcomeAdvanced(data,entryIndex,side,entry,sl,tp,plannedR,breaks,costR);
       if(result.status==='ACTIVE')continue;
       const prevention=result.exitReason==='Yapısal stop'
@@ -509,7 +510,8 @@
     const latestMss=[...breaks].reverse().find(b=>b.kind==='MSS'&&b.displacement&&data.length-1-b.index<=recentWindow)||null;
     const latestBreak=latestMss||latestAnyBreak;
     let setup=null;
-    const allowMssWithoutSweep=false;
+    // A+ = SFP zinciri. B = HTF uyumlu ana MSS + gerçek FVG/OB retesti.
+    const allowMssWithoutSweep=true;
     for(let s=sfps.length-1;s>=0&&!setup;s--){
       const sweep=sfps[s];
       if(data.length-1-sweep.index>60) break;
@@ -532,10 +534,15 @@
       if((sweep.side==='LONG'&&entry>eq+localAtr*.12)||(sweep.side==='SHORT'&&entry<eq-localAtr*.12))continue;
       const sl=sweep.side==='LONG'?Math.min(sweep.extreme,data[mss.index].low)-buffer:Math.max(sweep.extreme,data[mss.index].high)+buffer;
       const risk=Math.abs(entry-sl);
-      const opposite=(sweep.side==='LONG'?[...highs].reverse().find(x=>x.price>entry):[...lows].reverse().find(x=>x.price<entry));
-      let tp=opposite?.price ?? (sweep.side==='LONG'?entry+risk*2:entry-risk*2);
-      if(Math.abs(tp-entry)<risk*1.5) tp=sweep.side==='LONG'?entry+risk*2:entry-risk*2;
+      const costR=(entry*totalCostBps()/10000)/risk;
+      const minGrossR=MIN_NET_R+costR;
+      const opposite=sweep.side==='LONG'
+        ? [...highs].reverse().find(x=>x.price>entry&&Math.abs(x.price-entry)/risk>=minGrossR)
+        : [...lows].reverse().find(x=>x.price<entry&&Math.abs(x.price-entry)/risk>=minGrossR);
+      if(!opposite)continue;
+      let tp=opposite.price;
       const plannedR=Math.min(2,Math.abs(tp-entry)/risk);
+      if(plannedR-costR<MIN_NET_R)continue;
       tp=sweep.side==='LONG'?entry+risk*plannedR:entry-risk*plannedR;
       const after=data.slice(mss.index+1), retestIndex=after.findIndex(c=>{
         const body=Math.abs(c.close-c.open),fills=c.low<=entry&&c.high>=entry;
@@ -544,19 +551,19 @@
       });
       const mssAge=data.length-1-mss.index;
       if(retestIndex<0){
-        if(mssAge<=24) setup={source:'SFP_CHAIN',side:sweep.side,sweep,mss,fvg,ob,zone,entry,sl,tp,rr:plannedR,state:'WAIT_RETEST'};
+        if(mssAge<=24) setup={source:'SFP_CHAIN',qualityTier:'A+',side:sweep.side,sweep,mss,fvg,ob,zone,entry,sl,tp,rr:plannedR,netPlannedR:plannedR-costR,costR,state:'WAIT_RETEST'};
         break;
       }
       const retestAbs=mss.index+1+retestIndex;
       const retestAge=data.length-1-retestAbs;
-      const costR=(entry*totalCostBps()/10000)/risk;
       const outcome=tradeOutcomeAdvanced(data,retestAbs,sweep.side,entry,sl,tp,plannedR,breaks,costR),exitAge=outcome.exitIndex===null?null:data.length-1-outcome.exitIndex;
       if((outcome.status==='ACTIVE'&&retestAge<=48)||(outcome.status!=='ACTIVE'&&exitAge<=30))
-        setup={source:'SFP_CHAIN',side:sweep.side,sweep,mss,fvg,ob,zone,entry,sl,tp,netR:outcome.netR,state:outcome.status,entryIndex:retestAbs,...outcome,rr:plannedR};
+        setup={source:'SFP_CHAIN',qualityTier:'A+',side:sweep.side,sweep,mss,fvg,ob,zone,entry,sl,tp,netPlannedR:plannedR-costR,netR:outcome.netR,state:outcome.status,entryIndex:retestAbs,...outcome,rr:plannedR};
       break;
     }
-    if(allowMssWithoutSweep&&!setup&&latestMss&&data.length-1-latestMss.index<=24){
-      const mss=latestMss, triggerIndex=mss.confirmationIndex??mss.index, side=mss.side, buffer=atr(data)*.1;
+    if(allowMssWithoutSweep&&!setup&&latestMss&&data.length-1-latestMss.index<=36){
+      const mss=latestMss, triggerIndex=mss.confirmationIndex??mss.index, side=mss.side, localAtr=atr(data), buffer=localAtr*.3;
+      const context=historicalMtfContext(tf,data.at(-1).time,side);
       const fvg=[...fvgs].reverse().find(f=>f.side===side&&f.index>=triggerIndex-1&&f.index<=triggerIndex+12);
       let ob=null;
       for(let j=triggerIndex-1;j>=Math.max(0,triggerIndex-10);j--){
@@ -566,29 +573,45 @@
           break;
         }
       }
-      const zone=fvg||ob||{side,index:triggerIndex,time:data[triggerIndex].time,start:mss.pivot.time,from:mss.level-buffer*.8,to:mss.level+buffer*.8};
-      const entry=(zone.from+zone.to)/2;
-      const sl=side==='LONG'?Math.min(data[triggerIndex].low,zone.from)-buffer:Math.max(data[triggerIndex].high,zone.to)+buffer;
-      const risk=Math.abs(entry-sl);
-      const opposite=side==='LONG'?[...highs].reverse().find(x=>x.price>entry):[...lows].reverse().find(x=>x.price<entry);
-      let tp=opposite?.price??(side==='LONG'?entry+risk*2:entry-risk*2);
-      if(Math.abs(tp-entry)<risk*1.5)tp=side==='LONG'?entry+risk*2:entry-risk*2;
-      const after=data.slice(triggerIndex+1);
-      const retestIndex=after.findIndex(c=>c.low<=Math.max(zone.from,zone.to)&&c.high>=Math.min(zone.from,zone.to));
-      if(retestIndex<0){
-        setup={source:'MSS_RETEST',side,sweep:null,mss,fvg,ob,zone,entry,sl,tp,rr:Math.abs((tp-entry)/(entry-sl)),state:'WAIT_RETEST'};
-      }else{
-        const retestAbs=triggerIndex+1+retestIndex,retestAge=data.length-1-retestAbs;
-        const outcome=tradeOutcome(data,retestAbs,side,sl,tp),exitAge=outcome.exitIndex===null?null:data.length-1-outcome.exitIndex;
-        if((outcome.status==='ACTIVE'&&retestAge<=48)||(outcome.status!=='ACTIVE'&&exitAge<=30))
-          setup={source:'MSS_RETEST',side,sweep:null,mss,fvg,ob,zone,entry,sl,tp,rr:Math.abs((tp-entry)/(entry-sl)),state:outcome.status,entryIndex:retestAbs,...outcome};
+      const zone=fvg||ob;
+      if(context.pass&&zone){
+        const entry=(zone.from+zone.to)/2;
+        const sl=side==='LONG'
+          ? Math.min(data[triggerIndex].low,mss.pivot?.price??Infinity,zone.from)-buffer
+          : Math.max(data[triggerIndex].high,mss.pivot?.price??-Infinity,zone.to)+buffer;
+        const risk=Math.abs(entry-sl),riskAtr=risk/localAtr;
+        const costR=(entry*totalCostBps()/10000)/risk,minGrossR=MIN_NET_R+costR;
+        const opposite=side==='LONG'
+          ? [...highs].reverse().find(x=>x.price>entry&&Math.abs(x.price-entry)/risk>=minGrossR)
+          : [...lows].reverse().find(x=>x.price<entry&&Math.abs(x.price-entry)/risk>=minGrossR);
+        if(Number.isFinite(risk)&&riskAtr>=.65&&riskAtr<=6&&opposite){
+          const plannedR=Math.min(2,Math.abs(opposite.price-entry)/risk);
+          const tp=side==='LONG'?entry+risk*plannedR:entry-risk*plannedR;
+          const after=data.slice(triggerIndex+1);
+          const retestIndex=after.findIndex(c=>{
+            const body=Math.abs(c.close-c.open),fills=c.low<=entry&&c.high>=entry;
+            const confirms=side==='LONG'?c.close>entry&&c.close>c.open&&body>=localAtr*.12:c.close<entry&&c.close<c.open&&body>=localAtr*.12;
+            return fills&&confirms;
+          });
+          if(retestIndex<0){
+            setup={source:'MSS_RETEST',qualityTier:'B',side,sweep:null,mss,fvg,ob,zone,entry,sl,tp,rr:plannedR,netPlannedR:plannedR-costR,costR,state:'WAIT_RETEST'};
+          }else{
+            const retestAbs=triggerIndex+1+retestIndex,retestAge=data.length-1-retestAbs;
+            const outcome=tradeOutcomeAdvanced(data,retestAbs,side,entry,sl,tp,plannedR,breaks,costR),exitAge=outcome.exitIndex===null?null:data.length-1-outcome.exitIndex;
+            if((outcome.status==='ACTIVE'&&retestAge<=48)||(outcome.status!=='ACTIVE'&&exitAge<=30))
+              setup={source:'MSS_RETEST',qualityTier:'B',side,sweep:null,mss,fvg,ob,zone,entry,sl,tp,rr:plannedR,netPlannedR:plannedR-costR,costR,state:outcome.status,entryIndex:retestAbs,...outcome};
+          }
+        }
       }
     }
     if(setup){
       const entries=[], side=setup.side, commonSl=setup.sl, commonTp=setup.tp;
       const addEntry=(name,price,kind,sl=commonSl)=>{
         if(!Number.isFinite(price)||entries.some(e=>Math.abs(e.price-price)<Math.max(1,price*.00005)))return;
-        entries.push({name,price,kind,sl,tp:commonTp,rr:Math.abs((commonTp-price)/(price-sl))});
+        const rr=Math.abs((commonTp-price)/(price-sl));
+        const costR=(price*totalCostBps()/10000)/Math.abs(price-sl);
+        if(rr-costR<MIN_NET_R)return;
+        entries.push({name,price,kind,sl,tp:commonTp,rr,netR:rr-costR});
       };
       if(setup.fvg){
         const lo=Math.min(setup.fvg.from,setup.fvg.to),hi=Math.max(setup.fvg.from,setup.fvg.to);
@@ -602,7 +625,8 @@
       }
       setup.entries=entries.sort((a,b)=>side==='SHORT'?a.price-b.price:b.price-a.price);
       setup.primary=entries.find(e=>e.name==='FVG %50')||entries[0];
-      if(setup.primary){setup.entry=setup.primary.price;setup.sl=setup.primary.sl;setup.rr=setup.primary.rr}
+      if(setup.primary){setup.entry=setup.primary.price;setup.sl=setup.primary.sl;setup.rr=setup.primary.rr;setup.netPlannedR=setup.primary.netR}
+      else setup=null;
     }
     const audit=options.skipTrades?{trades:[],rejections:{},rejectedCount:0,candidateCount:0}:backtestTrades(data,breaks,fvgs,sfps,p,tf);
     return {p,internal,zz,trend,sfps,breaks,fvgs,trades:audit.trades,audit,latestSfp,latestBreak,latestMss,setup,lastHigh,lastLow,majorSpan};
@@ -650,7 +674,7 @@
 
     facts.push(`1G ${trendTr(d1)} · 4H ${trendTr(h4)}`);
     facts.push(`LONG ${Math.round(scores.LONG)} puan · SHORT ${Math.round(scores.SHORT)} puan`);
-    if(chosen) facts.push(`${tfName[chosen.tf]} üzerinde ${chosen.setup.side} ${chosen.setup.state==='ACTIVE'?'retest tetikleyicisi':'retest bölgesi'} bulundu`);
+    if(chosen) facts.push(`${tfName[chosen.tf]} üzerinde ${chosen.setup.qualityTier||'A+'} kalite ${chosen.setup.side} ${chosen.setup.state==='ACTIVE'?'retest tetikleyicisi':'retest bölgesi'} bulundu`);
     else facts.push('1H/15m üzerinde tamamlanmış sweep → MSS → retest zinciri yok');
     if(oneDayConflict) facts.push('1G ana yön ters; pozisyon güveni azaltıldı');
     if(htfConflict) facts.push('4H bağlam aday yönle ters; işlem engellendi');
@@ -802,7 +826,7 @@
     if(!a)return '<span>Durum</span><b>Veri bekleniyor</b>';
     const confidence=tfConfidence(a);
     if(!a.setup)return `<span>Karar</span><b>BEKLE</b><span>Güven</span><b>${confidence}/100</b><span class="wide">Entry/SL/TP ancak ana MSS ve retest tamamlandığında açılır.</span>`;
-    const s=a.setup,alts=(s.entries||[]).map(e=>`${e.name}: ${fmt(e.price)} (R:${e.rr.toFixed(1)})`).join(' · ');
+    const s=a.setup,alts=(s.entries||[]).map(e=>`${e.name}: ${fmt(e.price)} (net R:${(e.netR??e.rr).toFixed(2)})`).join(' · ');
     const result=s.state==='WON'?`BAŞARILI +${(s.netR??s.rr).toFixed(2)}R`:s.state==='LOST'?`BAŞARISIZ ${(s.netR??-1).toFixed(2)}R`:s.state==='FLAT'?`KORUNDU ${(s.netR??0).toFixed(2)}R`:s.state==='ACTIVE'?'AÇIK İŞLEM':'RETEST BEKLİYOR';
     return `<span>Sonuç</span><b class="${s.state==='WON'?'bull':s.state==='LOST'?'bear':''}">${result}</b><span>Entry</span><b>${fmt(s.entry)}</b><span>SL</span><b>${fmt(s.sl)}</b><span>TP</span><b>${fmt(s.tp)}</b><span>Güven</span><b>${confidence}/100</b><span class="wide">${alts}</span>`;
   }
@@ -843,13 +867,13 @@
       signal.className='signal '+(d.side==='LONG'?'long':'short');
       signal.innerHTML=focusedTrade
         ? `<strong>TARİHSEL: ${d.side} · ${stateTr(d.status)}</strong>${focusedTrade.exitReason} · net ${focusedTrade.rr>=0?'+':''}${focusedTrade.rr.toFixed(2)}R. Bu kart yalnızca işlem anındaki mumları kullanır.`
-        : `<strong>EN UYGUN: ${d.side} · ${d.status==='ACTIVE'?'AKTİF':'RETEST BEKLE'}</strong>${TF_LABEL[d.tf]} kurulum; 1G/4H bağlamı ve 1H/15m tetikleyicileri birlikte puanlandı.`;
+        : `<strong>EN UYGUN: ${d.side} · ${d.status==='ACTIVE'?'AKTİF':'RETEST BEKLE'}</strong>${TF_LABEL[d.tf]} · ${ds.qualityTier||'A+'} kalite kurulum · maliyet sonrası en az 1,5R kuralı aktif.`;
       $('#direction').textContent=d.side+' · '+(focusedTrade?stateTr(d.status):(d.status==='ACTIVE'?'AKTİF':'RETEST BEKLE'));
       $('#bestTf').textContent=TF_LABEL[d.tf];
       $('#entry').textContent='$'+fmt(ds.entry);
       $('#sl').textContent='$'+fmt(ds.sl);
       $('#tp').textContent='$'+fmt(ds.tp);
-      $('#rr').textContent=focusedTrade?`plan 1:${ds.rr.toFixed(2)} · net ${focusedTrade.rr.toFixed(2)}R`:'1 : '+ds.rr.toFixed(2);
+      $('#rr').textContent=focusedTrade?`plan 1:${ds.rr.toFixed(2)} · net ${focusedTrade.rr.toFixed(2)}R`:`brüt 1:${ds.rr.toFixed(2)} · net ${(ds.netPlannedR??ds.rr).toFixed(2)}R`;
     }else if(d?.status==='WAIT_TRIGGER'){
       signal.className='signal';
       signal.innerHTML=`<strong>ÖNGÖRÜ: ${d.side} TETİK BEKLE</strong>MTF yönü ${d.side} tarafını destekliyor; ancak giriş için SFP → hacimli MSS → FVG/OB retest zinciri tamamlanmalı.`;
