@@ -29,6 +29,7 @@
     .panel{background:rgba(16,24,39,.96);border:1px solid var(--line);border-radius:14px}
     .toolbar{padding:10px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
     .field{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}
+    .field input[type=number]{width:78px;border:1px solid #334563;background:#0b1424;color:var(--text);border-radius:9px;padding:9px 8px}
     .tf-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
     .tf-card{text-align:left;padding:13px 14px;min-height:215px;background:linear-gradient(145deg,#111b2e,#0c1423)}
     .tf-card.active{border-color:var(--blue);box-shadow:0 0 0 1px rgba(78,156,255,.22) inset;background:linear-gradient(145deg,#152a4a,#0d182a)}
@@ -74,7 +75,7 @@
     .event-list{display:flex;flex-direction:column;gap:7px;max-height:180px;overflow:auto}
     .event{padding:8px;border-radius:7px;background:#0d1626;border:1px solid #23334e;font-size:11px;line-height:1.4}
     .event b{display:block;margin-bottom:2px}
-    .journal{margin-top:12px;padding:14px}.journal-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.journal-head h3{margin:0 0 4px}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0}.stat{background:#0d1626;border:1px solid #263751;border-radius:9px;padding:10px}.stat span{display:block;color:var(--muted);font-size:10px}.stat b{display:block;margin-top:4px;font-size:17px}.journal-table-wrap{overflow:auto;max-height:310px}.journal-table{width:100%;border-collapse:collapse;font-size:11px}.journal-table th,.journal-table td{padding:8px;border-bottom:1px solid #23334e;text-align:right;white-space:nowrap}.journal-table th:first-child,.journal-table td:first-child,.journal-table th:nth-child(2),.journal-table td:nth-child(2){text-align:left}.win{color:var(--green);font-weight:800}.loss{color:var(--red);font-weight:800}.journal-row{cursor:pointer;transition:background .15s ease}.journal-row:hover{background:#15233a}.journal-row.selected{background:#17304a;box-shadow:inset 3px 0 var(--blue)}
+    .journal{margin-top:12px;padding:14px}.journal-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.journal-head h3{margin:0 0 4px}.stats{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:12px 0}.stat{background:#0d1626;border:1px solid #263751;border-radius:9px;padding:10px}.stat span{display:block;color:var(--muted);font-size:10px}.stat b{display:block;margin-top:4px;font-size:17px}.journal-table-wrap{overflow:auto;max-height:360px}.journal-table{width:100%;border-collapse:collapse;font-size:11px}.journal-table th,.journal-table td{padding:8px;border-bottom:1px solid #23334e;text-align:right;white-space:nowrap}.journal-table th:first-child,.journal-table td:first-child,.journal-table th:nth-child(2),.journal-table td:nth-child(2),.journal-table th:nth-child(3),.journal-table td:nth-child(3){text-align:left}.journal-table td:nth-child(3){white-space:normal;min-width:230px;max-width:360px;line-height:1.35}.win{color:var(--green);font-weight:800}.loss{color:var(--red);font-weight:800}.flat{color:var(--yellow);font-weight:800}.journal-row{cursor:pointer;transition:background .15s ease}.journal-row:hover{background:#15233a}.journal-row.selected{background:#17304a;box-shadow:inset 3px 0 var(--blue)}
     :fullscreen{background:var(--bg)}:fullscreen .chart-wrap{height:calc(100vh - 100px)}:fullscreen .legend{display:none}
     @media(max-width:1060px){.workspace{grid-template-columns:1fr}.side{display:grid;grid-template-columns:repeat(2,1fr)}.chart-wrap{height:560px}}
     @media(max-width:720px){.app{padding:8px}.topbar{align-items:flex-start;flex-direction:column}.tf-strip{grid-template-columns:repeat(2,1fr)}.tf-card{padding:10px}.chart-wrap{height:480px}.side{display:flex}.field{width:calc(50% - 5px)}.field select{width:100%;min-width:0}.toolbar>button{flex:1}.chart-head{padding:0 9px}.instrument{font-size:15px}.stats{grid-template-columns:repeat(2,1fr)}}
@@ -99,6 +100,9 @@
     </label>
     <label class="field">Ana grafik
       <select id="interval"><option value="15m">15 dakika</option><option value="1h">1 saat</option><option value="4h" selected>4 saat</option><option value="1d">1 gün</option></select>
+    </label>
+    <label class="field">Toplam maliyet (bps)
+      <input id="costBps" type="number" min="0" max="100" step="1" value="10" title="Gidiş-dönüş komisyon, kayma ve tahmini funding toplamı">
     </label>
     <button id="refresh">↻ Veriyi yenile</button>
     <button id="fit">Grafiği sığdır</button>
@@ -185,15 +189,17 @@
     </aside>
   </section>
   <section class="panel journal">
-    <div class="journal-head"><div><h3>Strateji Başarı Günlüğü</h3><div class="muted">Teyitli ana MSS → FVG/MSS retest yapılarının geçmiş mum performansı</div></div><div class="muted">Komisyon, funding ve kayma dahil değildir.</div></div>
+    <div class="journal-head"><div><h3>Strateji Başarı Günlüğü · Doğrulanmış MTF</h3><div class="muted">Tarihsel HTF yönü → SFP sweep → ana MSS → taze FVG → gerçek %50 dolumu → retest onay mumu</div></div><div class="muted" id="jSampleNote">Seçilen toplam maliyet R sonucundan düşülür; satıra basınca tarihsel kurulum açılır.</div></div>
     <div class="stats">
       <div class="stat"><span>Toplam kapanan</span><b id="jTotal">0</b></div>
       <div class="stat"><span>Başarılı</span><b class="bull" id="jWins">0</b></div>
       <div class="stat"><span>Başarısız</span><b class="bear" id="jLosses">0</b></div>
       <div class="stat"><span>Başarı oranı</span><b id="jRate">—</b></div>
       <div class="stat"><span>Net / ortalama R</span><b id="jR">—</b></div>
+      <div class="stat"><span>Kâr faktörü</span><b id="jPf">—</b></div>
+      <div class="stat"><span>Filtrelenen aday</span><b id="jRejected">0</b></div>
     </div>
-    <div class="journal-table-wrap"><table class="journal-table"><thead><tr><th>Zaman</th><th>TF / Yön</th><th>Entry</th><th>SL</th><th>TP</th><th>Sonuç</th></tr></thead><tbody id="journalRows"><tr><td colspan="6" class="muted">İşlem geçmişi hazırlanıyor…</td></tr></tbody></table></div>
+    <div class="journal-table-wrap"><table class="journal-table"><thead><tr><th>Zaman</th><th>TF / Yön</th><th>Bağlam · Neden / Önlem</th><th>Entry</th><th>SL</th><th>TP</th><th>Sonuç</th></tr></thead><tbody id="journalRows"><tr><td colspan="7" class="muted">İşlem geçmişi hazırlanıyor…</td></tr></tbody></table></div>
   </section>
 </main>
 
@@ -220,32 +226,44 @@
 
   const TF_LABEL={ '15m':'15M','1h':'1H','4h':'4H','1d':'1G' };
   const MEXC_TF={ '15m':'Min15','1h':'Min60','4h':'Hour4','1d':'Day1' };
+  const TF_SECONDS={ '15m':900,'1h':3600,'4h':14400,'1d':86400 };
+  const HISTORY_BARS=2000;
   let mtf={}, analyses={}, globalDecision=null, decision=null, activeTf='4h', activeData=[], activeAnalysis=null;
   let ws=null, reconnectTimer=null, restTimer=null, overlayRaf=0, generation=0;
   let priceLines=[], replayIndex=null, replayTimer=null, lastAnalysisAt=0, focusedTrade=null, journalTrades=[];
 
   const fmt=(n)=>Number.isFinite(+n) ? (+n>=1000 ? (+n).toLocaleString('tr-TR',{maximumFractionDigits:2}) : (+n).toFixed(+n<10?4:2)) : '—';
   const tsText=(t)=>new Date(t*1000).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  const tsFull=(t)=>new Date(t*1000).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   const exchange=()=>$('#exchange').value;
   const symbol=()=>$('#symbol').value;
   const mexcSymbol=()=>symbol().replace('USDT','_USDT');
+  const totalCostBps=()=>Math.max(0,Math.min(100,+$('#costBps').value||0));
 
   function mapBinance(rows){
     return rows.map(r=>({time:r[0]/1000,open:+r[1],high:+r[2],low:+r[3],close:+r[4],volume:+r[5]}));
   }
   async function fetchTf(tf){
     if(exchange()==='binance'){
-      const url=`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol()}&interval=${tf}&limit=1000`;
-      const res=await fetch(url); if(!res.ok) throw new Error(`Binance HTTP ${res.status}`);
-      const rows=await res.json(); if(!Array.isArray(rows)) throw new Error('Binance mum verisi geçersiz');
-      return mapBinance(rows);
+      let rows=[],endTime=Date.now();
+      while(rows.length<HISTORY_BARS){
+        const limit=Math.min(1500,HISTORY_BARS-rows.length);
+        const url=`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol()}&interval=${tf}&limit=${limit}&endTime=${endTime}`;
+        const res=await fetch(url); if(!res.ok) throw new Error(`Binance HTTP ${res.status}`);
+        const batch=await res.json(); if(!Array.isArray(batch)) throw new Error('Binance mum verisi geçersiz');
+        if(!batch.length)break;
+        rows=[...batch,...rows];endTime=batch[0][0]-1;
+        if(batch.length<limit)break;
+      }
+      const unique=[...new Map(rows.map(r=>[r[0],r])).values()].sort((a,b)=>a[0]-b[0]);
+      return mapBinance(unique.slice(-HISTORY_BARS));
     }
-    const end=Math.floor(Date.now()/1000), start=end-(tf==='1d'?86400:tf==='4h'?14400:tf==='1h'?3600:900)*1000;
+    const end=Math.floor(Date.now()/1000), start=end-TF_SECONDS[tf]*HISTORY_BARS;
     const url=`https://contract.mexc.com/api/v1/contract/kline/${mexcSymbol()}?interval=${MEXC_TF[tf]}&start=${start}&end=${end}`;
     const res=await fetch(url); if(!res.ok) throw new Error(`MEXC HTTP ${res.status}`);
     const json=await res.json(), d=json.data;
     if(!d?.time) throw new Error('MEXC mum verisi geçersiz');
-    return d.time.map((t,i)=>({time:+t,open:+d.open[i],high:+d.high[i],low:+d.low[i],close:+d.close[i],volume:+d.vol[i]})).slice(-1000);
+    return d.time.map((t,i)=>({time:+t,open:+d.open[i],high:+d.high[i],low:+d.low[i],close:+d.close[i],volume:+d.vol[i]})).slice(-HISTORY_BARS);
   }
 
   function pivots(data, span=3){
@@ -283,6 +301,38 @@
     for(let i=1;i<x.length;i++) sum+=Math.max(x[i].high-x[i].low,Math.abs(x[i].high-x[i-1].close),Math.abs(x[i].low-x[i-1].close));
     return sum/(x.length-1);
   }
+  function biasAt(tf,time){
+    const raw=(mtf[tf]||[]).filter(c=>c.time<=time).slice(-420);
+    const span={'15m':12,'1h':12,'4h':6,'1d':4}[tf]||6;
+    if(raw.length<span*5)return 'RANGE';
+    const p=pivots(raw,span),h1=p.highs.at(-1),h0=p.highs.at(-2),l1=p.lows.at(-1),l0=p.lows.at(-2);
+    if(h1&&h0&&l1&&l0&&h1.price>h0.price&&l1.price>l0.price)return 'UP';
+    if(h1&&h0&&l1&&l0&&h1.price<h0.price&&l1.price<l0.price)return 'DOWN';
+    return 'RANGE';
+  }
+  function historicalMtfContext(tf,time,side){
+    const map={'15m':['1h','4h','1d'],'1h':['4h','1d'],'4h':['1d'],'1d':[]};
+    const desired=side==='LONG'?'UP':'DOWN',higher=map[tf]||[];
+    const rows=higher.map(x=>({tf:x,trend:biasAt(x,time)}));
+    const supports=rows.filter(x=>x.trend===desired).length;
+    const nearest=rows[0]?.trend||'RANGE';
+    const hardConflict=nearest!=='RANGE'&&nearest!==desired;
+    const pass=!hardConflict&&(!rows.length||supports>0||rows.every(x=>x.trend==='RANGE'));
+    return {
+      pass,supports,hardConflict,
+      rows,
+      label:rows.length?rows.map(x=>`${TF_LABEL[x.tf]} ${trendTr(x.trend)}`).join(' · '):'1G ana yapı',
+      reasons:[
+        rows.length?`Tarihsel bağlam: ${rows.map(x=>`${TF_LABEL[x.tf]} ${trendTr(x.trend)}`).join(' · ')}`:'1G üzerinde daha yüksek zaman filtresi yok',
+        hardConflict?'En yakın üst zaman yönü ters':'En yakın üst zaman yönü ters değil'
+      ]
+    };
+  }
+  function finishOutcome(rawR,costR,exitIndex,exitPrice,exitReason,extra={}){
+    const netR=rawR-costR;
+    const status=netR>.05?'WON':netR<-.05?'LOST':'FLAT';
+    return {status,rawR,netR,rr:netR,exitIndex,exitPrice,exitReason,costR,...extra};
+  }
   function tradeOutcome(data,startIndex,side,sl,tp){
     for(let i=startIndex;i<data.length;i++){
       const c=data[i],hitSl=side==='LONG'?c.low<=sl:c.high>=sl,hitTp=side==='LONG'?c.high>=tp:c.low<=tp;
@@ -292,32 +342,88 @@
     }
     return {status:'ACTIVE',exitIndex:null,exitPrice:null};
   }
-  function backtestTrades(data,breaks,fvgs,tf){
-    const trades=[];let blockedUntil=-1;
-    for(const mss of breaks.filter(b=>b.kind==='MSS'&&b.displacement&&b.index>=Math.max(0,data.length-600))){
-      const trigger=mss.confirmationIndex??mss.index;
-      if(trigger<=blockedUntil)continue;
-      const side=mss.side,localAtr=atr(data.slice(0,trigger+1),14),buffer=localAtr*.1;
-      const fvg=fvgs.find(f=>f.side===side&&f.index>=trigger-1&&f.index<=trigger+12);
-      const zone=fvg||{from:mss.level-buffer*.8,to:mss.level+buffer*.8};
-      const entry=(zone.from+zone.to)/2;
-      const sl=side==='LONG'?Math.min(data[trigger].low,zone.from)-buffer:Math.max(data[trigger].high,zone.to)+buffer;
-      const risk=Math.abs(entry-sl);if(!Number.isFinite(risk)||risk<=0)continue;
-      const tp=side==='LONG'?entry+risk*2:entry-risk*2;
-      let entryIndex=-1;
-      for(let i=trigger+1;i<=Math.min(data.length-1,trigger+24);i++){
-        if(data[i].low<=Math.max(zone.from,zone.to)&&data[i].high>=Math.min(zone.from,zone.to)){entryIndex=i;break}
+  function tradeOutcomeAdvanced(data,startIndex,side,entry,sl,tp,plannedR,breaks,costR){
+    const risk=Math.abs(entry-sl),oneR=side==='LONG'?entry+risk:entry-risk;
+    let beArmed=false;
+    for(let i=startIndex;i<data.length;i++){
+      const c=data[i],hitSl=side==='LONG'?c.low<=sl:c.high>=sl,hitTp=side==='LONG'?c.high>=tp:c.low<=tp;
+      if(hitSl&&hitTp)return finishOutcome(-1,costR,i,sl,'Aynı mumda TP/SL belirsizliği',{ambiguous:true});
+      if(hitSl)return finishOutcome(-1,costR,i,sl,'Yapısal stop');
+      if(hitTp)return finishOutcome(plannedR,costR,i,tp,'Likidite hedefi');
+      if(beArmed&&((side==='LONG'&&c.low<=entry)||(side==='SHORT'&&c.high>=entry)))
+        return finishOutcome(0,costR,i,entry,'1R sonrası maliyet çıkışı');
+      const opposite=breaks.find(b=>b.index===i&&b.kind==='MSS'&&b.displacement&&b.side!==side);
+      if(opposite){
+        const rawR=(side==='LONG'?(c.close-entry):(entry-c.close))/risk;
+        return finishOutcome(rawR,costR,i,c.close,'Ters ana MSS ile erken çıkış');
       }
-      if(entryIndex<0)continue;
-      const result=tradeOutcome(data,entryIndex,side,sl,tp);
+      if((side==='LONG'&&c.high>=oneR)||(side==='SHORT'&&c.low<=oneR))beArmed=true;
+    }
+    return {status:'ACTIVE',rawR:0,netR:-costR,rr:-costR,exitIndex:null,exitPrice:null,exitReason:'Açık işlem',costR};
+  }
+  function backtestTrades(data,breaks,fvgs,sfps,p,tf){
+    const trades=[],rejections={};let blockedUntil=-1;
+    const reject=(reason)=>{rejections[reason]=(rejections[reason]||0)+1};
+    const candidates=breaks.filter(b=>b.kind==='MSS'&&b.displacement&&b.index>=Math.max(0,data.length-1200));
+    for(const mss of candidates){
+      const trigger=mss.confirmationIndex??mss.index;
+      if(trigger<=blockedUntil){reject('Önceki işlem devam ediyor');continue}
+      const side=mss.side,localAtr=atr(data.slice(0,trigger+1),14);
+      if(!localAtr){reject('ATR verisi yetersiz');continue}
+      const sweep=[...sfps].reverse().find(s=>s.side===side&&s.index<mss.index&&mss.index-s.index<=35);
+      if(!sweep){reject('MSS öncesi aynı yön SFP yok');continue}
+      const context=historicalMtfContext(tf,data[trigger].time,side);
+      if(!context.pass){reject('Tarihsel HTF yönü ters');continue}
+      const fvg=fvgs.find(f=>f.side===side&&f.index>=trigger-1&&f.index<=trigger+8);
+      if(!fvg){reject('MSS sonrası taze FVG yok');continue}
+      const entry=(fvg.from+fvg.to)/2;
+      const dealing=data.slice(Math.max(0,trigger-80),trigger+1);
+      const rangeHigh=Math.max(...dealing.map(c=>c.high)),rangeLow=Math.min(...dealing.map(c=>c.low)),equilibrium=(rangeHigh+rangeLow)/2;
+      const locationOk=side==='LONG'?entry<=equilibrium+localAtr*.12:entry>=equilibrium-localAtr*.12;
+      if(!locationOk){reject(side==='LONG'?'Long premium bölgede':'Short discount bölgede');continue}
+      const structuralExtreme=side==='LONG'?Math.min(sweep.extreme,data[trigger].low):Math.max(sweep.extreme,data[trigger].high);
+      const sl=side==='LONG'?structuralExtreme-localAtr*.3:structuralExtreme+localAtr*.3;
+      const risk=Math.abs(entry-sl),riskAtr=risk/localAtr;
+      if(!Number.isFinite(risk)||riskAtr<.65||riskAtr>6){reject(riskAtr<.65?'Stop piyasa gürültüsünden dar':'Stop/entry mesafesi aşırı geniş');continue}
+      const targetPivot=side==='LONG'
+        ? [...p.highs].reverse().find(x=>x.index<trigger&&x.price>entry&&Math.max(...data.slice(x.index+1,trigger+1).map(c=>c.high),-Infinity)<x.price)
+        : [...p.lows].reverse().find(x=>x.index<trigger&&x.price<entry&&Math.min(...data.slice(x.index+1,trigger+1).map(c=>c.low),Infinity)>x.price);
+      if(!targetPivot){reject('Alınmamış karşı likidite hedefi yok');continue}
+      const targetR=Math.abs(targetPivot.price-entry)/risk;
+      if(targetR<1.5){reject('Karşı likidite 1.5R’den yakın');continue}
+      const plannedR=Math.min(2,targetR),tp=side==='LONG'?entry+risk*plannedR:entry-risk*plannedR;
+      let entryIndex=-1;
+      const retestStart=Math.max(trigger,fvg.index)+1,retestEnd=Math.min(data.length-1,retestStart+18);
+      for(let i=retestStart;i<=retestEnd;i++){
+        const c=data[i],fills=c.low<=entry&&c.high>=entry;
+        const body=Math.abs(c.close-c.open),confirmation=side==='LONG'
+          ? c.close>entry&&c.close>c.open&&body>=localAtr*.2
+          : c.close<entry&&c.close<c.open&&body>=localAtr*.2;
+        if(fills&&confirmation){entryIndex=i;break}
+      }
+      if(entryIndex<0){reject('FVG %50 gerçek dolum + retest onayı yok');continue}
+      const costR=(entry*totalCostBps()/10000)/risk;
+      const result=tradeOutcomeAdvanced(data,entryIndex,side,entry,sl,tp,plannedR,breaks,costR);
       if(result.status==='ACTIVE')continue;
-      trades.push({tf,side,entry,sl,tp,rr:result.status==='WON'?2:-1,status:result.status,entryIndex,exitIndex:result.exitIndex,entryTime:data[entryIndex].time,exitTime:data[result.exitIndex].time,source:fvg?'FVG %50':'MSS retest'});
+      const prevention=result.exitReason==='Yapısal stop'
+        ? 'Yeni sweep ve ana MSS gelmeden tekrar giriş yok'
+        : result.exitReason.includes('Ters ana MSS')
+          ? 'Ters MSS erken çıkışı uygulandı'
+          : result.exitReason.includes('maliyet')
+            ? '1R sonrası sermaye korundu'
+            : 'Aynı kurulum zinciri yeniden beklenmeli';
+      trades.push({
+        tf,side,entry,sl,tp,status:result.status,rr:result.netR,rawR:result.rawR,costR,
+        entryIndex,exitIndex:result.exitIndex,exitPrice:result.exitPrice,entryTime:data[entryIndex].time,exitTime:data[result.exitIndex].time,
+        source:'SFP + FVG %50',sweep,mss,fvg,plannedR,riskAtr,
+        context,contextLabel:context.label,exitReason:result.exitReason,prevention,ambiguous:result.ambiguous
+      });
       blockedUntil=result.exitIndex;
     }
-    return trades.slice(-50);
+    return {trades:trades.slice(-80),rejections,rejectedCount:Object.values(rejections).reduce((a,b)=>a+b,0),candidateCount:candidates.length};
   }
 
-  function analyzeData(data,tf='4h'){
+  function analyzeData(data,tf='4h',options={}){
     const majorSpan={'15m':12,'1h':12,'4h':6,'1d':4}[tf]||6;
     const p=pivots(data,majorSpan), internal=pivots(data,3), zz=zigzag(p), highs=p.highs, lows=p.lows;
     const lastHigh=highs.at(-1), prevHigh=highs.at(-2), lastLow=lows.at(-1), prevLow=lows.at(-2);
@@ -403,10 +509,11 @@
     const latestMss=[...breaks].reverse().find(b=>b.kind==='MSS'&&b.displacement&&data.length-1-b.index<=recentWindow)||null;
     const latestBreak=latestMss||latestAnyBreak;
     let setup=null;
+    const allowMssWithoutSweep=false;
     for(let s=sfps.length-1;s>=0&&!setup;s--){
       const sweep=sfps[s];
-      if(data.length-1-sweep.index>45) break;
-      const mss=breaks.find(b=>b.side===sweep.side&&b.kind==='MSS'&&b.displacement&&b.index>sweep.index&&b.index<=sweep.index+35);
+      if(data.length-1-sweep.index>60) break;
+      const mss=breaks.find(b=>b.side===sweep.side&&b.kind==='MSS'&&b.displacement&&b.index>sweep.index&&b.index<=sweep.index+45);
       if(!mss) continue;
       const fvg=[...fvgs].reverse().find(f=>f.side===sweep.side&&f.index>=mss.index-1&&f.index<=mss.index+12);
       let ob=null;
@@ -419,26 +526,36 @@
       }
       const zone=fvg||ob;
       if(!zone) continue;
-      const entry=(zone.from+zone.to)/2, buffer=atr(data)*.08;
-      const sl=sweep.side==='LONG'?sweep.extreme-buffer:sweep.extreme+buffer;
+      const localAtr=atr(data),entry=(zone.from+zone.to)/2, buffer=localAtr*.3;
+      const dealing=data.slice(Math.max(0,mss.index-80),mss.index+1);
+      const eq=(Math.max(...dealing.map(c=>c.high))+Math.min(...dealing.map(c=>c.low)))/2;
+      if((sweep.side==='LONG'&&entry>eq+localAtr*.12)||(sweep.side==='SHORT'&&entry<eq-localAtr*.12))continue;
+      const sl=sweep.side==='LONG'?Math.min(sweep.extreme,data[mss.index].low)-buffer:Math.max(sweep.extreme,data[mss.index].high)+buffer;
       const risk=Math.abs(entry-sl);
       const opposite=(sweep.side==='LONG'?[...highs].reverse().find(x=>x.price>entry):[...lows].reverse().find(x=>x.price<entry));
       let tp=opposite?.price ?? (sweep.side==='LONG'?entry+risk*2:entry-risk*2);
       if(Math.abs(tp-entry)<risk*1.5) tp=sweep.side==='LONG'?entry+risk*2:entry-risk*2;
-      const after=data.slice(mss.index+1), retestIndex=after.findIndex(c=>c.low<=Math.max(zone.from,zone.to)&&c.high>=Math.min(zone.from,zone.to));
+      const plannedR=Math.min(2,Math.abs(tp-entry)/risk);
+      tp=sweep.side==='LONG'?entry+risk*plannedR:entry-risk*plannedR;
+      const after=data.slice(mss.index+1), retestIndex=after.findIndex(c=>{
+        const body=Math.abs(c.close-c.open),fills=c.low<=entry&&c.high>=entry;
+        const confirms=sweep.side==='LONG'?c.close>entry&&c.close>c.open&&body>=localAtr*.2:c.close<entry&&c.close<c.open&&body>=localAtr*.2;
+        return fills&&confirms;
+      });
       const mssAge=data.length-1-mss.index;
       if(retestIndex<0){
-        if(mssAge<=24) setup={source:'SFP_CHAIN',side:sweep.side,sweep,mss,fvg,ob,zone,entry,sl,tp,rr:Math.abs((tp-entry)/(entry-sl)),state:'WAIT_RETEST'};
+        if(mssAge<=24) setup={source:'SFP_CHAIN',side:sweep.side,sweep,mss,fvg,ob,zone,entry,sl,tp,rr:plannedR,state:'WAIT_RETEST'};
         break;
       }
       const retestAbs=mss.index+1+retestIndex;
       const retestAge=data.length-1-retestAbs;
-      const outcome=tradeOutcome(data,retestAbs,sweep.side,sl,tp),exitAge=outcome.exitIndex===null?null:data.length-1-outcome.exitIndex;
+      const costR=(entry*totalCostBps()/10000)/risk;
+      const outcome=tradeOutcomeAdvanced(data,retestAbs,sweep.side,entry,sl,tp,plannedR,breaks,costR),exitAge=outcome.exitIndex===null?null:data.length-1-outcome.exitIndex;
       if((outcome.status==='ACTIVE'&&retestAge<=48)||(outcome.status!=='ACTIVE'&&exitAge<=30))
-        setup={source:'SFP_CHAIN',side:sweep.side,sweep,mss,fvg,ob,zone,entry,sl,tp,rr:Math.abs((tp-entry)/(entry-sl)),state:outcome.status,entryIndex:retestAbs,...outcome};
+        setup={source:'SFP_CHAIN',side:sweep.side,sweep,mss,fvg,ob,zone,entry,sl,tp,netR:outcome.netR,state:outcome.status,entryIndex:retestAbs,...outcome,rr:plannedR};
       break;
     }
-    if(!setup&&latestMss&&data.length-1-latestMss.index<=24){
+    if(allowMssWithoutSweep&&!setup&&latestMss&&data.length-1-latestMss.index<=24){
       const mss=latestMss, triggerIndex=mss.confirmationIndex??mss.index, side=mss.side, buffer=atr(data)*.1;
       const fvg=[...fvgs].reverse().find(f=>f.side===side&&f.index>=triggerIndex-1&&f.index<=triggerIndex+12);
       let ob=null;
@@ -487,8 +604,8 @@
       setup.primary=entries.find(e=>e.name==='FVG %50')||entries[0];
       if(setup.primary){setup.entry=setup.primary.price;setup.sl=setup.primary.sl;setup.rr=setup.primary.rr}
     }
-    const trades=backtestTrades(data,breaks,fvgs,tf);
-    return {p,internal,zz,trend,sfps,breaks,fvgs,trades,latestSfp,latestBreak,latestMss,setup,lastHigh,lastLow,majorSpan};
+    const audit=options.skipTrades?{trades:[],rejections:{},rejectedCount:0,candidateCount:0}:backtestTrades(data,breaks,fvgs,sfps,p,tf);
+    return {p,internal,zz,trend,sfps,breaks,fvgs,trades:audit.trades,audit,latestSfp,latestBreak,latestMss,setup,lastHigh,lastLow,majorSpan};
   }
 
   function buildDecision(){
@@ -577,6 +694,21 @@
     if(a.setup?.state==='WON'||a.setup?.state==='LOST')reasons.push(`Son işlem ${a.setup.state==='WON'?'başarılı':'başarısız'} kapandı; yeni tetik bekleniyor`);
     return {status:side&&!hardConflict?'WAIT_TRIGGER':'NO_TRADE',side:side&&!hardConflict?side:null,tf,setup:null,confidence,reasons,scores:{LONG:side==='LONG'?confidence:100-confidence,SHORT:side==='SHORT'?confidence:100-confidence}};
   }
+  function historicalDecisionForTrade(t){
+    const confidence=Math.min(94,62+(t.context?.supports||0)*9+(t.riskAtr>=1&&t.riskAtr<=4?8:0));
+    return {
+      status:t.status,side:t.side,tf:t.tf,
+      setup:{...t,state:t.status,rr:t.plannedR,zone:t.fvg,entries:[{name:t.source,price:t.entry,kind:'JOURNAL',sl:t.sl,tp:t.tp,rr:t.plannedR}],primary:{name:t.source,price:t.entry}},
+      confidence,
+      reasons:[
+        ...(t.context?.reasons||[]),
+        `SFP → ana MSS → taze FVG → gerçek %50 dolumu doğrulandı`,
+        `Yapısal stop ${t.riskAtr.toFixed(2)} ATR · maliyet ${t.costR.toFixed(2)}R`,
+        `Çıkış: ${t.exitReason} · net ${t.rr>=0?'+':''}${t.rr.toFixed(2)}R`
+      ],
+      scores:{LONG:t.side==='LONG'?confidence:100-confidence,SHORT:t.side==='SHORT'?confidence:100-confidence}
+    };
+  }
 
   function currentBars(){
     const n=activeData.length;
@@ -595,8 +727,8 @@
     activeData=full.slice(0,end);
     activeAnalysis=replayIndex===null?(analyses[activeTf]||null):analyzeData(activeData,activeTf);
     if(focusedTrade&&focusedTrade.tf===activeTf&&activeAnalysis){
-      const t=focusedTrade,pad=Math.max(1,atr(activeData)*.04);
-      activeAnalysis={...activeAnalysis,setup:{source:'JOURNAL',side:t.side,state:t.status,entry:t.entry,sl:t.sl,tp:t.tp,rr:Math.abs((t.tp-t.entry)/(t.entry-t.sl)),entryIndex:t.entryIndex,exitIndex:t.exitIndex,exitPrice:t.status==='WON'?t.tp:t.sl,zone:{from:t.entry-pad,to:t.entry+pad,time:activeData[t.entryIndex]?.time,start:activeData[t.entryIndex]?.time},fvg:null,ob:null,entries:[{name:t.source,price:t.entry,kind:'JOURNAL',sl:t.sl,tp:t.tp,rr:Math.abs((t.tp-t.entry)/(t.entry-t.sl))}],primary:{name:t.source,price:t.entry}}};
+      const t=focusedTrade,pad=Math.max(1,atr(activeData)*.04),zone=t.fvg||{from:t.entry-pad,to:t.entry+pad,time:activeData[t.entryIndex]?.time,start:activeData[t.entryIndex]?.time};
+      activeAnalysis={...activeAnalysis,latestSfp:t.sweep||activeAnalysis.latestSfp,latestBreak:t.mss||activeAnalysis.latestBreak,setup:{source:'JOURNAL',side:t.side,state:t.status,entry:t.entry,sl:t.sl,tp:t.tp,rr:t.plannedR,netR:t.rr,entryIndex:t.entryIndex,exitIndex:t.exitIndex,exitPrice:t.exitPrice,exitReason:t.exitReason,zone,fvg:t.fvg||null,ob:null,entries:[{name:t.source,price:t.entry,kind:'JOURNAL',sl:t.sl,tp:t.tp,rr:t.plannedR}],primary:{name:t.source,price:t.entry}}};
     }
     candles.setData(activeData);
     volume.setData(activeData.map(c=>({time:c.time,value:c.volume||0,color:c.close>=c.open?'rgba(37,214,162,.28)':'rgba(255,82,109,.28)'})));
@@ -640,6 +772,7 @@
       const zoneName=s.fvg?'FVG':s.ob?'OB':'MSS retest';
       if(s.state==='WON')return `İşlem TP’ye ulaştı ve +${s.rr.toFixed(1)}R başarılı olarak kapandı. Yeni yapı bekleniyor.`;
       if(s.state==='LOST')return `İşlem SL’ye ulaştı ve -1R başarısız olarak kapandı. Yeni yapı bekleniyor.`;
+      if(s.state==='FLAT')return `İşlem 1R sonrası maliyet/ters yapı çıkışıyla korundu. Yeni sweep zinciri bekleniyor.`;
       return s.state==='ACTIVE'
         ? `${s.side} ${zoneName} tetiklendi. ${fmt(s.sl)} korunursa ${fmt(s.tp)} likidite hedefi düşünülebilir.`
         : `${zone} ${zoneName} bölgesine dönüş olursa ${s.side} retest planı değerlendirilebilir.`;
@@ -670,7 +803,7 @@
     const confidence=tfConfidence(a);
     if(!a.setup)return `<span>Karar</span><b>BEKLE</b><span>Güven</span><b>${confidence}/100</b><span class="wide">Entry/SL/TP ancak ana MSS ve retest tamamlandığında açılır.</span>`;
     const s=a.setup,alts=(s.entries||[]).map(e=>`${e.name}: ${fmt(e.price)} (R:${e.rr.toFixed(1)})`).join(' · ');
-    const result=s.state==='WON'?`BAŞARILI +${s.rr.toFixed(1)}R`:s.state==='LOST'?'BAŞARISIZ -1R':s.state==='ACTIVE'?'AÇIK İŞLEM':'RETEST BEKLİYOR';
+    const result=s.state==='WON'?`BAŞARILI +${(s.netR??s.rr).toFixed(2)}R`:s.state==='LOST'?`BAŞARISIZ ${(s.netR??-1).toFixed(2)}R`:s.state==='FLAT'?`KORUNDU ${(s.netR??0).toFixed(2)}R`:s.state==='ACTIVE'?'AÇIK İŞLEM':'RETEST BEKLİYOR';
     return `<span>Sonuç</span><b class="${s.state==='WON'?'bull':s.state==='LOST'?'bear':''}">${result}</b><span>Entry</span><b>${fmt(s.entry)}</b><span>SL</span><b>${fmt(s.sl)}</b><span>TP</span><b>${fmt(s.tp)}</b><span>Güven</span><b>${confidence}/100</b><span class="wide">${alts}</span>`;
   }
 
@@ -682,8 +815,8 @@
       trendEl.textContent=a.trend==='UP'?'YÜKSELİŞ':a.trend==='DOWN'?'DÜŞÜŞ':'YATAY';
       trendEl.className=a.trend==='UP'?'bull':a.trend==='DOWN'?'bear':'neutral';
       if(a.setup){
-        setupEl.textContent=a.setup.state==='WON'?`BAŞARILI +${a.setup.rr.toFixed(1)}R`:a.setup.state==='LOST'?'BAŞARISIZ -1R':a.setup.side+' · '+(a.setup.state==='ACTIVE'?'AKTİF':'RETEST BEKLE');
-        setupEl.className=a.setup.state==='WON'?'bull':a.setup.state==='LOST'?'bear':a.setup.side==='LONG'?'bull':'bear';
+        setupEl.textContent=a.setup.state==='WON'?`BAŞARILI +${(a.setup.netR??a.setup.rr).toFixed(2)}R`:a.setup.state==='LOST'?`BAŞARISIZ ${(a.setup.netR??-1).toFixed(2)}R`:a.setup.state==='FLAT'?`KORUNDU ${(a.setup.netR??0).toFixed(2)}R`:a.setup.side+' · '+(a.setup.state==='ACTIVE'?'AKTİF':'RETEST BEKLE');
+        setupEl.className=a.setup.state==='WON'?'bull':a.setup.state==='LOST'?'bear':a.setup.state==='FLAT'?'neutral':a.setup.side==='LONG'?'bull':'bear';
       } else if(a.latestSfp){
         setupEl.textContent=a.latestSfp.side+' SFP · MSS bekle';
         setupEl.className=a.latestSfp.side==='LONG'?'bull':'bear';
@@ -695,7 +828,7 @@
     if(!activeAnalysis) return;
     const a=activeAnalysis, s=a.setup;
     const htf=analyses['4h']?.trend||'RANGE';
-    $('#step1').textContent=`1G: ${trendTr(analyses['1d']?.trend)} · 4H: ${trendTr(htf)}`;
+    $('#step1').textContent=focusedTrade?`İşlem anı: ${focusedTrade.contextLabel}`:`1G: ${trendTr(analyses['1d']?.trend)} · 4H: ${trendTr(htf)}`;
     $('#step1dot').className='step-dot done';
     $('#step2').textContent=a.latestSfp?`${a.latestSfp.side} SFP ${tsText(a.latestSfp.time)} · seviye ${fmt(a.latestSfp.level)}`:'Geçerli son swing sweep’i bekleniyor.';
     $('#step2dot').className='step-dot '+(a.latestSfp?'done':'');
@@ -704,17 +837,19 @@
     $('#step4').textContent=s?`${s.fvg?'FVG':s.ob?'OB':'MSS retest'} bölgesi ${fmt(s.zone.from)}–${fmt(s.zone.to)} · ${stateTr(s.state)}`:'Ana MSS sonrası FVG/OB veya kırılım retesti bekleniyor.';
     $('#step4dot').className='step-dot '+(s?'done':'');
     const signal=$('#signal'), d=decision;
-    $('#decisionTitle').textContent=`Akıllı MTF kararı · ${TF_LABEL[activeTf]} odağı`;
+    $('#decisionTitle').textContent=focusedTrade?`Tarihsel MTF kararı · ${TF_LABEL[activeTf]}`:`Akıllı MTF kararı · ${TF_LABEL[activeTf]} odağı`;
     if(d?.setup){
       const ds=d.setup;
       signal.className='signal '+(d.side==='LONG'?'long':'short');
-      signal.innerHTML=`<strong>EN UYGUN: ${d.side} · ${d.status==='ACTIVE'?'AKTİF':'RETEST BEKLE'}</strong>${TF_LABEL[d.tf]} kurulum; 1G/4H bağlamı ve 1H/15m tetikleyicileri birlikte puanlandı.`;
-      $('#direction').textContent=d.side+' · '+(d.status==='ACTIVE'?'AKTİF':'RETEST BEKLE');
+      signal.innerHTML=focusedTrade
+        ? `<strong>TARİHSEL: ${d.side} · ${stateTr(d.status)}</strong>${focusedTrade.exitReason} · net ${focusedTrade.rr>=0?'+':''}${focusedTrade.rr.toFixed(2)}R. Bu kart yalnızca işlem anındaki mumları kullanır.`
+        : `<strong>EN UYGUN: ${d.side} · ${d.status==='ACTIVE'?'AKTİF':'RETEST BEKLE'}</strong>${TF_LABEL[d.tf]} kurulum; 1G/4H bağlamı ve 1H/15m tetikleyicileri birlikte puanlandı.`;
+      $('#direction').textContent=d.side+' · '+(focusedTrade?stateTr(d.status):(d.status==='ACTIVE'?'AKTİF':'RETEST BEKLE'));
       $('#bestTf').textContent=TF_LABEL[d.tf];
       $('#entry').textContent='$'+fmt(ds.entry);
       $('#sl').textContent='$'+fmt(ds.sl);
       $('#tp').textContent='$'+fmt(ds.tp);
-      $('#rr').textContent='1 : '+ds.rr.toFixed(2);
+      $('#rr').textContent=focusedTrade?`plan 1:${ds.rr.toFixed(2)} · net ${focusedTrade.rr.toFixed(2)}R`:'1 : '+ds.rr.toFixed(2);
     }else if(d?.status==='WAIT_TRIGGER'){
       signal.className='signal';
       signal.innerHTML=`<strong>ÖNGÖRÜ: ${d.side} TETİK BEKLE</strong>MTF yönü ${d.side} tarafını destekliyor; ancak giriş için SFP → hacimli MSS → FVG/OB retest zinciri tamamlanmalı.`;
@@ -738,22 +873,35 @@
     if(s?.fvg) events.push(`<div class="event"><b style="color:#4e9cff">FVG bulundu</b>${fmt(s.fvg.from)}–${fmt(s.fvg.to)} retest bölgesi.</div>`);
     if(s?.ob) events.push(`<div class="event"><b style="color:#ffd166">Order Block bulundu</b>${fmt(s.ob.from)}–${fmt(s.ob.to)} son zıt mum bölgesi.</div>`);
     if(s&&!s.fvg&&!s.ob) events.push(`<div class="event"><b style="color:#ac78ff">MSS kırılım retesti</b>${fmt(s.zone.from)}–${fmt(s.zone.to)} ana yapı geri dönüş bölgesi.</div>`);
-    if(s?.state==='WON')events.push(`<div class="event"><b class="bull">BAŞARILI İŞLEM · +${s.rr.toFixed(1)}R</b>${tsText(activeData[s.exitIndex]?.time)} · TP ${fmt(s.tp)} seviyesinde kapandı.</div>`);
-    if(s?.state==='LOST')events.push(`<div class="event"><b class="bear">BAŞARISIZ İŞLEM · -1R</b>${tsText(activeData[s.exitIndex]?.time)} · SL ${fmt(s.sl)} seviyesinde kapandı${s.ambiguous?' (aynı mumda TP/SL; temkinli olarak SL sayıldı)':''}.</div>`);
+    if(s?.state==='WON')events.push(`<div class="event"><b class="bull">BAŞARILI İŞLEM · ${(s.netR??s.rr)>=0?'+':''}${(s.netR??s.rr).toFixed(2)}R</b>${tsText(activeData[s.exitIndex]?.time)} · ${s.exitReason||'TP hedefi'} · çıkış ${fmt(s.exitPrice??s.tp)}.</div>`);
+    if(s?.state==='LOST')events.push(`<div class="event"><b class="bear">BAŞARISIZ İŞLEM · ${(s.netR??-1).toFixed(2)}R</b>${tsText(activeData[s.exitIndex]?.time)} · ${s.exitReason||'Yapısal stop'} · çıkış ${fmt(s.exitPrice??s.sl)}${s.ambiguous?' (aynı mumda TP/SL; temkinli olarak SL sayıldı)':''}.</div>`);
+    if(s?.state==='FLAT')events.push(`<div class="event"><b class="neutral">KORUMALI ÇIKIŞ · ${(s.netR??0).toFixed(2)}R</b>${tsText(activeData[s.exitIndex]?.time)} · ${s.exitReason||'Maliyet çıkışı'}.</div>`);
     $('#events').innerHTML=events.join('')||'<div class="event muted">Bu zaman diliminde güncel SMC olayı yok.</div>';
   }
   function updateJournal(){
     const tfOrder={'15m':0,'1h':1,'4h':2,'1d':3};
     const trades=Object.entries(analyses).flatMap(([tf,a])=>(a?.trades||[]).map(t=>({...t,tf}))).sort((a,b)=>b.exitTime-a.exitTime||tfOrder[a.tf]-tfOrder[b.tf]);
     journalTrades=trades.slice(0,80);
-    const wins=trades.filter(t=>t.status==='WON').length,losses=trades.length-wins,net=trades.reduce((sum,t)=>sum+t.rr,0),avg=trades.length?net/trades.length:0;
+    const wins=trades.filter(t=>t.status==='WON').length,losses=trades.filter(t=>t.status==='LOST').length,net=trades.reduce((sum,t)=>sum+t.rr,0),avg=trades.length?net/trades.length:0;
+    const grossWin=trades.filter(t=>t.rr>0).reduce((s,t)=>s+t.rr,0),grossLoss=Math.abs(trades.filter(t=>t.rr<0).reduce((s,t)=>s+t.rr,0));
+    const profitFactor=grossLoss?grossWin/grossLoss:(grossWin?Infinity:0);
+    const rejected=Object.values(analyses).reduce((s,a)=>s+(a?.audit?.rejectedCount||0),0);
     $('#jTotal').textContent=trades.length;$('#jWins').textContent=wins;$('#jLosses').textContent=losses;
-    $('#jRate').textContent=trades.length?(wins/trades.length*100).toFixed(1)+'%':'—';
+    $('#jRate').textContent=(wins+losses)?(wins/(wins+losses)*100).toFixed(1)+'%':'—';
     $('#jR').textContent=trades.length?`${net>=0?'+':''}${net.toFixed(1)}R / ${avg>=0?'+':''}${avg.toFixed(2)}R`:'—';
-    $('#journalRows').innerHTML=journalTrades.map((t,i)=>`<tr class="journal-row ${focusedTrade?.tf===t.tf&&focusedTrade?.entryTime===t.entryTime?'selected':''}" data-trade-index="${i}" title="Grafikte bu işleme git"><td>${tsText(t.entryTime)}</td><td>${TF_LABEL[t.tf]} · ${t.side}<br><span class="muted">${t.source}</span></td><td>${fmt(t.entry)}</td><td>${fmt(t.sl)}</td><td>${fmt(t.tp)}</td><td class="${t.status==='WON'?'win':'loss'}">${t.status==='WON'?'+2R BAŞARILI':'-1R BAŞARISIZ'}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">Henüz kapanmış teyitli işlem bulunamadı.</td></tr>';
+    $('#jPf').textContent=Number.isFinite(profitFactor)?profitFactor.toFixed(2):(grossWin?'∞':'—');
+    $('#jRejected').textContent=rejected;
+    $('#jSampleNote').textContent=trades.length<30
+      ? `Örneklem yalnızca ${trades.length} işlem: sonuç istatistiksel karar için yetersiz. Toplam maliyet ${totalCostBps()} bps.`
+      : `${trades.length} işlem · toplam maliyet ${totalCostBps()} bps · satıra basınca tarihsel kurulum açılır.`;
+    $('#journalRows').innerHTML=journalTrades.map((t,i)=>{
+      const resultClass=t.status==='WON'?'win':t.status==='LOST'?'loss':'flat';
+      const resultText=`${t.rr>=0?'+':''}${t.rr.toFixed(2)}R ${t.status==='WON'?'BAŞARILI':t.status==='LOST'?'BAŞARISIZ':'KORUNDU'}`;
+      return `<tr class="journal-row ${focusedTrade?.tf===t.tf&&focusedTrade?.entryTime===t.entryTime?'selected':''}" data-trade-index="${i}" title="Grafikte bu tarihsel MTF işleme git"><td>${tsFull(t.entryTime)}</td><td>${TF_LABEL[t.tf]} · ${t.side}<br><span class="muted">${t.source}</span></td><td><b>${t.contextLabel}</b><br><span class="muted">${t.exitReason} · ${t.prevention}</span></td><td>${fmt(t.entry)}</td><td>${fmt(t.sl)}</td><td>${fmt(t.tp)}</td><td class="${resultClass}">${resultText}<br><span class="muted">maliyet ${t.costR.toFixed(2)}R</span></td></tr>`;
+    }).join('')||'<tr><td colspan="7" class="muted">Sıkı MTF filtrelerini geçen kapanmış işlem henüz bulunamadı.</td></tr>';
   }
   function trendTr(v){return v==='UP'?'Yükseliş':v==='DOWN'?'Düşüş':'Yatay / kararsız'}
-  function stateTr(v){return v==='ACTIVE'?'Açık işlem':v==='WON'?'Başarılı kapandı':v==='LOST'?'Başarısız kapandı':'Retest bekleniyor'}
+  function stateTr(v){return v==='ACTIVE'?'Açık işlem':v==='WON'?'Başarılı kapandı':v==='LOST'?'Başarısız kapandı':v==='FLAT'?'Maliyet/erken çıkış':'Retest bekleniyor'}
 
   function resizeCanvas(){
     const r=canvas.getBoundingClientRect(), dpr=Math.min(devicePixelRatio||1,2);
@@ -797,15 +945,17 @@
     ctx.fillStyle='rgba(37,214,162,.18)';ctx.fillRect(x,rewardTop,w,rewardH);ctx.strokeStyle='#25d6a2';ctx.strokeRect(x,rewardTop,w,rewardH);
     ctx.beginPath();ctx.strokeStyle='#ffd166';ctx.lineWidth=2;ctx.moveTo(x,entryY);ctx.lineTo(x+w,entryY);ctx.stroke();
     ctx.beginPath();ctx.strokeStyle='#ffd166';ctx.setLineDash([4,3]);ctx.moveTo(x,riskTop);ctx.lineTo(x,rewardTop+rewardH);ctx.stroke();ctx.setLineDash([]);
-    const result=setup.state==='WON'?`BAŞARILI +${setup.rr.toFixed(1)}R`:setup.state==='LOST'?'BAŞARISIZ -1R':`AÇIK · R 1:${setup.rr.toFixed(1)}`;
-    ctx.font='700 10px Inter,system-ui';ctx.fillStyle=setup.state==='WON'?'#7ce9c8':setup.state==='LOST'?'#ff9caf':'#eef4ff';
+    const shownR=setup.netR??setup.rr;
+    const result=setup.state==='WON'?`BAŞARILI +${shownR.toFixed(2)}R`:setup.state==='LOST'?`BAŞARISIZ ${shownR.toFixed(2)}R`:setup.state==='FLAT'?`KORUNDU ${shownR.toFixed(2)}R`:`AÇIK · R 1:${setup.rr.toFixed(1)}`;
+    ctx.font='700 10px Inter,system-ui';ctx.fillStyle=setup.state==='WON'?'#7ce9c8':setup.state==='LOST'?'#ff9caf':setup.state==='FLAT'?'#ffd166':'#eef4ff';
     ctx.fillText(`${setup.side} · ${setup.primary?.name||'ENTRY'} · ${result}`,x+6,entryY-6);
     ctx.fillStyle='#ffd166';ctx.fillText('GİRİŞ',x+3,entryY+13);
     ctx.fillStyle='#ff9caf';ctx.fillText('SL '+fmt(setup.sl),x+6,riskTop+13);
     ctx.fillStyle='#7ce9c8';ctx.fillText('TP '+fmt(setup.tp),x+6,rewardTop+rewardH-6);
     if(setup.state!=='ACTIVE'){
-      ctx.beginPath();ctx.strokeStyle=setup.state==='WON'?'#25d6a2':'#ff526d';ctx.lineWidth=2;ctx.moveTo(x+w,riskTop);ctx.lineTo(x+w,rewardTop+rewardH);ctx.stroke();
-      ctx.fillStyle=setup.state==='WON'?'#25d6a2':'#ff526d';ctx.fillText(setup.state==='WON'?'TP KAPANIŞ':'SL KAPANIŞ',x+w-72,entryY+13);
+      const exitColor=setup.state==='WON'?'#25d6a2':setup.state==='FLAT'?'#ffd166':'#ff526d';
+      ctx.beginPath();ctx.strokeStyle=exitColor;ctx.lineWidth=2;ctx.moveTo(x+w,riskTop);ctx.lineTo(x+w,rewardTop+rewardH);ctx.stroke();
+      ctx.fillStyle=exitColor;ctx.fillText(setup.state==='WON'?'TP KAPANIŞ':setup.state==='FLAT'?'KORUMALI ÇIKIŞ':'SL / ERKEN ÇIKIŞ',x+w-88,entryY+13);
     }
   }
   function drawOverlay(){
@@ -909,7 +1059,7 @@
     stopReplay();stopLive();focusedTrade={...trade};activeTf=trade.tf;$('#interval').value=trade.tf;
     document.querySelectorAll('.tf-card').forEach(c=>c.classList.toggle('active',c.dataset.tf===trade.tf));
     replayIndex=Math.min(mtf[trade.tf].length,trade.exitIndex+1);
-    decision=buildFocusedDecision(activeTf);
+    decision=historicalDecisionForTrade(trade);
     renderChart(false);
     setTimeout(()=>{
       chart.timeScale().setVisibleLogicalRange({from:Math.max(0,trade.entryIndex-22),to:Math.min(replayIndex+6,trade.exitIndex+20)});
@@ -953,6 +1103,11 @@
   $('#interval').addEventListener('change',e=>switchTf(e.target.value));
   $('#exchange').addEventListener('change',()=>loadAll(true));
   $('#symbol').addEventListener('change',()=>loadAll(true));
+  $('#costBps').addEventListener('change',()=>{
+    focusedTrade=null;replayIndex=null;
+    analyses=Object.fromEntries(Object.keys(mtf).map(tf=>[tf,analyzeData(mtf[tf],tf)]));
+    globalDecision=buildDecision();decision=buildFocusedDecision(activeTf);renderChart(false);
+  });
   $('#refresh').addEventListener('click',()=>loadAll(true));
   $('#fit').addEventListener('click',()=>chart.timeScale().fitContent());
   $('#focusBest').addEventListener('click',()=>{if(globalDecision?.tf)switchTf(globalDecision.tf)});
