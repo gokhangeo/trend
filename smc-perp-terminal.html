@@ -119,6 +119,27 @@
 
       .market-watchlist{padding:12px}.watchlist-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.watchlist-title h3{margin:0}.watchlist-title span,.watchlist-columns{color:var(--muted);font-size:9px;letter-spacing:.08em}.watchlist-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:9px}.watchlist-tabs b{background:#111a25;border:1px solid rgba(178,194,214,.12);border-radius:7px;color:var(--muted);font-size:9px;padding:8px;text-align:center}.watchlist-tabs b.active{background:rgba(244,173,40,.12);border-color:rgba(244,173,40,.4);color:var(--orange)}.watchlist-columns{display:grid;grid-template-columns:1fr auto auto;padding:0 5px 7px;border-bottom:1px solid rgba(178,194,214,.1)}.watchlist-list{display:flex;flex-direction:column}.watch-row{align-items:center;background:transparent;border:0;border-bottom:1px solid rgba(178,194,214,.08);color:var(--text);cursor:pointer;display:grid;gap:7px;grid-template-columns:27px 1fr auto;min-height:52px;padding:8px 4px;text-align:left}.watch-row:hover,.watch-row.selected{background:rgba(57,135,255,.13);box-shadow:inset 3px 0 var(--blue)}.watch-icon{align-items:center;background:#1c2a3b;border-radius:50%;color:var(--orange);display:flex;font-weight:800;height:25px;justify-content:center;width:25px}.watch-row span:nth-child(2){display:grid;gap:3px}.watch-row span:nth-child(2) strong{font-size:11px}.watch-row span:nth-child(2) small{color:var(--muted);font-size:8px}.watch-row em{color:var(--muted);font-size:9px;font-style:normal}
   </style>
+<style>
+    /* GitHub Pages alignment with the live Kırılım Radarı terminal */
+    :root{--bg:#080c12;--panel:#0c121a;--panel2:#111a25;--line:#273344;--text:#e7edf4;--muted:#8290a3;--green:#25d6a2;--red:#ff6477;--orange:#f4ad28;--blue:#3987ff}
+    body{background:#080c12}
+    .app{max-width:none;margin:0;padding:0 14px 24px 78px}
+    .topbar{height:64px;margin:0 0 10px;padding:0 14px;border-bottom:1px solid rgba(178,194,214,.12);background:#0b1118}
+    .brand{font-size:20px;letter-spacing:.02em}.brand b{color:var(--orange)}.subtitle{color:#718097}
+    .toolbar{padding:8px;background:#0c121a;border-color:rgba(178,194,214,.14);border-radius:10px}
+    .toolbar button,.toolbar select,.toolbar input[type=text],.toolbar input[type=number]{background:#111a25;border-color:rgba(178,194,214,.14);border-radius:7px}
+    .toolbar button:hover{border-color:var(--orange)}
+    .perp-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;margin:10px 0}.perp-item{background:#0c121a;border-color:rgba(178,194,214,.12);padding:9px 10px}
+    .gainers{background:#0c121a;border-color:rgba(178,194,214,.12);margin:10px 0}.gainer{background:#111a25;border-color:rgba(178,194,214,.12)}
+    .tf-strip{gap:8px;margin:10px 0}.tf-card{min-height:175px;background:linear-gradient(145deg,#111a25,#0c121a);border-color:rgba(178,194,214,.12);padding:12px}.tf-card.active{border-color:var(--orange);box-shadow:0 0 0 1px rgba(244,173,40,.22) inset;background:linear-gradient(145deg,#242016,#0d151f)}
+    .workspace{display:block;margin-left:270px}.chart-panel,.card,.journal{background:#0c121a;border-color:rgba(178,194,214,.14);border-radius:10px}.chart-head{height:58px;border-bottom-color:rgba(178,194,214,.12)}.chart-wrap{height:min(72vh,760px);min-height:560px;background:#091119}
+    .tv-toolbar{height:42px;display:flex;align-items:center;gap:15px;padding:0 14px;border-bottom:1px solid rgba(178,194,214,.12);background:#10151b;color:#c4ccd6;font:12px ui-monospace,SFMono-Regular,monospace}.tv-toolbar b{color:#e8edf2;font-size:13px}.tv-toolbar strong{padding:8px 10px;background:#30363e;color:#fff;border-radius:5px}.tv-toolbar i{flex:1}.tv-toolbar span{white-space:nowrap}
+    .legend{background:#0c121a}.replay{background:#0c121a}
+    .side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;position:static;max-height:none;overflow:visible;margin-top:10px}.side>.market-watchlist{position:fixed;z-index:15;left:78px;top:78px;width:250px;max-height:calc(100vh - 96px);overflow:auto;background:#0c121a;border-color:rgba(178,194,214,.14);border-radius:10px}
+    .side>.card{min-width:0}.market-watchlist{padding:12px}.watchlist-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.watchlist-title h3{margin:0}.watchlist-title span,.watchlist-columns{color:var(--muted);font-size:9px;letter-spacing:.08em}.watchlist-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:9px}.watchlist-tabs b{background:#111a25;border:1px solid rgba(178,194,214,.12);border-radius:7px;color:var(--muted);font-size:9px;padding:8px;text-align:center}.watchlist-tabs b.active{background:rgba(244,173,40,.12);border-color:rgba(244,173,40,.4);color:var(--orange)}.watchlist-market-tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:9px}.watchlist-market-tabs b{background:#111a25;border:1px solid rgba(178,194,214,.1);border-radius:7px;color:var(--muted);font-size:9px;padding:8px 4px;text-align:center}.watchlist-market-tabs b.active{color:var(--orange);border-color:rgba(244,173,40,.4);background:rgba(244,173,40,.1)}.watchlist-columns{display:grid;grid-template-columns:1fr auto auto;padding:0 5px 7px;border-bottom:1px solid rgba(178,194,214,.1)}.watchlist-list{display:flex;flex-direction:column}.watch-row{align-items:center;background:transparent;border:0;border-bottom:1px solid rgba(178,194,214,.08);color:var(--text);cursor:pointer;display:grid;gap:7px;grid-template-columns:27px 1fr auto;min-height:52px;padding:8px 4px;text-align:left}.watch-row:hover,.watch-row.selected{background:rgba(57,135,255,.13);box-shadow:inset 3px 0 var(--blue)}.watch-icon{align-items:center;background:#1c2a3b;border-radius:50%;color:var(--orange);display:flex;font-weight:800;height:25px;justify-content:center;width:25px}.watch-row span:nth-child(2){display:grid;gap:3px}.watch-row span:nth-child(2) strong{font-size:11px}.watch-row span:nth-child(2) small{color:var(--muted);font-size:8px}.watch-row em{color:var(--muted);font-size:9px;font-style:normal}
+    @media(max-width:1120px){.workspace{margin-left:0}.side>.market-watchlist{position:static;width:auto;max-height:none;overflow:visible}.side{display:flex}.market-watchlist{order:-1}}
+    @media(max-width:720px){.app{padding:0 7px 16px}.tool-rail{display:none}.topbar{height:auto;padding:10px 4px}.perp-grid{display:flex;overflow-x:auto}.perp-item{min-width:132px}.chart-wrap{height:58vh;min-height:390px}.tv-toolbar{gap:8px;overflow:auto}.side{display:flex}}
+</style>
 </head>
 <body>
 
@@ -135,7 +156,7 @@
 <main class="app">
   <header class="topbar">
     <div>
-      <div class="brand"><b>SMC</b> Perp Yapı Terminali</div>
+      <div class="brand"><b>KIRILIM</b> RADARI</div>
       <div class="subtitle">Swing yapısı · Likidite alımı (SFP) · MSS · FVG / OB retest · Entry / SL / TP</div>
     </div>
     <div class="live"><span class="live-dot" id="liveDot"></span><span id="feed">Perpetual veri bağlantısı kuruluyor…</span></div>
@@ -189,6 +210,9 @@
         <div class="instrument"><span id="pair">BTCUSDT.P</span> · <b id="tfLabel">4H</b> <span id="venue">BINANCE PERPETUAL</span></div>
         <div class="head-actions"><span class="price-badge" id="price">—</span><button id="fullscreen" title="Grafiği tam ekran aç">⛶</button></div>
       </div>
+      <div class="tv-toolbar" aria-label="TradingView araç çubuğu">
+        <b>⌕ BTCUSDT.P</b><span>1dk</span><span>5dk</span><strong>15dk</strong><span>1sa</span><span>4sa</span><span>1G</span><i></i><span>⛶</span>
+      </div>
       <div class="chart-wrap">
         <div id="chart"></div>
         <canvas id="drawing"></canvas>
@@ -214,7 +238,7 @@
     <aside class="side">
 
       <section class="panel card market-watchlist">
-        <div class="watchlist-title"><h3>İzleme listesi</h3><span>PERPETUAL</span></div>
+        <div class="watchlist-title"><h3>İZLEME LİSTESİ</h3><span>8 PERPETUAL</span></div><div class="watchlist-market-tabs"><b class="active">KRİPTO</b><b>PERP</b><b>ALARMLAR</b></div>
         <div class="watchlist-tabs"><b class="active">TÜMÜ 8</b><b>FAVORİLER 0</b></div>
         <div class="watchlist-columns"><span>VARLIK</span><span>SON</span><span>24S</span></div>
         <div class="watchlist-list">
@@ -223,6 +247,9 @@
           <button class="watch-row" type="button" data-watch-symbol="SOLUSDT"><span class="watch-icon">S</span><span><strong>SOL</strong><small>SOLUSDT.P</small></span><em>takipte</em></button>
           <button class="watch-row" type="button" data-watch-symbol="BNBUSDT"><span class="watch-icon">B</span><span><strong>BNB</strong><small>BNBUSDT.P</small></span><em>takipte</em></button>
           <button class="watch-row" type="button" data-watch-symbol="XRPUSDT"><span class="watch-icon">X</span><span><strong>XRP</strong><small>XRPUSDT.P</small></span><em>takipte</em></button>
+          <button class="watch-row" type="button" data-watch-symbol="DOGEUSDT"><span class="watch-icon">D</span><span><strong>DOGE</strong><small>DOGEUSDT.P</small></span><em>takipte</em></button>
+          <button class="watch-row" type="button" data-watch-symbol="ADAUSDT"><span class="watch-icon">A</span><span><strong>ADA</strong><small>ADAUSDT.P</small></span><em>takipte</em></button>
+          <button class="watch-row" type="button" data-watch-symbol="AVAXUSDT"><span class="watch-icon">A</span><span><strong>AVAX</strong><small>AVAXUSDT.P</small></span><em>takipte</em></button>
         </div>
       </section>
 
