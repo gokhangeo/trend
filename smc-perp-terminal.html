@@ -140,6 +140,10 @@
     @media(max-width:1120px){.workspace{margin-left:0}.side>.market-watchlist{position:static;width:auto;max-height:none;overflow:visible}.side{display:flex}.market-watchlist{order:-1}}
     @media(max-width:720px){.app{padding:0 7px 16px}.tool-rail{display:none}.topbar{height:auto;padding:10px 4px}.perp-grid{display:flex;overflow-x:auto}.perp-item{min-width:132px}.chart-wrap{height:58vh;min-height:390px}.tv-toolbar{gap:8px;overflow:auto}.side{display:flex}}
 </style>
+<style>
+    .chart-wrap{overflow:hidden}.tv-embed{position:absolute;inset:0;z-index:4;background:#0b1118}.tv-embed .tradingview-widget-container__widget,.tv-embed iframe{height:100%!important;width:100%!important}.tv-embed iframe{border:0}
+    @media(max-width:720px){.tv-embed{min-height:390px}}
+  </style>
 </head>
 <body>
 
@@ -214,6 +218,7 @@
         <b>⌕ BTCUSDT.P</b><span>1dk</span><span>5dk</span><strong>15dk</strong><span>1sa</span><span>4sa</span><span>1G</span><i></i><span>⛶</span>
       </div>
       <div class="chart-wrap">
+        <div id="tvWidget" class="tv-embed" aria-label="TradingView canlı grafiği"><div class="tradingview-widget-container__widget"></div></div>
         <div id="chart"></div>
         <canvas id="drawing"></canvas>
         <div class="tooltip" id="tooltip"></div>
@@ -1579,6 +1584,32 @@
 </script>
 <script>
   document.querySelectorAll("[data-watch-symbol]").forEach((button) => button.addEventListener("click", () => { const input = document.getElementById("symbol"); if (!input) return; input.value = button.dataset.watchSymbol || "BTCUSDT"; document.getElementById("refresh")?.click(); }));
+</script>
+<script>
+(function mountTradingViewWidget(){
+  const root=document.getElementById("tvWidget");
+  if(!root) return;
+  const symbolInput=document.getElementById("symbol");
+  const exchangeInput=document.getElementById("exchange");
+  const intervalInput=document.getElementById("interval");
+  const exchangeMap={binance:"BINANCE",mexc:"MEXC"};
+  const intervalMap={"15m":"15","1h":"60","4h":"240","1d":"D"};
+  let timer=0;
+  function mountTradingViewWidget(){
+    root.innerHTML='<div class="tradingview-widget-container__widget"></div>';
+    const exchange=exchangeMap[exchangeInput?.value]||"BINANCE";
+    const symbol=(symbolInput?.value||"BTCUSDT").replace(/\\.P$/i,"").toUpperCase();
+    const interval=intervalMap[intervalInput?.value]||"15";
+    const script=document.createElement("script");
+    script.src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+    script.async=true;
+    script.innerHTML=JSON.stringify({autosize:true,symbol:exchange+":"+symbol+".P",interval,timezone:"Europe/Istanbul",theme:"dark",style:"1",locale:"tr",allow_symbol_change:true,hide_top_toolbar:false,hide_legend:false,save_image:false,calendar:false,hide_volume:false,support_host:"https://www.tradingview.com"});
+    root.appendChild(script);
+  }
+  function schedule(){clearTimeout(timer);timer=setTimeout(mountTradingViewWidget,180);}
+  [symbolInput,exchangeInput,intervalInput].forEach((el)=>el?.addEventListener("change",schedule));
+  mountTradingViewWidget();
+})();
 </script>
 </body>
 </html>
