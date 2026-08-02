@@ -283,7 +283,7 @@
           const entry=(zone.low+zone.high)/2,a=Number.isFinite(d.atr[sweep.i])?d.atr[sweep.i]:entry*.01,stop=sweep.direction==='long'?sweep.wick-a*.08:sweep.wick+a*.08,risk=Math.abs(entry-stop);if(!(risk>0))continue;
           const knownTargets=sweep.direction==='long'?piv.highs.filter(p=>p.i+span<=mss.i&&p.price>entry).sort((x,y)=>x.price-y.price):piv.lows.filter(p=>p.i+span<=mss.i&&p.price<entry).sort((x,y)=>y.price-x.price),targetPoint=knownTargets.find(p=>Math.abs(p.price-entry)/risk>=1.5);if(!targetPoint)continue;
           const target=targetPoint.price,rr=Math.abs(target-entry)/risk,after=c.slice(mss.i+1,lastClosed+1),invalid=after.some(x=>sweep.direction==='long'?x.low<=stop:x.high>=stop),completed=after.some(x=>sweep.direction==='long'?x.high>=target:x.low<=target);if(invalid||completed)continue;
-          const retested=after.some(x=>x.low<=zone.high&&x.high>=zone.low),status=retested?'RETEST GELDİ • tetik izleniyor':'RETEST GELİRSE';
+          const retested=after.some(x=>x.low<=zone.high&&x.high>=zone.low),status=retested?'BÖLGEDE • dönüş kapanışı bekle':'RETEST GELİRSE • dönüş kapanışı bekle';
           plans.push({side:sweep.direction==='long'?'LONG':'SHORT',entry,stop,target,rr,time:mss.time,zoneLow:zone.low,zoneHigh:zone.high,zoneType:zone.type,status,sfpTime:sweep.time,label:(sweep.direction==='long'?'LONG':'SHORT')+' PLAN '+fmt(rr,2)+'R',bias:'SFP + MSS teyitli'});
         }
         const last=c[lastClosed],atrNow=Number.isFinite(d.atr[lastClosed])?d.atr[lastClosed]:last.close*.01,tolerance=Math.max(atrNow*.18,last.close*.0008),liquidity=[];
