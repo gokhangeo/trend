@@ -22,7 +22,8 @@
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; color: var(--text); background: radial-gradient(circle at 10% 0%, #132b45 0, transparent 30%), var(--bg); min-height: 100vh; }
+    body { margin: 0; color: var(--text); background: radial-gradient(circle at 10% 0%, #132b45 0, transparent 30%), var(--bg); min-height: 100vh; overflow-x: hidden; }
+    body.chart-expanded-open { overflow: hidden; }
     button, select, input { font: inherit; }
     button { border: 1px solid var(--border); background: #13253b; color: var(--text); border-radius: 9px; padding: 8px 11px; cursor: pointer; transition: .18s ease; }
     button:hover { border-color: rgba(78,216,237,.6); transform: translateY(-1px); }
@@ -58,7 +59,13 @@
     .chart-wrap { position: relative; height: 520px; background: #091625; }
     #main-chart { position: absolute; inset: 0; z-index: 1; }
     #draw-layer { position: absolute; inset: 0; z-index: 5; width: 100%; height: 100%; pointer-events: none; }
-    #draw-layer.interactive { pointer-events: auto; cursor: crosshair; }
+    #draw-layer.interactive { pointer-events: auto; cursor: crosshair; touch-action: none; }
+    .zoom-tools { display: inline-flex; align-items: center; gap: 5px; padding-right: 4px; border-right: 1px solid var(--border); }
+    .zoom-tools button { min-width: 38px; font-weight: 800; }
+    .chart-panel.chart-expanded { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; width: 100vw; height: 100dvh; border: 0; border-radius: 0; background: #091625; }
+    .chart-panel.chart-expanded .panel-head { flex: 0 0 auto; background: #0d1a2b; }
+    .chart-panel.chart-expanded .chart-wrap { flex: 1 1 auto; height: auto; min-height: 0; }
+    .chart-panel.chart-expanded .oscillators, .chart-panel.chart-expanded .status-strip { display: none; }
     .chart-hint { position: absolute; left: 13px; bottom: 12px; z-index: 7; display: none; padding: 7px 9px; border-radius: 7px; color: #c9f7ff; background: rgba(7,17,31,.86); border: 1px solid rgba(78,216,237,.4); font-size: 11px; pointer-events: none; }
     .oscillators { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--border); }
     .osc { height: 145px; min-width: 0; border-right: 1px solid var(--border); }
@@ -110,7 +117,27 @@
     .toast { position: fixed; right: 17px; bottom: 17px; z-index: 20; max-width: 360px; padding: 11px 13px; border: 1px solid var(--border); border-radius: 10px; background: #102238; color: var(--text); box-shadow: var(--shadow); font-size: 12px; opacity: 0; transform: translateY(10px); pointer-events: none; transition: .22s ease; }
     .toast.show { opacity: 1; transform: translateY(0); }
     @media (max-width: 1120px) { .layout { grid-template-columns: 1fr; } .side { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); align-items: start; } }
-    @media (max-width: 720px) { .app-shell { padding: 10px; } .topbar { align-items: flex-start; flex-direction: column; } .toolbar { grid-template-columns: 1fr; } .chart-wrap { height: 430px; } .oscillators, .bottom-grid, .side { grid-template-columns: 1fr; } .status-strip { grid-template-columns: repeat(2, 1fr); } .status-cell:nth-child(2) { border-right: 0; } .status-cell:nth-child(3), .status-cell:nth-child(4), .status-cell:nth-child(5) { border-top: 1px solid var(--border); } }
+    @media (max-width: 720px) {
+      .app-shell { padding: 7px; }
+      .topbar { align-items: flex-start; flex-direction: column; gap: 10px; }
+      .top-actions { width: 100%; justify-content: space-between; }
+      .toolbar { grid-template-columns: 1fr; padding: 9px; }
+      .toolbar-section { align-items: flex-start; flex-wrap: wrap; }
+      .toolbar-section:first-child { display: grid; grid-template-columns: 1fr 1fr; }
+      .toolbar-section:first-child input { grid-column: 1 / -1; grid-row: 1; }
+      .timeframes, .indicator-toggles { gap: 5px; }
+      .panel-head { align-items: flex-start; flex-direction: column; padding: 10px; }
+      .draw-tools { width: 100%; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; padding-bottom: 4px; }
+      .draw-tools button { flex: 0 0 auto; min-height: 40px; }
+      .chart-wrap { height: min(60dvh, 470px); min-height: 350px; }
+      .oscillators, .bottom-grid, .side { grid-template-columns: 1fr; }
+      .status-strip { grid-template-columns: repeat(2, 1fr); }
+      .status-cell:nth-child(2) { border-right: 0; }
+      .status-cell:nth-child(3), .status-cell:nth-child(4), .status-cell:nth-child(5) { border-top: 1px solid var(--border); }
+      .chart-panel.chart-expanded .panel-head { flex: 0 0 auto; }
+      .chart-panel.chart-expanded .chart-wrap { height: auto; min-height: 0; }
+    }
+    @media (max-width: 420px) { h1 { font-size: 17px; } .connection { max-width: 190px; } .chart-wrap { min-height: 330px; } button { padding: 8px 9px; } }
   </style>
 </head>
 <body>
@@ -128,8 +155,8 @@
     </section>
 
     <section class="layout">
-      <div class="panel chart-panel">
-        <div class="panel-head"><div><div class="panel-title" id="chart-title">BTCUSDT Perpetual</div><div class="panel-meta" id="chart-subtitle">15 dakika • TradingView tarzı / Binance USDⓈ-M Futures</div></div><div class="draw-tools"><button id="load-older">⏮ Daha eski</button><button data-draw="select" class="active">↖ Seç</button><button data-draw="trend">╱ Trend</button><button data-draw="ray">↗ Işın</button><button data-draw="horizontal">— Seviye</button><button data-draw="vertical">│ Dikey</button><button data-draw="rect">▱ Bölge</button><button data-draw="fib">⌁ Fib</button><button id="clear-drawings">Temizle</button></div></div>
+      <div class="panel chart-panel" id="chart-panel">
+        <div class="panel-head"><div><div class="panel-title" id="chart-title">BTCUSDT Perpetual</div><div class="panel-meta" id="chart-subtitle">15 dakika • TradingView tarzı / Binance USDⓈ-M Futures</div></div><div class="draw-tools"><span class="zoom-tools"><button id="zoom-in" title="Grafiği yakınlaştır" aria-label="Grafiği yakınlaştır">＋</button><button id="zoom-out" title="Grafiği uzaklaştır" aria-label="Grafiği uzaklaştır">−</button><button id="zoom-fit" title="Tüm veriyi sığdır">Sığdır</button><button id="chart-expand" title="Grafiği büyük pencerede aç" aria-label="Grafiği büyük pencerede aç">⛶ Tam ekran</button></span><button id="load-older">⏮ Daha eski</button><button data-draw="select" class="active">↖ Seç</button><button data-draw="trend">╱ Trend</button><button data-draw="ray">↗ Işın</button><button data-draw="horizontal">— Seviye</button><button data-draw="vertical">│ Dikey</button><button data-draw="rect">▱ Bölge</button><button data-draw="fib">⌁ Fib</button><button id="clear-drawings">Temizle</button></div></div>
         <div class="chart-wrap" id="chart-wrap"><div id="main-chart"></div><svg id="draw-layer" aria-label="Grafik çizim katmanı"></svg><div id="chart-hint" class="chart-hint">İlk noktayı seç</div></div>
         <div class="oscillators"><div class="osc"><div class="osc-chart"><div class="osc-title">RSI 14</div><div id="rsi-chart"></div></div></div><div class="osc"><div class="osc-chart"><div class="osc-title">MACD 12 / 26 / 9</div><div id="macd-chart"></div></div></div></div>
         <div class="status-strip"><div class="status-cell"><div class="status-label">Son fiyat</div><div class="status-value" id="last-price">—</div></div><div class="status-cell"><div class="status-label">24S değişim</div><div class="status-value" id="day-change">—</div></div><div class="status-cell"><div class="status-label">RSI</div><div class="status-value" id="rsi-value">—</div></div><div class="status-cell"><div class="status-label">ATR %</div><div class="status-value" id="atr-value">—</div></div><div class="status-cell"><div class="status-label">Veri</div><div class="status-value" id="data-status">—</div></div></div>
@@ -206,7 +233,7 @@
       function vwap(candles) { let pv=0, vol=0; return candles.map(c => { pv += ((c.high+c.low+c.close)/3)*c.volume; vol += c.volume; return pv/vol; }); }
       function indicators(candles) { const close = candles.map(c=>c.close); const e20=ema(close,20), e50=ema(close,50), e200=ema(close,200), mid=sma(close,20), sd=stdev(close,20,mid); const m12=ema(close,12), m26=ema(close,26); const macd=m12.map((x,i)=>Number.isFinite(x)&&Number.isFinite(m26[i])?x-m26[i]:null); const signal=ema(macd.map(x=>Number.isFinite(x)?x:0),9).map((x,i)=>i<25?null:x); return { e20, e50, e200, mid, upper: mid.map((x,i)=>Number.isFinite(x)&&Number.isFinite(sd[i])?x+2*sd[i]:null), lower: mid.map((x,i)=>Number.isFinite(x)&&Number.isFinite(sd[i])?x-2*sd[i]:null), rsi:rsi(close), atr:atr(candles), vwap:vwap(candles), macd, signal, histogram:macd.map((x,i)=>Number.isFinite(x)&&Number.isFinite(signal[i])?x-signal[i]:null), volSma:sma(candles.map(c=>c.volume),20) }; }
       const seriesData = (candles, values) => candles.map((c,i) => Number.isFinite(values[i]) ? ({ time:c.time, value:values[i] }) : null).filter(Boolean);
-      function chartOptions(height) { return { height, layout:{ background:{type:'solid',color:'#091625'}, textColor:'#91a5be', fontFamily:'Inter, system-ui, sans-serif' }, grid:{ vertLines:{color:'rgba(142,170,205,.08)'}, horzLines:{color:'rgba(142,170,205,.08)'} }, crosshair:{ mode:LC.CrosshairMode.Normal }, rightPriceScale:{ borderColor:'rgba(142,170,205,.16)', scaleMargins:{top:.08,bottom:.08} }, timeScale:{ borderColor:'rgba(142,170,205,.16)', timeVisible:true, secondsVisible:false, rightOffset:5 }, handleScale:{ mouseWheel:true, pinch:true }, handleScroll:{ mouseWheel:true, pressedMouseMove:true } }; }
+      function chartOptions(height) { return { height, layout:{ background:{type:'solid',color:'#091625'}, textColor:'#91a5be', fontFamily:'Inter, system-ui, sans-serif' }, grid:{ vertLines:{color:'rgba(142,170,205,.08)'}, horzLines:{color:'rgba(142,170,205,.08)'} }, crosshair:{ mode:LC.CrosshairMode.Normal }, rightPriceScale:{ borderColor:'rgba(142,170,205,.16)', scaleMargins:{top:.08,bottom:.08} }, timeScale:{ borderColor:'rgba(142,170,205,.16)', timeVisible:true, secondsVisible:false, rightOffset:5 }, handleScale:{ axisPressedMouseMove:true, mouseWheel:true, pinch:true }, handleScroll:{ mouseWheel:true, pressedMouseMove:true, horzTouchDrag:true, vertTouchDrag:false } }; }
       function initCharts() {
         if (state.charts.main) return;
         state.charts.main = LC.createChart($('main-chart'), chartOptions(520));
@@ -217,9 +244,9 @@
         for (const [key,color,width] of lines) state.series[key] = state.charts.main.addSeries(LC.LineSeries,{color,lineWidth:width,priceLineVisible:false,lastValueVisible:false});
         state.charts.rsi = LC.createChart($('rsi-chart'), chartOptions(145)); state.series.rsi = state.charts.rsi.addSeries(LC.LineSeries,{color:'#a895ff',lineWidth:2,priceLineVisible:false});
         state.charts.macd = LC.createChart($('macd-chart'), chartOptions(145)); state.series.macd = state.charts.macd.addSeries(LC.LineSeries,{color:'#4ed8ed',lineWidth:1.7,priceLineVisible:false}); state.series.macdSignal = state.charts.macd.addSeries(LC.LineSeries,{color:'#f5c76c',lineWidth:1.4,priceLineVisible:false});
-        const sync = (source) => { const range=source.timeScale().getVisibleLogicalRange(); if (!range) return; for (const c of [state.charts.main,state.charts.rsi,state.charts.macd]) if (c!==source) c.timeScale().setVisibleLogicalRange(range); if (source===state.charts.main && range.from < 12) loadOlderHistory(); redrawDrawings(); };
+        const sync = (source) => { const range=source.timeScale().getVisibleLogicalRange(); if (!range) return; for (const c of [state.charts.main,state.charts.rsi,state.charts.macd]) if (c!==source) c.timeScale().setVisibleLogicalRange(range); if (source===state.charts.main && range.from < 12) loadOlderHistory(); scheduleOverlayRedraw(); };
         for (const c of [state.charts.main,state.charts.rsi,state.charts.macd]) c.timeScale().subscribeVisibleLogicalRangeChange(() => sync(c));
-        const ro = new ResizeObserver(() => { const w=$('chart-wrap').clientWidth; state.charts.main.applyOptions({width:w,height:$('chart-wrap').clientHeight}); state.charts.rsi.applyOptions({width:document.querySelector('.osc').clientWidth,height:145}); state.charts.macd.applyOptions({width:document.querySelectorAll('.osc')[1].clientWidth,height:145}); redrawDrawings(); }); ro.observe($('chart-wrap'));
+        const ro = new ResizeObserver(() => { const w=$('chart-wrap').clientWidth; state.charts.main.applyOptions({width:w,height:$('chart-wrap').clientHeight}); state.charts.rsi.applyOptions({width:document.querySelector('.osc').clientWidth,height:145}); state.charts.macd.applyOptions({width:document.querySelectorAll('.osc')[1].clientWidth,height:145}); scheduleOverlayRedraw(); }); ro.observe($('chart-wrap'));
       }
       function renderCharts(fit = true) { const c=state.candles, d=state.derived; if (!c.length) return; state.series.candles.setData(c.map(x=>({time:x.time,open:x.open,high:x.high,low:x.low,close:x.close}))); state.series.volume.setData(c.map(x=>({time:x.time,value:x.volume,color:x.close>=x.open?'rgba(51,214,159,.28)':'rgba(255,108,130,.28)'}))); const lineMap={ema20:'e20',ema50:'e50',ema200:'e200',upper:'upper',mid:'mid',lower:'lower',vwap:'vwap'}; for (const key of Object.keys(lineMap)) state.series[key].setData(seriesData(c,d[lineMap[key]]||[])); state.series.rsi.setData(seriesData(c,d.rsi||[])); state.series.macd.setData(seriesData(c,d.macd||[])); state.series.macdSignal.setData(seriesData(c,d.signal||[])); for (const key of Object.keys(lineMap)) state.series[key].applyOptions({visible: state.indicators[key] !== false && (key!=='upper'&&key!=='mid'&&key!=='lower' || state.indicators.boll) && (key!=='vwap'||state.indicators.vwap)}); if (fit) { state.charts.main.timeScale().fitContent(); state.charts.rsi.timeScale().fitContent(); state.charts.macd.timeScale().fitContent(); } redrawDrawings(); }
       async function loadOlderHistory() { if (state.historyLoading || !state.candles.length) return; const oldest = state.candles[0].time * 1000; const cutoff = Date.now() - state.historyLimitMs; if (oldest <= cutoff) { toast('5 yıllık tarih sınırına ulaşıldı.'); return; } state.historyLoading = true; const range = state.charts.main.timeScale().getVisibleLogicalRange(); try { const rows = await fetchKlines(state.symbol, state.interval, 1500, oldest - 1); const unique = rows.filter(x => x.time < state.candles[0].time); if (!unique.length) throw new Error('Daha eski mum bulunamadı.'); state.candles = unique.concat(state.candles); computeState(); renderCharts(false); if (range) { const next = { from: range.from + unique.length, to: range.to + unique.length }; for (const c of [state.charts.main,state.charts.rsi,state.charts.macd]) c.timeScale().setVisibleLogicalRange(next); } $('data-status').textContent=state.candles.length+' mum'; toast(`${unique.length} eski mum yüklendi. 5 yıllık arşive doğru devam edebilirsiniz.`); } catch (e) { toast(e.message); } finally { state.historyLoading = false; } }
@@ -307,6 +334,29 @@
         svg.dataset.renderCounts=JSON.stringify({auto:(auto.msb?.length||0)+(auto.liquidity?.length||0)+(auto.sweeps?.length||0)+(auto.plans?.length||0),manual:state.drawings.length,nodes:svg.childNodes.length});
       }
       function activateSelectMode(){ state.drawMode='select'; state.pending=null; document.querySelectorAll('[data-draw]').forEach(b=>b.classList.toggle('active',b.dataset.draw==='select')); $('draw-layer').classList.remove('interactive'); $('chart-hint').style.display='none'; redrawDrawings(); }
+      function scheduleOverlayRedraw(){
+        if(state.overlayFrame)cancelAnimationFrame(state.overlayFrame);
+        clearTimeout(state.overlayTimer);
+        state.overlayFrame=requestAnimationFrame(()=>requestAnimationFrame(()=>{ redrawDrawings(); document.documentElement.dataset.overlaySync=String((Number(document.documentElement.dataset.overlaySync)||0)+1); }));
+        state.overlayTimer=setTimeout(redrawDrawings,140);
+      }
+      function zoomMainChart(factor){
+        const ts=state.charts.main?.timeScale(),range=ts?.getVisibleLogicalRange(); if(!range)return;
+        const center=(range.from+range.to)/2,current=Math.max(8,range.to-range.from),maxSpan=Math.max(30,state.candles.length*1.35),span=Math.max(8,Math.min(maxSpan,current*factor));
+        ts.setVisibleLogicalRange({from:center-span/2,to:center+span/2});
+        document.documentElement.dataset.zoomSpan=span.toFixed(2); scheduleOverlayRedraw();
+      }
+      function setupChartViewControls(){
+        $('zoom-in').addEventListener('click',()=>zoomMainChart(.72));
+        $('zoom-out').addEventListener('click',()=>zoomMainChart(1.38));
+        $('zoom-fit').addEventListener('click',()=>{ state.charts.main.timeScale().fitContent(); scheduleOverlayRedraw(); });
+        const panel=$('chart-panel'),expand=$('chart-expand');
+        const setExpanded=enabled=>{ panel.classList.toggle('chart-expanded',enabled); document.body.classList.toggle('chart-expanded-open',enabled); expand.textContent=enabled?'✕ Küçült':'⛶ Tam ekran'; expand.setAttribute('aria-label',enabled?'Büyük grafik görünümünü kapat':'Grafiği büyük pencerede aç'); expand.classList.toggle('active',enabled); scheduleOverlayRedraw(); };
+        expand.addEventListener('click',()=>setExpanded(!panel.classList.contains('chart-expanded')));
+        document.addEventListener('keydown',ev=>{ if(ev.key==='Escape'&&panel.classList.contains('chart-expanded'))setExpanded(false); });
+        const chartWrap=$('chart-wrap'); ['wheel','pointerup','touchend'].forEach(type=>chartWrap.addEventListener(type,scheduleOverlayRedraw,{passive:true}));
+        window.addEventListener('resize',scheduleOverlayRedraw,{passive:true});
+      }
       function setupAdvancedDrawingTools(){
         const svg=$('draw-layer');
         document.querySelectorAll('[data-draw]').forEach(b=>b.addEventListener('click',()=>{ if(b.dataset.draw==='select')svg.classList.remove('interactive'); state.selectedDrawing=-1; redrawDrawings(); }));
@@ -320,7 +370,7 @@
       window.__trendDebug={state,computeAutoAnalysis,redrawDrawings};
       const renderChartsImmediate=renderCharts;
       renderCharts=function(fit=true){ const result=renderChartsImmediate(fit); requestAnimationFrame(()=>requestAnimationFrame(redrawDrawings)); setTimeout(redrawDrawings,160); return result; };
-      initCharts(); setupEvents(); setupAnalysisEvents(); setupAdvancedDrawingTools(); $('chart-title').textContent=state.symbol+' Perpetual'; loadMarkets().then(()=>loadData()).catch(()=>loadData());
+      initCharts(); setupEvents(); setupAnalysisEvents(); setupAdvancedDrawingTools(); setupChartViewControls(); $('chart-title').textContent=state.symbol+' Perpetual'; loadMarkets().then(()=>loadData()).catch(()=>loadData());
     })();
   </script>
 </body>
