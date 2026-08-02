@@ -96,9 +96,42 @@
       .gainer-grid{display:flex;overflow-x:auto}.gainer{min-width:150px}.gainers-head{align-items:flex-start}
       .journal{padding:10px}.journal-head{display:block}.journal-table-wrap{max-height:420px}.journal-table{font-size:10px}.journal-table th,.journal-table td{padding:7px}.mobile-only{display:block}
     }
+  
+    /* GitHub Pages terminal refresh: Selcoin-inspired workspace chrome */
+    :root{--bg:#090d12;--panel:#0c121a;--panel2:#111a25;--line:#253244;--text:#e7edf4;--muted:#8795a8;--green:#25d6a2;--red:#ff6477;--orange:#f4ad28;--blue:#3987ff;--yellow:#ffd166}
+    body{background:#090d12}
+    .app{max-width:none;margin:0;padding:0 14px 24px 78px}
+    .topbar{height:64px;margin:0 0 10px;padding:0 14px;border-bottom:1px solid rgba(178,194,214,.12);background:#0b1118}
+    .brand{font-size:20px}.brand b{color:var(--orange)}.subtitle{color:#738196}
+    .tool-rail{position:fixed;z-index:20;inset:0 auto 0 0;width:64px;display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 8px;background:#0c121a;border-right:1px solid rgba(178,194,214,.12)}
+    .rail-logo{height:34px;width:34px;display:flex;align-items:flex-end;justify-content:center;gap:2px;transform:skewX(-12deg);margin-bottom:12px}.rail-logo i{display:block;width:6px;height:12px;background:var(--orange)}.rail-logo i:nth-child(2){height:22px}.rail-logo i:nth-child(3){height:30px}
+    .rail-tool{width:42px;height:42px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:#748297;font-size:18px}.rail-tool:hover,.rail-tool.active{color:var(--orange);background:rgba(244,173,40,.12);border-color:rgba(244,173,40,.38)}.rail-space{flex:1}
+    .toolbar{padding:8px;background:#0c121a;border-color:rgba(178,194,214,.14);border-radius:10px}
+    .toolbar button,.toolbar select,.toolbar input[type=text],.toolbar input[type=number]{background:#111a25;border-color:rgba(178,194,214,.14);border-radius:7px}
+    .toolbar button:hover{border-color:var(--orange)}
+    .perp-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;margin:10px 0}.perp-item{background:#0c121a;border-color:rgba(178,194,214,.12);padding:9px 10px}.perp-item b{color:#e7edf4}
+    .gainers{background:#0c121a;border-color:rgba(178,194,214,.12);margin:10px 0}.gainer{background:#111a25;border-color:rgba(178,194,214,.12)}
+    .tf-strip{gap:8px;margin:10px 0}.tf-card{min-height:175px;background:linear-gradient(145deg,#111a25,#0c121a);border-color:rgba(178,194,214,.12);padding:12px}.tf-card.active{border-color:var(--orange);box-shadow:0 0 0 1px rgba(244,173,40,.22) inset;background:linear-gradient(145deg,#242016,#0d151f)}
+    .workspace{grid-template-columns:minmax(0,1fr) 330px;gap:10px}.chart-panel,.card,.journal{background:#0c121a;border-color:rgba(178,194,214,.14);border-radius:10px}.chart-head{height:58px;border-bottom-color:rgba(178,194,214,.12)}.chart-wrap{height:min(72vh,760px);min-height:560px;background:#091119}.side{gap:10px;position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto}.card{padding:13px}.signal{background:#242016}.signal.long{background:#0e2d27}.signal.short{background:#331723}
+    .journal{margin-top:10px}.stat,.audit-box{background:#111a25;border-color:rgba(178,194,214,.12)}
+    @media(max-width:1060px){.app{padding-right:12px}.workspace{grid-template-columns:1fr}.side{position:static;max-height:none;overflow:visible}}
+    @media(max-width:720px){.app{padding:0 7px 16px}.tool-rail{display:none}.topbar{height:auto;padding:10px 4px}.perp-grid{display:flex;overflow-x:auto}.perp-item{min-width:132px}.chart-wrap{height:58vh;min-height:390px}.side{display:flex}}
+
+      .market-watchlist{padding:12px}.watchlist-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.watchlist-title h3{margin:0}.watchlist-title span,.watchlist-columns{color:var(--muted);font-size:9px;letter-spacing:.08em}.watchlist-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:9px}.watchlist-tabs b{background:#111a25;border:1px solid rgba(178,194,214,.12);border-radius:7px;color:var(--muted);font-size:9px;padding:8px;text-align:center}.watchlist-tabs b.active{background:rgba(244,173,40,.12);border-color:rgba(244,173,40,.4);color:var(--orange)}.watchlist-columns{display:grid;grid-template-columns:1fr auto auto;padding:0 5px 7px;border-bottom:1px solid rgba(178,194,214,.1)}.watchlist-list{display:flex;flex-direction:column}.watch-row{align-items:center;background:transparent;border:0;border-bottom:1px solid rgba(178,194,214,.08);color:var(--text);cursor:pointer;display:grid;gap:7px;grid-template-columns:27px 1fr auto;min-height:52px;padding:8px 4px;text-align:left}.watch-row:hover,.watch-row.selected{background:rgba(57,135,255,.13);box-shadow:inset 3px 0 var(--blue)}.watch-icon{align-items:center;background:#1c2a3b;border-radius:50%;color:var(--orange);display:flex;font-weight:800;height:25px;justify-content:center;width:25px}.watch-row span:nth-child(2){display:grid;gap:3px}.watch-row span:nth-child(2) strong{font-size:11px}.watch-row span:nth-child(2) small{color:var(--muted);font-size:8px}.watch-row em{color:var(--muted);font-size:9px;font-style:normal}
   </style>
 </head>
 <body>
+
+  <aside class="tool-rail" aria-label="Terminal araçları">
+    <div class="rail-logo" aria-hidden="true"><i></i><i></i><i></i></div>
+    <button class="rail-tool active" type="button" title="Grafik görünümü">◒</button>
+    <button class="rail-tool" type="button" title="Piyasa tarayıcı">⌁</button>
+    <button class="rail-tool" type="button" title="Likidite akışı">◇</button>
+    <button class="rail-tool" type="button" title="Ayarlar">⚙</button>
+    <span class="rail-space"></span>
+    <button class="rail-tool" type="button" title="Tema">◐</button>
+  </aside>
+
 <main class="app">
   <header class="topbar">
     <div>
@@ -179,6 +212,20 @@
     </section>
 
     <aside class="side">
+
+      <section class="panel card market-watchlist">
+        <div class="watchlist-title"><h3>İzleme listesi</h3><span>PERPETUAL</span></div>
+        <div class="watchlist-tabs"><b class="active">TÜMÜ 8</b><b>FAVORİLER 0</b></div>
+        <div class="watchlist-columns"><span>VARLIK</span><span>SON</span><span>24S</span></div>
+        <div class="watchlist-list">
+          <button class="watch-row selected" type="button" data-watch-symbol="BTCUSDT"><span class="watch-icon">B</span><span><strong>Bitcoin</strong><small>BTCUSDT.P</small></span><em>aktif</em></button>
+          <button class="watch-row" type="button" data-watch-symbol="ETHUSDT"><span class="watch-icon">E</span><span><strong>Ethereum</strong><small>ETHUSDT.P</small></span><em>takipte</em></button>
+          <button class="watch-row" type="button" data-watch-symbol="SOLUSDT"><span class="watch-icon">S</span><span><strong>SOL</strong><small>SOLUSDT.P</small></span><em>takipte</em></button>
+          <button class="watch-row" type="button" data-watch-symbol="BNBUSDT"><span class="watch-icon">B</span><span><strong>BNB</strong><small>BNBUSDT.P</small></span><em>takipte</em></button>
+          <button class="watch-row" type="button" data-watch-symbol="XRPUSDT"><span class="watch-icon">X</span><span><strong>XRP</strong><small>XRPUSDT.P</small></span><em>takipte</em></button>
+        </div>
+      </section>
+
       <section class="panel card">
         <h3>SMC işlem akışı</h3>
         <div class="flow">
@@ -1502,6 +1549,9 @@
   restTimer=setInterval(refreshBackground,60000);
   resizeCanvas();loadAll(true);
 })();
+</script>
+<script>
+  document.querySelectorAll("[data-watch-symbol]").forEach((button) => button.addEventListener("click", () => { const input = document.getElementById("symbol"); if (!input) return; input.value = button.dataset.watchSymbol || "BTCUSDT"; document.getElementById("refresh")?.click(); }));
 </script>
 </body>
 </html>
