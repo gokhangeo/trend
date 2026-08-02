@@ -153,20 +153,23 @@
   <script>
     (() => {
       'use strict';
-      const LC = window.LightweightCharts;
-      const state = { exchange: 'binance', symbol: 'BTCUSDT', interval: '15m', candles: [], markets: [], indicators: { ema20: true, ema50: true, ema200: false, boll: true, vwap: true }, charts: {}, series: {}, ws: null, wsPing: null, drawings: [], drawMode: 'select', pending: null, signalKey: '', mtf: {}, historyLoading: false, historyLimitMs: 5 * 365.25 * 24 * 60 * 60 * 1000 };
-      const $ = (id) => document.getElementById(id);
-      const fmt = (n, digits = 2) => Number.isFinite(n) ? n.toLocaleString('tr-TR', { maximumFractionDigits: digits, minimumFractionDigits: digits }) : '—';
-      const short = (n) => Number.isFinite(n) ? (Math.abs(n) >= 1000 ? fmt(n, 1) : Math.abs(n) < 1 ? fmt(n, 5) : fmt(n, 2)) : '—';
-      const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-      function toast(message) { const el = $('toast'); el.textContent = message; el.classList.add('show'); clearTimeout(window.__toastTimer); window.__toastTimer = setTimeout(() => el.classList.remove('show'), 3500); }
-      function setConnection(mode, text) { $('connection-dot').className = 'dot ' + (mode || ''); $('connection-text').textContent = text; }
-      function intervalLabel(interval) { return ({'1m':'1 dakika','5m':'5 dakika','15m':'15 dakika','1h':'1 saat','4h':'4 saat','1d':'1 gün'})[interval] || interval; }
-      function parseKlines(rows) { return rows.map(r => ({ time: Math.floor(Number(r[0]) / 1000), open: +r[1], high: +r[2], low: +r[3], close: +r[4], volume: +r[5] })).filter(x => Number.isFinite(x.close)); }
-      async function getJSON(url) { const response = await fetch(url, { cache: 'no-store' }); if (!response.ok) throw new Error('Veri isteği başarısız: ' + response.status); return response.json(); }
-      const mexcInterval = (interval) => ({'1m':'Min1','5m':'Min5','15m':'Min15','1h':'Min60','4h':'Hour4','1d':'Day1'})[interval] || 'Min15';
-      function parseMexcKlines(payload) { const d=payload?.data||{}; const len=(d.time||[]).length; return Array.from({length:len},(_,i)=>({time:+d.time[i],open:+d.open[i],high:+d.high[i],low:+d.low[i],close:+d.close[i],volume:+d.vol[i]})).filter(x=>Number.isFinite(x.close)); }
-      async function fetchKlines(symbol, interval, limit = 500, endTime = null) { if(state.exchange==='mexc'){ const q=new URLSearchParams({interval:mexcInterval(interval)}); if(endTime)q.set('end',String(Math.floor(endTime/1000))); return parseMexcKli…1212 tokens truncated…shair:{ mode:LC.CrosshairMode.Normal }, rightPriceScale:{ borderColor:'rgba(142,170,205,.16)', scaleMargins:{top:.08,bottom:.08} }, timeScale:{ borderColor:'rgba(142,170,205,.16)', timeVisible:true, secondsVisible:false, rightOffset:5 }, handleScale:{ mouseWheel:true, pinch:true }, handleScroll:{ mouseWheel:true, pressedMouseMove:true } }; }
+      const LC = window.LightweightCharts || (() => {
+        const fallback = { CrosshairMode: { Normal: 0 }, CandlestickSeries: 'candles', HistogramSeries: 'histogram', LineSeries: 'line' };
+        fallback.createChart = (host, options = {}) => {
+          host.innerHTML = '';
+          host.style.position = 'relative';
+          const canvas = document.createElement('canvas');
+          canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+          host.appendChild(canvas);
+          const ctx = canvas.getContext('2d');
+          const chartState = { width: host.clientWidth || 800, height: options.height || 300, series: [], range: null, listeners: [], opts: options };
+          const colors = { text: '#91a5be', grid: 'rgba(142,170,205,.08)' };
+          const dataOf = () => chartState.series.find(s => s.type === 'candles')?.data || chartState.series[0]?.data || [];
+          const visible = () => { const data=dataOf(); if(!data.length)return {from:0,to:0}; if(!chartState.range)chartState.range={from:Math.max(0,data.length-160),to:data.length-1}; return chartState.range; };
+          const xFor = (index) => { const r=visible(), span=Math.max(1,r.to-r.from), pad=36; return pad+(index-r.from)/(span)*(Math.max(1,chartState.width-pad-12)); };
+          const priceBounds = () => { const r=visible(), all=[]; for(const s of chartState.series){ for(let i=Math.max(0,Math.floor(r.from));i<=Math.min(s.data.length-1,Math.ceil(r.to));i++){const v=s.data[i];if(s.type==='candles'){all.push(v.high,v.low);}else if(s.type!=='histogram'&&Number.isFinite(v?.value))all.push(v.value);} } const min=Math.min(...all),max=Math.max(...all); return {min:Number.isFinite(min)?min:0,max:Number.isFinite(max)&&max!==min?max:min+1}; };
+          const yFor = (value) => { const b=priceBounds(), top=10,bottom=24; return top+(b.max-value)/(b.max-b.min)*(Math.max(1,chartState.height-top-bottom)); };
+          const draw = () => { chartState.width=host.clientWidth||800; chartState.height=host.clientHeight||options.height||300; const dpr=window.devicePixelRatio||1; canvas.width=chartState.width*dpr;canvas.height=chartState.height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,chartState.width,chartState.height);ctx.fillStyle='#091625';ctx.fillRect(0,0,chartState.width,chartState.height);ctx.strokeStyle=colors.grid;ctx.lineWidth=1;for(let y=20;y<chartState.height;y+=45){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(c…2671 tokens truncated…shair:{ mode:LC.CrosshairMode.Normal }, rightPriceScale:{ borderColor:'rgba(142,170,205,.16)', scaleMargins:{top:.08,bottom:.08} }, timeScale:{ borderColor:'rgba(142,170,205,.16)', timeVisible:true, secondsVisible:false, rightOffset:5 }, handleScale:{ mouseWheel:true, pinch:true }, handleScroll:{ mouseWheel:true, pressedMouseMove:true } }; }
       function initCharts() {
         if (state.charts.main) return;
         state.charts.main = LC.createChart($('main-chart'), chartOptions(520));
