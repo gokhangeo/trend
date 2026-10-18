@@ -744,7 +744,7 @@
   const isBirthday = () => { const b = cfg().birthday; return !!b && b.slice(5) === today().slice(5); };
   function cfg() {
     return {
-      botName: A.get("botName", "Gizem"), kidName: A.get("kidName", ""), birthday: A.get("birthday", "2015-03-02"),
+      botName: A.get("botName", "Gizem"), kidName: A.get("kidName", "Gizem"), birthday: A.get("birthday", "2015-03-02"),
       morning: A.get("morningTime", "07:30"), evening: A.get("eveningTime", "20:30"),
       grade: A.get("grade", "1"), auto: A.get("auto", "1") === "1", fx: A.get("fx", "1") === "1"
     };
