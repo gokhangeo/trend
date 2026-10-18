@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robot</title>
+<style>
+  :root { --ring: #3ddba4; --ring-glow-base: rgba(61,219,164,.38); --disc: #1b2433; --visor: #1b2433; --head: #e4faf3;
+    --head-shade: #bfeee2; --ear: #7fd1bc; --eye: #7ff5e0; --cheek: #ff9fb8; --acc2: #3ddba4; }
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  .bot { position: absolute; inset: 6%; animation: float 2.6s ease-in-out infinite; }
+  @keyframes float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-5%) } }
+  .ring { position: absolute; inset: 0; border-radius: 50%; background: var(--ring); box-shadow: 0 0 10px var(--ring-glow-base); }
+  .disc { position: absolute; inset: 9%; border-radius: 50%; background: var(--disc); overflow: hidden; }
+  svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .flip { transform-origin: 100px 100px; transition: transform .25s; }
+  .cheeks { opacity: .5; }
+  .walk .head { animation: waddle .5s ease-in-out infinite; }
+  @keyframes waddle { 0%,100% { transform: rotate(-6deg) } 50% { transform: rotate(6deg) } }
+  .head { transform-origin: 100px 130px; }
+  .eyes { transform-origin: 100px 104px; animation: blink 4s infinite; }
+  @keyframes blink { 0%,92%,100% { transform: scaleY(1) } 95% { transform: scaleY(.1) } }
+  .tip { animation: tip 1.6s ease-in-out infinite; }
+  @keyframes tip { 0%,100% { fill: var(--head-shade) } 50% { fill: var(--ring) } }
+  .waving .bot { animation: jump .5s ease-out 2; }
+  @keyframes jump { 0%,100% { transform: translateY(0) scale(1) } 40% { transform: translateY(-10%) scale(1.08) } }
+  .zzz { position: absolute; top: 0; right: 2%; font: 800 16px sans-serif; color: #c4b5fd; display: none; text-shadow: 0 0 4px #000; }
+  body.sleeping .zzz { display: block; animation: zzz 2.4s ease-in-out infinite; }
+  @keyframes zzz { 0% { opacity: 0; transform: translate(0,8px) scale(.7) } 50% { opacity: 1 } 100% { opacity: 0; transform: translate(8px,-12px) scale(1.1) } }
+  body.sleeping .bot { animation: breathe 4s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { transform: scale(1) } 50% { transform: scale(1.03) } }
+  body.sleeping .ring { filter: saturate(.5) brightness(.8); box-shadow: none; }
+  .dancing .bot { animation: dance .45s ease-in-out 8; }
+  @keyframes dance { 0%,100% { transform: rotate(-10deg) translateY(0) } 50% { transform: rotate(10deg) translateY(-8%) } }
+  .stretching .bot { animation: stretch 1.6s ease-in-out 1; }
+  @keyframes stretch { 0%,100% { transform: scale(1) } 40% { transform: scale(1.12, .9) } 70% { transform: scale(.94, 1.1) } }
+  .mini .bot { inset: 4%; animation: none; }
+  .mini .ring { box-shadow: none; }
+</style>
+<script src="robot.js"></script>
+</head>
+<body>
+  <div class="bot">
+    <div class="ring"></div>
+    <div class="disc" id="disc"></div>
+  </div>
+  <div class="zzz">z z</div>
+<script>
+  document.getElementById("disc").innerHTML = ROBOT_SVG;
+  // Eyes sit slightly right so flipping shows which way the robot walks.
+  document.querySelectorAll(".eye").forEach((e) => e.setAttribute("x", +e.getAttribute("x") + 2));
+  applyLook({});
+
+  // Called by RobotOverlayService: dir = 1 (right) or -1 (left).
+  function setMoving(moving, dir) {
+    document.body.classList.toggle("walk", moving);
+    document.getElementById("flip").style.transform = dir < 0 ? "scaleX(-1)" : "";
+  }
+  function setMini(m) { document.body.classList.toggle("mini", m); }
+  function setSleep(on) { document.body.classList.toggle("sleeping", on); }
+  function once(cls, ms) {
+    document.body.classList.remove(cls); void document.body.offsetWidth;
+    document.body.classList.add(cls);
+    setTimeout(() => document.body.classList.remove(cls), ms);
+  }
+  function dance() { once("dancing", 3700); }
+  function stretch() { once("stretching", 1700); }
+  function wave() {
+    document.body.classList.remove("waving"); void document.body.offsetWidth;
+    document.body.classList.add("waving");
+  }
+</script>
+</body>
+</html>

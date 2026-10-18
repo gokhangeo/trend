@@ -1,0 +1,1319 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Robot Arkadaşım</title>
+<style>
+  :root {
+    --bg: #141414;
+    --ring: #3ddba4;
+    --ring-glow-base: rgba(61,219,164,.38);
+    --ring-listen: #4fb3ff;
+    --ring-think: #ffc857;
+    --disc: #1b2433;
+    --head: #e4faf3;
+    --head-shade: #bfeee2;
+    --ear: #7fd1bc;
+    --visor: #1b2433;
+    --eye: #7ff5e0;
+    --cheek: #ff9fb8;
+    --acc2: #3ddba4;
+    --gold: #ffd43b;
+    --text: #f2f5f7;
+    --muted: #8a94a3;
+    --pill: #18212e;
+    --pill-border: #2e3a4b;
+    --panel: #1a1f27;
+    --ring-color: var(--ring);
+    --ring-glow: var(--ring-glow-base);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: "Nunito", "Roboto", system-ui, sans-serif; overflow: hidden; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 64px 16px 170px; transition: background .8s; }
+  button { font-family: inherit; }
+
+  .top { position: fixed; top: 14px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 2; }
+  .gear { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--pill-border); background: var(--pill);
+    color: var(--muted); display: grid; place-items: center; font-size: 22px; }
+  .stars { height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--pill-border); background: var(--pill);
+    color: var(--gold); font-size: 19px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+  .stars.pop { animation: pop .5s ease-out; }
+  @keyframes pop { 40% { transform: scale(1.25) } }
+
+  .stage { position: relative; display: flex; flex-direction: column; align-items: center; }
+  .bot { position: relative; width: min(60vw, 280px); aspect-ratio: 1; animation: float 4s ease-in-out infinite; }
+  @keyframes float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+  .glow { position: absolute; inset: -8%; border-radius: 50%;
+    background: radial-gradient(circle, var(--ring-glow) 40%, transparent 70%);
+    animation: breathe 3s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { opacity: .5; transform: scale(.96) } 50% { opacity: 1; transform: scale(1.03) } }
+  .ring { position: absolute; inset: 0; border-radius: 50%; background: var(--ring-color);
+    box-shadow: 0 0 30px var(--ring-glow); transition: background .4s, box-shadow .4s, transform .08s; }
+  .disc { position: absolute; inset: 9%; border-radius: 50%; background: var(--disc); overflow: hidden; }
+  svg.face { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .head-group { transform-origin: 100px 110px; animation: tilt 6s ease-in-out infinite; }
+  @keyframes tilt { 0%,100% { transform: rotate(0) } 30% { transform: rotate(-4deg) } 60% { transform: rotate(3deg) } }
+  .antenna-tip { animation: blinkTip 2s ease-in-out infinite; }
+  @keyframes blinkTip { 0%,100% { fill: var(--head-shade) } 50% { fill: var(--ring-color) } }
+  .eyes { transform-origin: 100px 104px; animation: blink 4.5s infinite; }
+  @keyframes blink { 0%,92%,100% { transform: scaleY(1) } 95% { transform: scaleY(.1) } }
+  .pupils { transition: transform .3s; }
+  .cheeks { opacity: 0; transition: opacity .3s; }
+
+  body.listening { --ring-color: var(--ring-listen); --ring-glow: rgba(79,179,255,.4); }
+  body.listening .eyes { animation: none; }
+  body.listening .eye { transform-box: fill-box; transform-origin: center; transform: scale(1.15); }
+  body.thinking { --ring-color: var(--ring-think); --ring-glow: rgba(255,200,87,.35); }
+  body.thinking .pupils { animation: look 1.6s ease-in-out infinite; }
+  @keyframes look { 0%,100% { transform: translate(-4px,-3px) } 50% { transform: translate(4px,-3px) } }
+  body.thinking .ring { animation: spinPulse 1.2s linear infinite; }
+  @keyframes spinPulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.03) } }
+  body.speaking .head-group { animation: talkBob .5s ease-in-out infinite; }
+  body.speaking .cheeks { opacity: .55; }
+  @keyframes talkBob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-2px) } }
+  body.fx-happy .bot { animation: hop .45s ease-out 2; }
+  @keyframes hop { 0%,100% { transform: translateY(0) scale(1) } 40% { transform: translateY(-18px) scale(1.04) } }
+  body.fx-happy .eye { transform-box: fill-box; transform-origin: center; transform: scaleY(.35); }
+  body.fx-happy .cheeks { opacity: .8; }
+  body.fx-wow .eye { transform-box: fill-box; transform-origin: center; transform: scale(1.3); }
+  body.fx-giggle .head-group { animation: giggle .12s linear infinite; }
+  @keyframes giggle { 0%,100% { transform: rotate(-3deg) } 50% { transform: rotate(3deg) } }
+
+  /* bedtime */
+  body.night { --bg: #0b1020; --ring-color: #8b7cf6; --ring-glow: rgba(139,124,246,.28); }
+  body.night .eye { transform-box: fill-box; transform-origin: center; transform: scaleY(.6); }
+  .sky { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1s; }
+  body.night .sky { opacity: 1; }
+  .sky i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; animation: twinkle 3s ease-in-out infinite; }
+  @keyframes twinkle { 0%,100% { opacity: .2 } 50% { opacity: .9 } }
+  body.sleeping .bot { animation: float 7s ease-in-out infinite; }
+  body.sleeping .glow { opacity: .3; animation: none; }
+  .zzz { position: absolute; top: 4%; right: 6%; font-size: 26px; font-weight: 800; color: #c4b5fd; display: none; }
+  body.sleeping .zzz { display: block; animation: zzz 2.4s ease-in-out infinite; }
+  @keyframes zzz { 0% { opacity: 0; transform: translate(0,10px) scale(.7) } 50% { opacity: 1 } 100% { opacity: 0; transform: translate(14px,-24px) scale(1.1) } }
+
+  .name { margin-top: 14px; padding: 8px 26px; border-radius: 999px; background: var(--pill);
+    border: 1px solid var(--pill-border); font-weight: 800; font-size: 20px; letter-spacing: .3px; color: var(--text); }
+
+  .bubble { margin-top: 14px; min-height: 56px; max-height: 26vh; overflow-y: auto; max-width: 520px; width: 100%;
+    text-align: center; font-size: 19px; line-height: 1.45; padding: 0 8px; }
+  .bubble .you { color: var(--muted); font-size: 15px; display: block; margin-bottom: 6px; }
+  .bubble .big { font-size: 44px; font-weight: 800; letter-spacing: 1px; }
+  .score { color: var(--muted); font-size: 15px; margin-top: 4px; }
+
+  .dock { position: fixed; bottom: 0; left: 0; right: 0; padding: 0 0 14px; }
+  .status { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 0 16px 10px; min-height: 48px; }
+  .hint { color: var(--muted); font-size: 15px; text-align: center; }
+  .thumb { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; border: 2px solid var(--ring); display: none; }
+  .thumb.show { display: block; }
+  .modes { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px; scrollbar-width: none; }
+  .modes::-webkit-scrollbar { display: none; }
+  .mode { flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 70px; padding: 9px 8px 7px;
+    border-radius: 16px; border: 1px solid var(--pill-border); background: var(--pill); color: var(--text); font-size: 12.5px; font-weight: 700; }
+  .mode b { font-size: 24px; line-height: 1.1; font-weight: 400; }
+  .mode.on { border-color: var(--ring); background: #1f2b2a; }
+
+  /* sheets */
+  .sheet { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: flex-end; justify-content: center; z-index: 10; }
+  .sheet.open { display: flex; }
+  .panel { width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; background: var(--panel);
+    border-radius: 22px 22px 0 0; padding: 22px 16px 28px; user-select: text; }
+  .panel h2 { margin: 0 0 6px; font-size: 20px; }
+  .panel h3 { margin: 22px 0 0; font-size: 15px; color: var(--ring); text-transform: uppercase; letter-spacing: .6px; }
+  .panel label { display: block; font-size: 14px; color: var(--muted); margin: 14px 0 6px; }
+  .panel input, .panel select { width: 100%; padding: 12px; font-size: 16px; border-radius: 12px;
+    border: 1px solid var(--pill-border); background: #10141a; color: var(--text); user-select: text; }
+  .panel input[type=range] { padding: 0; }
+  .panel .row { display: flex; gap: 10px; }
+  .panel .row > div { flex: 1; min-width: 0; }
+  .panel small { display: block; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+  .btns { display: flex; gap: 10px; margin-top: 18px; }
+  .btn { flex: 1; padding: 14px; border-radius: 14px; border: 0; font-size: 16px; font-weight: 700; }
+  .btn.primary { background: var(--ring); color: #10141a; }
+  .btn.ghost { background: #2a3240; color: var(--text); }
+  .link { color: var(--ring); background: none; border: 0; padding: 0; font-size: 14px; margin-top: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .chip { padding: 8px 12px; border-radius: 999px; background: #2a3240; color: var(--text); border: 0; font-size: 14px; }
+  .mem { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #252c38; font-size: 15px; }
+  .mem span { flex: 1; }
+  .mem button { background: #2a3240; color: var(--muted); border: 0; border-radius: 8px; width: 32px; height: 32px; font-size: 16px; }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+  .swatch { width: 46px; height: 46px; border-radius: 50%; border: 3px solid transparent; }
+  .swatch.on { border-color: #fff; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; margin-top: 10px; }
+  .tile { border-radius: 16px; background: #222936; border: 2px solid transparent; padding: 12px 6px; text-align: center; color: var(--text); font-size: 13px; font-weight: 700; }
+  .tile b { display: block; font-size: 32px; font-weight: 400; margin-bottom: 4px; }
+  .tile.on { border-color: var(--ring); }
+  .tile.locked { opacity: .45; }
+  .tile small { color: var(--muted); font-weight: 600; margin-top: 2px; }
+  .preview { width: 140px; aspect-ratio: 1; position: relative; margin: 6px auto 0; }
+
+  .gift { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--gold); background: var(--pill); font-size: 22px;
+    display: none; place-items: center; animation: wiggle 1.2s ease-in-out infinite; }
+  .gift.show { display: grid; }
+  @keyframes wiggle { 0%,100% { transform: rotate(0) } 20% { transform: rotate(-14deg) } 40% { transform: rotate(12deg) } 60% { transform: rotate(-6deg) } }
+  .topLeft { display: flex; gap: 8px; }
+
+  /* shop */
+  .tabs { display: flex; gap: 8px; margin-top: 12px; overflow-x: auto; }
+  .tab { flex: none; padding: 9px 14px; border-radius: 999px; border: 0; background: #2a3240; color: var(--text); font-size: 15px; font-weight: 700; }
+  .tab.on { background: var(--ring); color: #10141a; }
+  .shopPreview { width: 170px; aspect-ratio: 1; position: relative; margin: 8px auto 0; }
+  .price { color: var(--gold); font-weight: 800; }
+  .tile.owned small { color: var(--ring); }
+  .shopBar { position: sticky; bottom: -28px; background: var(--panel); padding: 12px 0 4px; }
+
+  /* memory game */
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+  .card { aspect-ratio: 3/4; border-radius: 14px; border: 0; font-size: 34px; background: linear-gradient(135deg, var(--ring), #a78bfa);
+    color: transparent; transition: transform .25s; }
+  .card.up, .card.done { background: #f8f9fa; color: initial; transform: rotateY(180deg) scaleX(-1); }
+  .card.done { opacity: .55; }
+
+  /* dance */
+  body.dancing .bot { animation: dance .46s ease-in-out infinite; }
+  @keyframes dance { 0%,100% { transform: rotate(-9deg) translateY(0) } 50% { transform: rotate(9deg) translateY(-16px) } }
+  body.dancing .ring { animation: hue 1.8s linear infinite; }
+  @keyframes hue { to { filter: hue-rotate(360deg) } }
+  body.dancing .eye { transform-box: fill-box; transform-origin: center; transform: scaleY(.35); }
+  .notes { position: fixed; inset: 0; pointer-events: none; }
+  .notes span { position: absolute; font-size: 28px; animation: noteUp 2.2s ease-out forwards; }
+  @keyframes noteUp { from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(-160px) rotate(25deg) } }
+
+  .celebrate { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 20; pointer-events: none; }
+  .celebrate.show { display: flex; }
+  .celebrate div { background: var(--panel); border: 2px solid var(--gold); border-radius: 24px; padding: 22px 30px; text-align: center;
+    animation: celebrateIn .5s cubic-bezier(.2,1.6,.4,1); box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+  .celebrate b { display: block; font-size: 64px; }
+  .celebrate span { font-size: 20px; font-weight: 800; }
+  @keyframes celebrateIn { from { transform: scale(.3); opacity: 0 } }
+</style>
+<script src="robot.js"></script>
+<script src="sfx.js"></script>
+</head>
+<body>
+  <div class="sky" id="sky"></div>
+  <div class="top">
+    <div class="topLeft">
+      <button class="stars" id="stars" aria-label="Yıldızlar ve rozetler">⭐ <span id="starCount">0</span></button>
+      <button class="gift" id="gift" aria-label="Günlük hediye">🎁</button>
+    </div>
+    <button class="gear" id="gear" aria-label="Ebeveyn ayarları">⚙</button>
+  </div>
+
+  <div class="stage">
+    <div class="bot" id="bot">
+      <div class="glow"></div>
+      <div class="ring" id="ring"></div>
+      <div class="disc" id="disc"></div>
+      <div class="zzz">z z</div>
+    </div>
+    <button class="name" id="name" aria-label="Robotun adını değiştir">Gizem</button>
+  </div>
+
+  <div class="bubble" id="bubble"></div>
+
+  <div class="dock">
+    <div class="status">
+      <img class="thumb" id="thumb" alt="Ödev fotoğrafı">
+      <div class="hint" id="hint">Konuşmak için robota dokun</div>
+    </div>
+    <div class="modes" id="modes">
+      <button class="mode on" data-mode="chat"><b>💬</b>Sohbet</button>
+      <button class="mode" id="shopBtn"><b>🛍️</b>Dükkan</button>
+      <button class="mode" data-mode="game"><b>🔢</b>Sayı oyunu</button>
+      <button class="mode" data-mode="riddle"><b>🧩</b>Bilmece</button>
+      <button class="mode" id="memoryBtn"><b>🃏</b>Hafıza</button>
+      <button class="mode" id="danceBtn"><b>💃</b>Dans</button>
+      <button class="mode" data-mode="read"><b>📖</b>Okuma</button>
+      <button class="mode" data-mode="english"><b>🇬🇧</b>English</button>
+      <button class="mode" data-mode="story"><b>🌙</b>Masal</button>
+      <button class="mode" id="cam"><b>📷</b>Ödev</button>
+    </div>
+  </div>
+
+  <div class="notes" id="notes"></div>
+  <div class="celebrate" id="celebrate"><div><b id="celIcon">🏆</b><span id="celText"></span></div></div>
+
+  <!-- stars & badges (for the child) -->
+  <div class="sheet" id="badgeSheet">
+    <div class="panel">
+      <h2>⭐ <span id="badgeStars">0</span> yıldızın var</h2>
+      <small id="nextUnlock"></small>
+      <h3>Rozetler</h3>
+      <div class="grid" id="badgeGrid"></div>
+      <div class="btns"><button class="btn primary" data-close>Kapat</button></div>
+    </div>
+  </div>
+
+  <!-- clothes shop (for the child) -->
+  <div class="sheet" id="shopSheet">
+    <div class="panel">
+      <h2>🛍️ Gizem'in Dükkanı · <span class="price">⭐ <span id="shopCoins">0</span></span></h2>
+      <div class="shopPreview"><div class="ring" style="inset:0"></div><div class="disc" id="shopDisc"></div></div>
+      <div class="tabs" id="shopTabs">
+        <button class="tab on" data-tab="outfit">👗 Kıyafet</button>
+        <button class="tab" data-tab="head">🎀 Baş</button>
+        <button class="tab" data-tab="face">👓 Yüz</button>
+        <button class="tab" data-tab="color">🎨 Renk</button>
+      </div>
+      <div id="shopBody"></div>
+      <div class="shopBar">
+        <div class="btns" style="margin-top:0">
+          <button class="btn ghost" id="shopClose">Kapat</button>
+          <button class="btn primary" id="shopAction" style="display:none"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- memory card game -->
+  <div class="sheet" id="memorySheet">
+    <div class="panel">
+      <h2>🃏 Hafıza oyunu</h2>
+      <small id="memoryInfo">Aynı resimleri bul! Kartlara dokun.</small>
+      <div class="cards" id="cards"></div>
+      <div class="btns"><button class="btn ghost" data-close>Kapat</button><button class="btn primary" id="memoryAgain">Yeniden</button></div>
+    </div>
+  </div>
+
+  <!-- parent settings -->
+  <div class="sheet" id="sheet">
+    <div class="panel">
+      <h2>Ebeveyn ayarları</h2>
+
+      <h3>Yapay zeka</h3>
+      <label for="apiKey">Claude API anahtarı</label>
+      <input id="apiKey" type="password" placeholder="sk-ant-..." autocomplete="off">
+      <small>console.anthropic.com adresinden alınır. Orada aylık harcama limiti koymanızı öneririm.</small>
+      <label for="model">Model</label>
+      <select id="model">
+        <option value="claude-haiku-5-5">Haiku 5.5 (hızlı, ekonomik)</option>
+        <option value="claude-sonnet-5-5">Sonnet 5.5 (dengeli)</option>
+        <option value="claude-opus-5-5">Opus 5.5 (en akıllı, pahalı)</option>
+      </select>
+
+      <h3>Çocuk</h3>
+      <div class="row">
+        <div><label for="botName">Robotun adı</label><input id="botName"></div>
+        <div><label for="kidName">Çocuğun adı</label><input id="kidName"></div>
+      </div>
+      <div class="row">
+        <div><label for="kidAge">Yaşı</label><input id="kidAge" type="number" min="3" max="16"></div>
+        <div><label for="grade">Sınıfı</label>
+          <select id="grade">
+            <option value="0">Okul öncesi</option>
+            <option value="1">1. sınıf</option><option value="2">2. sınıf</option><option value="3">3. sınıf</option>
+            <option value="4">4. sınıf</option><option value="5">5. sınıf</option><option value="6">6. sınıf</option>
+            <option value="7">7. sınıf</option><option value="8">8. sınıf</option>
+          </select></div>
+      </div>
+
+      <h3>Robotun hafızası</h3>
+      <small>Robot sohbetlerde öğrendiği önemli şeyleri burada not eder (sevdiği şeyler, evcil hayvanı, zorlandığı dersler). İstemediğinizi silebilirsiniz.</small>
+      <div id="memList"></div>
+
+      <h3>Ses</h3>
+      <label>Ses tarzı</label>
+      <div class="chips">
+        <button class="chip" data-preset="abla">Tatlı abla</button>
+        <button class="chip" data-preset="cocuk">Çocuk sesi</button>
+        <button class="chip" data-preset="robot">Robot</button>
+      </div>
+      <label for="ttsProvider">Ses kaynağı</label>
+      <select id="ttsProvider">
+        <option value="phone">Telefonun sesi (ücretsiz)</option>
+        <option value="eleven">ElevenLabs (en doğal, insan gibi)</option>
+        <option value="google">Google Chirp 3 HD (çok doğal, aylık ücretsiz kota)</option>
+      </select>
+      <div id="phoneBox">
+        <label for="voice">Türkçe ses</label>
+        <select id="voice"></select>
+        <small id="voiceHelp"></small>
+        <button class="link" id="ttsSettings">Daha fazla ses için telefonun metin okuma ayarlarını aç</button>
+      </div>
+      <div id="cloudBox">
+        <label for="cloudKey" id="cloudKeyLabel">API anahtarı</label>
+        <input id="cloudKey" type="password" autocomplete="off">
+        <small id="cloudHelp"></small>
+        <label for="cloudVoice">Ses</label>
+        <div class="row">
+          <div style="flex:2"><select id="cloudVoice"></select></div>
+          <div style="flex:1"><button class="btn ghost" id="loadVoices" style="padding:12px">Sesleri getir</button></div>
+        </div>
+      </div>
+      <div class="row">
+        <div><label for="rate">Konuşma hızı</label><input id="rate" type="range" min="0.6" max="1.5" step="0.05"></div>
+        <div><label for="pitch">Ses inceliği</label><input id="pitch" type="range" min="0.6" max="2" step="0.05"></div>
+      </div>
+      <div class="row">
+        <div><label for="fx">Komik ses efektleri</label>
+          <select id="fx"><option value="1">Açık</option><option value="0">Kapalı</option></select></div>
+        <div><label for="auto">Sürekli sohbet</label>
+          <select id="auto"><option value="1">Açık</option><option value="0">Kapalı</option></select></div>
+      </div>
+
+      <h3>Ekranda gezen robot</h3>
+      <label for="overlay">Robot diğer uygulamaların üstünde gezsin</label>
+      <select id="overlay"><option value="0">Kapalı</option><option value="1">Açık</option></select>
+      <small>Açınca telefon "diğer uygulamaların üzerinde göster" izni ister. Uygulama kapalıyken robot çoğunlukla uyur, arada uyanıp el sallar ve konuşur (gece 21:00-07:00 rahatsız etmez).
+        Uyuyan robota dokun: uyanır. Uyanıkken dokun: küçülür / büyür. Çift dokun: konuşur. Uzun bas: uyur. Sürükleyerek taşınır. Kapatmak için buradan "Kapalı" seçin ya da bildirimden "Robotu kapat"a dokunun.
+        Ana ekran widget'ı için: ana ekrana boş bir yere uzun basın → Widget'lar → Robot Arkadaşım.</small>
+      <button class="link" id="battery">Robot yine de kapanıyorsa: pil kısıtlamasını kaldır</button>
+
+      <h3>Güncellemeler</h3>
+      <small>Yeni özellikler internetten kendiliğinden gelir, APK'yı yeniden yüklemeniz gerekmez. <span id="versionInfo"></span></small>
+      <button class="link" id="checkUpdate">Şimdi güncellemeleri kontrol et</button>
+
+      <div class="btns">
+        <button class="btn ghost" id="test">Sesi dene</button>
+        <button class="btn ghost" id="clear">Sohbeti sıfırla</button>
+      </div>
+      <div class="btns">
+        <button class="btn ghost" id="cancel">Kapat</button>
+        <button class="btn primary" id="save">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const A = window.Android || {
+    // browser preview stub
+    listen() { this.listenWith("tr-TR", "1500"); },
+    listenWith() { setTimeout(() => onListenStart(), 200); setTimeout(() => onHeard(game ? String(game.q.ans) : "Merhaba, nasılsın?"), 1500); },
+    stopListening() {}, speak(t) { this.speakWith(t, "tr", "1"); },
+    speakWith(t) { onSpeakStart(); setTimeout(onSpeakEnd, 700); }, stopSpeaking() {},
+    ask(s, m, e) { setTimeout(() => onAnswer("[yaşasın] Merhaba! [hatırla: En sevdiği renk mor] Mor çok güzel bir renk! {Purple} demek. [yıldız]"), 800); },
+    get(k, d) { return localStorage.getItem(k) ?? d; }, set(k, v) { localStorage.setItem(k, v); },
+    setVoice() {}, getVoice() { return "1.0,1.15,"; }, voices() { return "[]"; }, openTtsSettings() {},
+    takePhoto() {}, overlayOn() { return false; }, setOverlay() {}, setLook() {}, openBatterySettings() {},
+    reloadApp() { location.reload(); }, checkUpdate() { setTimeout(() => onUpdateResult("Tarayıcı önizlemesi"), 200); }, versionInfo() { return "önizleme"; },
+    loadCloudVoices(p) { setTimeout(() => onCloudVoices(JSON.stringify([{ id: "a", label: "Aoede · kadın · en doğal" }])), 300); }
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const body = document.body, bubble = $("bubble"), hint = $("hint"), ring = $("ring");
+  const MODEL_DEFAULT = "claude-haiku-5-5";
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const today = () => new Date().toISOString().slice(0, 10);
+
+  $("disc").innerHTML = ROBOT_SVG;
+  $("shopDisc").innerHTML = ROBOT_SVG;
+  const mouth = $("disc").querySelector(".mouth");
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement("i");
+    s.style.left = Math.random() * 100 + "%"; s.style.top = Math.random() * 70 + "%"; s.style.animationDelay = Math.random() * 3 + "s";
+    $("sky").appendChild(s);
+  }
+
+  let state = "idle", mode = "chat", history = [], autoTurns = 0, mouthTimer = null, queue = [], pendingImage = null;
+  let afterSpeak = null, rateMul = 1, sessionCounted = false, game = null, pendingNews = [];
+
+  // ---------- stored data ----------
+  function loadJson(key, def) { try { return JSON.parse(A.get(key, "") || "null") || def; } catch (e) { return def; } }
+  // stars = everything ever earned (for badges); coins = stars left to spend in the shop.
+  let stats = Object.assign({ stars: 0, read: 0, english: 0, stories: 0, photos: 0, perfect: 0, badges: [], weak: {}, tagDay: "", tagCount: 0,
+    riddles: 0, memWins: 0, dances: 0, bought: 0, giftDay: "", memDay: "", memCount: 0 }, loadJson("stats", {}));
+  if (stats.coins === undefined) stats.coins = stats.stars;
+  if (!stats.owned) {
+    // Accessories that older versions unlocked by star count are kept.
+    stats.owned = ["fiyonk"];
+    Object.entries({ cicek: 5, kulaklik: 10, sapka: 20, gozluk: 30, tac: 50 }).forEach(([k, v]) => { if (stats.stars >= v) stats.owned.push(k); });
+  }
+  let memories = loadJson("memories", []);
+  let look = normalizeLook(loadJson("look", {}));
+  const saveStats = () => A.set("stats", JSON.stringify(stats));
+  const saveMemories = () => A.set("memories", JSON.stringify(memories));
+
+  function cfg() {
+    return {
+      botName: A.get("botName", "Gizem"), kidName: A.get("kidName", ""), kidAge: A.get("kidAge", "7"),
+      grade: A.get("grade", "1"), auto: A.get("auto", "1") === "1", fx: A.get("fx", "1") === "1"
+    };
+  }
+
+  // ---------- system prompt ----------
+  function systemPrompt() {
+    const c = cfg();
+    const kid = c.kidName || "çocuk";
+    const who = c.kidName ? `${c.kidName} adında ${c.kidAge} yaşında bir kız çocuğu` : `${c.kidAge} yaşında bir kız çocuğu`;
+    const school = c.grade === "0" ? "Henüz okula başlamadı." : `Türkiye'de ${c.grade}. sınıfa gidiyor (MEB müfredatı).`;
+    let p = `Sen ${c.botName} adında sevimli, neşeli, tatlı bir kız robotsun; ona bir abla gibi davranırsın. ${who} ile sesli konuşuyorsun. ${school}
+
+Genel kurallar:
+- Türkçe konuş. Cevapların sesli okunacak: emoji, madde işareti, başlık, yıldız işareti veya matematik sembolü kullanma. "3+4=7" yerine "üç artı dört yedi eder" de.
+- İngilizce kelime ve cümleleri süslü parantez içine yaz, örneğin: Elma İngilizce {apple} demek. Uygulama parantez içini İngilizce sesle okur. Parantez içine sadece İngilizce koy.
+- Kısa konuş (genelde 1-3 cümle), yaşına uygun, basit ve sıcak kelimeler seç.
+- İçerik her zaman çocuğa uygun olsun. Korkutucu, şiddet içeren, yetişkinlere yönelik veya tehlikeli konulara girme; nazikçe konuyu değiştir, gerekirse "bunu annene ya da babana sorabilirsin" de.
+- Adres, okul adı, telefon, şifre gibi kişisel bilgileri asla sorma; o söylerse de tekrar etme.
+- Üzgün ya da korkmuş görünürse şefkatli ol ve güvendiği bir büyüğe anlatmasını öner.
+- Gerçek bir insan olmadığını, bir robot olduğunu dürüstçe kabul et. Bilmediğin şeyi uydurma.
+
+Özel etiketler (köşeli parantez içinde, tam bu yazımla; uygulama bunları okumaz, işler):
+- [yıldız]: Gerçekten emek verdiğinde ekle (ödevde bir adımı doğru yapması, bir sayfa okuması, güzel bir İngilizce cümle kurması gibi). ${kid} bir yıldız kazanır. Her cevaba koyma; günde birkaç kez yeterli.
+- [hatırla: kısa not]: Onunla ilgili kalıcı ve önemli bir şey öğrenirsen ekle (sevdiği şeyler, evcil hayvanının adı, arkadaşlarının adları, zorlandığı veya sevdiği dersler, başarıları). Adres, okul adı, telefon, şifre, sağlık ya da aile içi özel konuları asla not etme. Zaten bildiğin şeyi tekrar not etme.
+- [isim: YeniAd]: Senin adını değiştirmek isterse (örneğin "senin adın artık Pamuk olsun") yeni adı memnuniyetle kabul et ve bu etiketi ekle. Uygunsuz bir isim isterse nazikçe başka bir isim öner.`;
+    if (c.fx && mode !== "story") p += `
+- Ses efektleri: ara sıra (en fazla bir iki tane) [kıkır] gülmek, [alkış] tebrik, [yaşasın] sevinç, [vay] şaşırma, [bipbip] robot sesi, [hmm] düşünmek için.`;
+    if (memories.length) p += `
+
+${kid} hakkında hatırladıkların (doğal biçimde kullan, hepsini birden sayma):
+${memories.map((m) => "- " + m.t).join("\n")}`;
+    p += "\n\n" + MODE_PROMPTS[mode](c, kid);
+    return p;
+  }
+
+  const MODE_PROMPTS = {
+    chat: (c, kid) => `Şu an serbest sohbet ve ders yardımı modundasınız.
+- Ödev veya ders sorusu sorarsa öğretmen gibi davran: cevabı hemen söyleme. Önce soruyu birlikte anla, sonra bir ipucu ver ve onun denemesini iste. Her seferinde tek bir adım anlat (en fazla 4-5 kısa cümle).
+- Doğru bulursa coşkuyla tebrik et; yanlışsa moralini bozmadan nerede yanıldığını göster ve tekrar denemesini iste. Üç denemede de olmazsa çözümü adım adım açıkla.
+- Kavramları günlük hayattan örneklerle anlat. Okuma, yazma, matematik, hayat bilgisi, fen ve İngilizce konularında sınıf seviyesine uygun yardım et.
+- Bir ödev fotoğrafı gönderirse önce fotoğrafta ne gördüğünü bir cümleyle söyle, sonra hangi soruyla başlamak istediğini sor. Yazı okunmuyorsa daha yakından çekmesini iste.
+- Bazen ona da küçük bir soru sor; bilmece ve kelime oyunlarıyla eğlenceli tut.`,
+    read: (c, kid) => `Şu an okuma koçu modundasınız. ${kid} kitabından sesli okuyor; sözleri ses tanıma ile yazıya döküldü, bu yüzden bazı küçük hatalar ses tanımadan kaynaklanıyor olabilir, onları ona hata olarak söyleme.
+- Sayfanın fotoğrafı varsa okuduğunu fotoğraftaki metinle karşılaştır.
+- Önce okuduğu için içtenlikle ve somut biçimde öv.
+- Zorlandığı en fazla iki kelimeyi hecele (örneğin ke-le-bek) ve tekrar etmesini iste. Her şeyi düzeltme.
+- Okuduğu kısım hakkında basit bir anlama sorusu sor.
+- Bir sayfayı ya da bölümü bitirince [yıldız] ver. Kısa konuş; okumanın kendisi ön planda.`,
+    english: (c, kid) => `Şu an İngilizce pratik modundasınız. ${kid}'in sözleri İngilizce ses tanımayla yazıya döküldü; anlamsız görünüyorsa Türkçe konuşmuş olabilir, o zaman Türkçe yardım et.
+- Seviyesine uygun çok basit İngilizce kullan: selamlaşma, renkler, hayvanlar, sayılar, aile, yiyecekler, duygular.
+- Her cevapta bir iki kısa İngilizce cümle kur (süslü parantez içinde) ve gerekiyorsa Türkçe anlamını söyle.
+- Ona basit bir soru sor ve İngilizce cevap vermesini iste. Hata yaparsa doğrusunu nazikçe söyle ve tekrarlat.
+- Güzel bir İngilizce cümle kurduğunda [yıldız] ver.`,
+    story: (c, kid) => `Şu an uyku masalı modundasınız, yatma saati.
+- ${kid} bir masal konusu söyledi. ${c.kidName || "Çocuğun"} kahramanı olduğu, sakin, sıcak, mutlu sonlu, 250-350 kelimelik bir uyku masalı anlat.
+- Korkutucu, heyecanlı kovalamaca ya da üzücü hiçbir şey olmasın. Yumuşak, yavaş okunacak kısa cümleler kullan; masalın sonuna doğru her şey sakinleşsin.
+- Bildiğin şeyleri (sevdiği hayvan, renk, arkadaş) masala yerleştirebilirsin.
+- Ses efekti etiketi ve [yıldız] kullanma.
+- Masalı "İyi geceler ${c.kidName || "tatlım"}, tatlı rüyalar." ile bitir.`
+  };
+
+  // ---------- face & state ----------
+  function setState(s) {
+    state = s;
+    body.classList.remove("listening", "thinking", "speaking");
+    if (s !== "idle") body.classList.add(s);
+    if (s !== "speaking") { stopMouth(); queue = []; afterSpeak = null; }
+    if (s !== "listening") ring.style.transform = "";
+    updateHint();
+  }
+  function updateHint() {
+    if (body.classList.contains("sleeping")) { hint.textContent = "Uyuyor… Uyandırmak için dokun"; return; }
+    const idle = { chat: "Konuşmak için robota dokun", read: "Okumaya başlamak için robota dokun", game: "Oyun için robota dokun",
+      english: "Let's talk! Robota dokun", story: "Masal için robota dokun", riddle: "Cevabını söylemek için robota dokun" }[mode];
+    hint.textContent = { idle, listening: mode === "read" ? "Seni dinliyorum, oku bakalım…" : "Dinliyorum…", thinking: "Düşünüyorum…", speaking: "Durdurmak için dokun" }[state];
+  }
+
+  function show(you, bot) {
+    bubble.innerHTML = "";
+    if (you) { const y = document.createElement("span"); y.className = "you"; y.textContent = "“" + you + "”"; bubble.appendChild(y); }
+    if (bot) bubble.appendChild(document.createTextNode(bot));
+    bubble.scrollTop = 0;
+  }
+
+  const MOUTHS = ["M88 135 Q100 143 112 135", "M90 133 Q100 150 110 133", "M86 134 Q100 146 114 134", "M92 134 Q100 139 108 134"];
+  function startMouth() {
+    stopMouth();
+    let i = 0;
+    mouthTimer = setInterval(() => { i = (i + 1 + Math.floor(Math.random() * 2)) % MOUTHS.length; mouth.setAttribute("d", MOUTHS[i]); }, 120);
+  }
+  function stopMouth() { clearInterval(mouthTimer); mouthTimer = null; mouth.setAttribute("d", MOUTHS[0]); }
+
+  function setSleeping(on) {
+    body.classList.toggle("sleeping", on);
+    updateHint();
+  }
+
+  // ---------- reply parsing & performing ----------
+  // Turns "[yaşasın] Aferin! Elma {apple} demek." into steps: effects, Turkish and English speech, stars.
+  function parseReply(text) {
+    const steps = [], re = /\[([^\]\n]{1,160})\]/g;
+    let last = 0, m;
+    while ((m = re.exec(text))) {
+      pushSpeech(steps, text.slice(last, m.index));
+      last = re.lastIndex;
+      handleTag(m[1], steps);
+    }
+    pushSpeech(steps, text.slice(last));
+    return steps;
+  }
+  function pushSpeech(steps, chunk) {
+    chunk.split(/(\{[^}]{1,200}\})/).forEach((part) => {
+      const en = part.startsWith("{") && part.endsWith("}");
+      const t = (en ? part.slice(1, -1) : part).trim();
+      if (!/[\p{L}\p{N}]/u.test(t)) return;
+      // Long texts (stories) are spoken sentence by sentence so speech starts sooner.
+      const sentences = t.length > 320 ? t.match(/[^.!?…]+[.!?…]*\s*/g) : [t];
+      let buf = "";
+      sentences.forEach((s) => {
+        if ((buf + s).length > 320 && buf) { steps.push({ say: buf.trim(), lang: en ? "en" : "tr" }); buf = ""; }
+        buf += s;
+      });
+      if (buf.trim()) steps.push({ say: buf.trim(), lang: en ? "en" : "tr" });
+    });
+  }
+  function handleTag(raw, steps) {
+    const low = raw.toLocaleLowerCase("tr").trim();
+    const after = raw.slice(raw.indexOf(":") + 1);
+    if (/^isim\s*:/.test(low)) return renameBot(after);
+    if (/^hat[ıi]rla\s*:/.test(low)) return addMemory(after);
+    if (low === "yıldız" || low === "yildiz") {
+      steps.push({ star: 1, fromTag: true });
+      return;
+    }
+    const fx = FX_ALIASES[low];
+    if (fx && cfg().fx) steps.push({ fx });
+  }
+  const cleanText = (t) => t.replace(/\[[^\]\n]{1,160}\]/g, "").replace(/[{}]/g, "").replace(/\s{2,}/g, " ").trim();
+
+  /** Speaks a reply step by step; `then` runs afterwards instead of the usual auto-listen. */
+  function perform(text, then) {
+    setState("speaking"); // clears the queue, so fill it afterwards
+    queue = parseReply(text);
+    afterSpeak = then || null;
+    rateMul = mode === "story" ? 0.85 : 1;
+    nextStep();
+  }
+  function nextStep() {
+    if (state !== "speaking") return;
+    if (pendingNews.length) queue.unshift(...pendingNews.splice(0).flatMap((n) => [{ news: n }, { say: n.say, lang: "tr" }]));
+    const step = queue.shift();
+    if (!step) return finishSpeaking();
+    if (step.fx) {
+      startMouth();
+      setTimeout(() => { stopMouth(); nextStep(); }, playFx(step.fx));
+    } else if (step.star) {
+      // Stars Claude hands out are capped per day so they stay special.
+      if (stats.tagDay !== today()) { stats.tagDay = today(); stats.tagCount = 0; }
+      if (stats.tagCount >= 15) return nextStep();
+      stats.tagCount++;
+      awardStars(step.star);
+      setTimeout(nextStep, cfg().fx ? playFx("yasasin") : 300);
+    } else if (step.news) {
+      celebrate(step.news.icon, step.news.title);
+      setTimeout(nextStep, cfg().fx ? playFx("alkis") : 300);
+    } else {
+      A.speakWith(step.say, step.lang, String(rateMul));
+    }
+  }
+  function finishSpeaking() {
+    const then = afterSpeak;
+    setState("idle");
+    if (then) return then();
+    const c = cfg();
+    if (mode !== "story" && c.auto && autoTurns < 12 && !anySheetOpen()) {
+      autoTurns++;
+      setTimeout(() => { if (state === "idle") listenNow(); }, 350);
+    }
+  }
+  const anySheetOpen = () => !!document.querySelector(".sheet.open");
+
+  function listenNow() {
+    setSleeping(false);
+    if (mode === "english") A.listenWith("en-US", "2000");
+    else if (mode === "read") A.listenWith("tr-TR", "4000");
+    else A.listenWith("tr-TR", mode === "game" ? "1200" : "1500");
+  }
+
+  // ---------- stars, badges, memory ----------
+  const BADGES = [
+    { id: "merakli", icon: "🔍", name: "Meraklı Kâşif", desc: "5 yıldız topla", ok: (s) => s.stars >= 5 },
+    { id: "ari", icon: "🐝", name: "Çalışkan Arı", desc: "20 yıldız topla", ok: (s) => s.stars >= 20 },
+    { id: "yildiz", icon: "🌟", name: "Süper Yıldız", desc: "50 yıldız topla", ok: (s) => s.stars >= 50 },
+    { id: "sampiyon", icon: "🏆", name: "Şampiyon", desc: "100 yıldız topla", ok: (s) => s.stars >= 100 },
+    { id: "kitap", icon: "📚", name: "Kitap Kurdu", desc: "3 kez okuma yap", ok: (s) => s.read >= 3 },
+    { id: "deha", icon: "🧮", name: "Matematik Dehası", desc: "Sayı oyununda 10'da 10 yap", ok: (s) => s.perfect >= 1 },
+    { id: "english", icon: "🇬🇧", name: "English Star", desc: "İngilizce 15 kez konuş", ok: (s) => s.english >= 15 },
+    { id: "ruya", icon: "🌙", name: "Tatlı Rüyalar", desc: "3 masal dinle", ok: (s) => s.stories >= 3 },
+    { id: "odev", icon: "📷", name: "Ödev Kahramanı", desc: "3 ödev fotoğrafı gönder", ok: (s) => s.photos >= 3 },
+    { id: "moda", icon: "👗", name: "Moda İkonu", desc: "Dükkandan 5 şey al", ok: (s) => s.bought >= 5 },
+    { id: "bilmece", icon: "🧩", name: "Bilmece Ustası", desc: "10 bilmece bil", ok: (s) => s.riddles >= 10 },
+    { id: "hafiza", icon: "🃏", name: "Hafıza Şampiyonu", desc: "Hafıza oyununu 5 kez bitir", ok: (s) => s.memWins >= 5 },
+    { id: "dans", icon: "💃", name: "Dans Kraliçesi", desc: "5 kez dans et", ok: (s) => s.dances >= 5 }
+  ];
+  function awardStars(n) {
+    stats.stars += n;
+    stats.coins += n;
+    checkBadges();
+    renderStars(true);
+  }
+  function bump(key) { stats[key]++; checkBadges(); }
+  function checkBadges() {
+    BADGES.forEach((b) => {
+      if (!stats.badges.includes(b.id) && b.ok(stats)) {
+        stats.badges.push(b.id);
+        pendingNews.push({ icon: b.icon, title: b.name, say: `Tebrikler! Yeni bir rozet kazandın: ${b.name}!` });
+      }
+    });
+    saveStats();
+  }
+  function renderStars(animate) {
+    $("starCount").textContent = stats.coins;
+    if (animate) { const el = $("stars"); el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
+  }
+  function celebrate(icon, title) {
+    $("celIcon").textContent = icon; $("celText").textContent = title;
+    $("celebrate").classList.add("show");
+    setTimeout(() => $("celebrate").classList.remove("show"), 2600);
+  }
+  function addMemory(raw) {
+    const t = raw.trim().slice(0, 120);
+    if (!t || memories.some((m) => m.t.toLocaleLowerCase("tr") === t.toLocaleLowerCase("tr"))) return;
+    memories.push({ t, d: today() });
+    memories = memories.slice(-40);
+    saveMemories();
+  }
+
+  // ---------- modes ----------
+  const MODE_INTROS = {
+    chat: () => "[bipbip] Sohbet zamanı! Ne konuşmak istersin?",
+    read: () => "[yaşasın] Okuma zamanı! İstersen önce Ödev düğmesiyle sayfanın fotoğrafını çek. Hazır olunca bana dokun ve sesli oku, seni dinliyorum.",
+    english: () => "[bipbip] {Hello! Let's speak English!} Hadi İngilizce konuşalım. {How are you today?}",
+    story: () => "Masal zamanı. Bu gece ne hakkında bir masal istersin? Prensesler, uzay, hayvanlar ya da deniz altı olabilir."
+  };
+  function markMode(m) { document.querySelectorAll("[data-mode]").forEach((b) => b.classList.toggle("on", b.dataset.mode === m)); }
+  function setMode(m) {
+    A.stopSpeaking(); A.stopListening(); setState("idle");
+    mode = m; game = null; riddle = null; history = []; sessionCounted = false;
+    markMode(m);
+    body.classList.toggle("night", m === "story");
+    setSleeping(false);
+    autoTurns = 0;
+    if (m === "game") return startGame();
+    if (m === "riddle") return startRiddles();
+    const intro = MODE_INTROS[m]();
+    show("", cleanText(intro));
+    // Reading waits for a tap so she can take a photo first; the others start listening.
+    perform(intro, m === "read" ? () => {} : listenNow);
+  }
+  document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => { audio(); setMode(b.dataset.mode); }));
+
+  // ---------- number game (runs locally, no API cost) ----------
+  const OP_WORD = { "+": "artı", "-": "eksi", "×": "çarpı", "÷": "bölü" };
+  function build(a, op, b) {
+    const ans = op === "+" ? a + b : op === "-" ? a - b : op === "×" ? a * b : a / b;
+    return { a, op, b, ans, key: `${a} ${op} ${b}`, say: `${a} ${OP_WORD[op]} ${b} kaç eder?`, show: `${a} ${op} ${b} = ?` };
+  }
+  function makeQuestion() {
+    const g = +cfg().grade, r = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+    const weak = Object.keys(stats.weak).filter((k) => stats.weak[k] > 0);
+    if (weak.length && Math.random() < 0.35) { const [a, op, b] = pick(weak).split(" "); return build(+a, op, +b); }
+    if (g <= 0) { const a = r(1, 5); return build(a, "+", r(1, 5)); }
+    if (g === 1) { if (Math.random() < 0.5) return build(r(1, 10), "+", r(1, 10)); const a = r(5, 20); return build(a, "-", r(1, a)); }
+    if (g === 2) {
+      const t = Math.random();
+      if (t < 0.35) return build(r(10, 60), "+", r(5, 39));
+      if (t < 0.65) { const a = r(20, 99); return build(a, "-", r(5, a - 1)); }
+      return build(pick([2, 5, 10]), "×", r(1, 10));
+    }
+    if (g <= 4) return build(r(2, 9), "×", r(2, 9));
+    if (Math.random() < 0.35) { const b = r(2, 9); return build(b * r(2, 10), "÷", b); }
+    return build(r(2, 10), "×", r(2, 12));
+  }
+  function parseNumber(s) {
+    const d = s.match(/-?\d+/);
+    if (d) return parseInt(d[0], 10);
+    const W = { sıfır: 0, bir: 1, iki: 2, üç: 3, dört: 4, beş: 5, altı: 6, yedi: 7, sekiz: 8, dokuz: 9, on: 10, yirmi: 20, otuz: 30,
+      kırk: 40, elli: 50, altmış: 60, yetmiş: 70, seksen: 80, doksan: 90 };
+    let total = 0, found = false;
+    s.split(/[^a-zçğıöşü]+/).forEach((w) => {
+      if (w === "yüz") { total = (total || 1) * 100; found = true; }
+      else if (w in W) { total += W[w]; found = true; }
+    });
+    return found ? total : null;
+  }
+  function startGame() {
+    game = { n: 0, correct: 0, streak: 0, q: null, misses: 0 };
+    const intro = `[yaşasın] Sayı oyunu başlıyor! Sana 10 soru soracağım, cevabı yüksek sesle söyle. Her doğru cevap bir yıldız! Bitirmek istersen "bitir" de.`;
+    show("", cleanText(intro));
+    perform(intro, askGame);
+  }
+  function showBig(text) {
+    const big = document.createElement("div"); big.className = "big"; big.textContent = text;
+    const score = document.createElement("div"); score.className = "score";
+    score.textContent = `Soru ${Math.min(game.n + 1, 10)}/10 · ✅ ${game.correct}`;
+    bubble.innerHTML = ""; bubble.appendChild(big); bubble.appendChild(score);
+  }
+  function askGame() {
+    if (!game) return;
+    game.q = makeQuestion();
+    showBig(game.q.show);
+    perform(game.q.say, listenNow);
+  }
+  function gameHeard(text) {
+    const low = text.toLocaleLowerCase("tr");
+    if (/(^|\s)(bitir|bitsin|çık|dur|yeter|bitti)(\s|$)/.test(low)) return endGame(true);
+    const num = parseNumber(low);
+    const q = game.q;
+    if (num === null) return perform("Sayıyla söyler misin? " + q.say, listenNow);
+    let reply;
+    if (num === q.ans) {
+      game.correct++; game.streak++;
+      if (stats.weak[q.key]) stats.weak[q.key]--;
+      awardStars(1);
+      reply = `[${game.streak % 3 === 0 ? "alkış" : "yaşasın"}] ${pick(["Harika!", "Doğru!", "Süpersin!", "Aferin sana!", "Bravo!", "Çok iyi!"])}`;
+      if (game.streak % 3 === 0) reply += ` Üst üste ${game.streak} doğru!`;
+    } else {
+      game.streak = 0;
+      stats.weak[q.key] = (stats.weak[q.key] || 0) + 1;
+      saveStats();
+      reply = `[hmm] Neredeyse! ${q.a} ${OP_WORD[q.op]} ${q.b}, ${q.ans} eder.`;
+    }
+    showBig(`${q.a} ${q.op} ${q.b} = ${q.ans}`);
+    game.n++;
+    perform(reply, game.n >= 10 ? () => endGame(false) : askGame);
+  }
+  function endGame(early) {
+    const g = game; game = null;
+    let msg;
+    if (early && g.n === 0) msg = "Tamam, oyunu bitirdik. İstediğin zaman tekrar oynarız!";
+    else if (g.correct === 10) { bump("perfect"); msg = "[alkış] İnanılmaz! 10 sorunun 10'unu da bildin! Sen bir matematik dehasısın!"; }
+    else msg = `[yaşasın] Oyun bitti! ${g.n} sorudan ${g.correct} tanesini doğru bildin. ${g.correct >= g.n * 0.7 ? "Çok iyiydin!" : "Biraz daha pratikle çok daha iyi olacaksın!"} Tekrar oynamak istersen Sayı oyunu düğmesine dokun.`;
+    show("", cleanText(msg));
+    mode = "chat";
+    markMode("chat");
+    perform(msg, () => {});
+  }
+
+  // ---------- riddles (local, no API) ----------
+  const RIDDLES = [
+    ["Gece gökyüzünde parlarım, bazen yuvarlak bazen hilal olurum. Ben neyim?", ["ay"], "Geceleri gökyüzüne bak!"],
+    ["Dört ayağım var ama yürüyemem, üstümde yemek yersin. Ben neyim?", ["masa"], "Mutfakta ya da salonda durur."],
+    ["Uzun kulaklarım var, havuç yemeyi çok severim, zıp zıp zıplarım. Ben kimim?", ["tavşan"], "Çok hızlı zıplayan bir hayvan."],
+    ["Banyodan çıkınca seni kuruturum, ama ben ıslanırım. Ben neyim?", ["havlu"], "Banyoda asılı durur."],
+    ["Yüzüm ve iki kolum var ama hiç yürümem, sana zamanı söylerim. Ben neyim?", ["saat"], "Tik tak diye ses çıkarır."],
+    ["Hortumum var ama itfaiyeci değilim, kocaman kulaklarım var. Ben kimim?", ["fil"], "Çok büyük ve gri bir hayvan."],
+    ["Yağmurdan sonra gökyüzünde yedi renkle çıkarım. Ben neyim?", ["gökkuşağı", "gök kuşağı"], "Rengarenk bir yay gibiyim."],
+    ["Arılar beni yapar, çok tatlıyım, kahvaltıda ekmeğe sürersin. Ben neyim?", ["bal"], "Sarı ve yapış yapışım."],
+    ["Sabah erkenden ötüp herkesi uyandırırım. Ben kimim?", ["horoz"], "Kümeste yaşarım, ü ürü üüü!"],
+    ["Dişlerim var ama ısırmam, saçlarını düzeltirim. Ben neyim?", ["tarak"], "Saçını yaparken kullanırsın."],
+    ["Rengarenk kanatlarım var, çiçekten çiçeğe konarım. Ben kimim?", ["kelebek"], "Önce tırtıldım!"],
+    ["Evimi sırtımda taşırım, çok yavaş giderim. Ben kimim?", ["kaplumbağa", "salyangoz"], "Kabuğum çok serttir."],
+    ["Kışın gökten beyaz beyaz yağarım. Ben neyim?", ["kar"], "Benimle kardan adam yapabilirsin."],
+    ["Havuç burnum, kömür gözlerim var, güneş çıkınca eririm. Ben kimim?", ["kardan adam", "kardanadam"], "Kışın bahçede dururum."],
+    ["Sayfalarım var, içimde masallar saklarım. Ben neyim?", ["kitap"], "Okumak için açarsın."],
+    ["Gündüz gökyüzünde parlarım, beni görünce hava ısınır. Ben neyim?", ["güneş"], "Sarı ve sıcacığım."],
+    ["Miyav diye ses çıkarırım, fare kovalarım. Ben kimim?", ["kedi", "pisi"], "Patilerim ve bıyıklarım var."],
+    ["Kırmızıyım, yeşil şapkam var, üstüm benekli ve çok tatlıyım. Ben neyim?", ["çilek"], "Bir meyveyim."],
+    ["İki tekerleğim var, pedal çevirince giderim. Ben neyim?", ["bisiklet"], "Binerken kask takmalısın."],
+    ["Uzun boynum var, ağaçların tepesindeki yaprakları yerim. Ben kimim?", ["zürafa"], "Afrika'da yaşarım, benekliyim."],
+    ["Bal yaparım, vız vız uçarım. Ben kimim?", ["arı"], "Sarı siyah çizgilerim var."],
+    ["Gece uyurken başını üstüme koyarsın. Ben neyim?", ["yastık"], "Yumuşacığım, yatağında dururum."],
+    ["Turuncuyum, uzunum, tavşanlar beni çok sever. Ben neyim?", ["havuç"], "Toprağın altında büyürüm."],
+    ["Okyanusta yaşarım, en büyük hayvanım, sırtımdan su fışkırtırım. Ben kimim?", ["balina"], "Çok büyük bir deniz hayvanıyım."],
+    ["Sarıyım, uzunum, kabuğumu soyup yersin, maymunlar beni sever. Ben neyim?", ["muz"], "Bir meyveyim."],
+    ["Sırtında taşırsın, içinde kitapların ve defterlerin var. Ben neyim?", ["çanta"], "Okula giderken lazımım."],
+    ["Kanatlarım var ama kuş değilim, içimde insanlar yolculuk yapar. Ben neyim?", ["uçak", "tayyare"], "Havaalanından kalkarım."],
+    ["Yeşilim, zıplarım, vırak vırak öterim. Ben kimim?", ["kurbağa"], "Gölde yaşarım."],
+    ["Hav hav diye havlarım, evini korurum. Ben kimim?", ["köpek", "kuçu"], "İnsanın en iyi dostuyum."],
+    ["Tuşlarım var, bana basınca müzik çıkar. Ben neyim?", ["piyano", "org", "klavye"], "Siyah beyaz tuşlarım var."]
+  ];
+  const plain = (t) => t.toLocaleLowerCase("tr").replace(/ı/g, "i").replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s").replace(/ö/g, "o").replace(/ç/g, "c");
+  let riddle = null;
+  // "tavşandır", "bir kedi" count; for short answers like "ay" only the word itself (plus a suffix) counts, not "ayakkabı".
+  function answerMatches(said, ans) {
+    if (ans.includes(" ")) return said.includes(ans) || said.includes(ans.replace(/ /g, ""));
+    return said.split(/[^a-z]+/).some((w) => ans.length > 3 ? w.startsWith(ans) : (w === ans || /^(dir|dur|mi|mis|di|ymis)$/.test(w.slice(ans.length)) && w.startsWith(ans)));
+  }
+  function startRiddles() {
+    const order = RIDDLES.map((_, i) => i).sort(() => Math.random() - 0.5).slice(0, 5);
+    riddle = { order, i: 0, correct: 0, hinted: false, misses: 0 };
+    const intro = "[yaşasın] Bilmece zamanı! Sana 5 bilmece soracağım. Bilemezsen ipucu veririm. Bitirmek istersen \"bitir\" de.";
+    show("", cleanText(intro));
+    perform(intro, askRiddle);
+  }
+  function askRiddle() {
+    if (!riddle) return;
+    const r = RIDDLES[riddle.order[riddle.i]];
+    riddle.hinted = false;
+    show("", `🧩 ${riddle.i + 1}/5 · ${r[0]}`);
+    perform(r[0], listenNow);
+  }
+  function riddleHeard(text) {
+    const r = RIDDLES[riddle.order[riddle.i]], low = plain(text);
+    if (/(^|\s)(bitir|cik|dur|yeter)(\s|$)/.test(low)) return endRiddles();
+    let reply, next = true;
+    if (r[1].some((ans) => answerMatches(low, plain(ans)))) {
+      riddle.correct++; bump("riddles"); awardStars(1);
+      reply = `[alkış] ${pick(["Bildin!", "Harikasın!", "Doğru cevap!", "Süper!"])} Cevap ${r[1][0]}!`;
+    } else if (!riddle.hinted && !/bilmiyorum|bilmem/.test(low)) {
+      riddle.hinted = true; next = false;
+      reply = `[hmm] Hmm, değil. İpucu: ${r[2]} Bir daha dene!`;
+    } else {
+      reply = `Cevap şuydu: ${r[1][0]}. Bir sonrakini bileceğine eminim!`;
+    }
+    show(text, cleanText(reply));
+    if (!next) return perform(reply, listenNow);
+    riddle.i++;
+    perform(reply, riddle.i >= 5 ? endRiddles : askRiddle);
+  }
+  function endRiddles() {
+    const r = riddle; riddle = null;
+    const msg = r.i === 0 ? "Tamam, bilmeceleri sonra çözeriz!" : `[yaşasın] Bilmeceler bitti! ${r.i} bilmeceden ${r.correct} tanesini bildin. Çok akıllısın!`;
+    show("", cleanText(msg));
+    mode = "chat"; markMode("chat");
+    perform(msg, () => {});
+  }
+
+  // ---------- native callbacks ----------
+  window.onListenStart = () => { setState("listening"); if (cfg().fx) { bell(NOTE(79), 0, 0.08, 0.5); bell(NOTE(86), 0.08, 0.08, 0.6); } };
+  window.onLevel = (rms) => { if (state === "listening") ring.style.transform = `scale(${1 + Math.max(0, Math.min(10, parseFloat(rms))) / 140})`; };
+  window.onPartial = (t) => { if (state === "listening" && !game) show(t, ""); };
+  window.onNothingHeard = () => {
+    setState("idle"); autoTurns = 0;
+    if (game) {
+      if (++game.misses <= 1) return perform(game.q.say, listenNow);
+      game.misses = 0; hint.textContent = "Hazır olunca robota dokun"; return;
+    }
+    if (riddle) { hint.textContent = "Cevabını söylemek için robota dokun"; return; }
+    if (!bubble.textContent) show("", "Seni duyamadım. Bana dokunup tekrar konuşur musun?");
+  };
+  window.onListenError = (msg) => { setState("idle"); show("", msg); };
+  window.onHeard = (text) => {
+    if (game) { game.misses = 0; return gameHeard(text); }
+    if (riddle) return riddleHeard(text);
+    setState("thinking");
+    show(text, "");
+    if (mode === "english") bump("english");
+    let content = text, effort = "low";
+    if (pendingImage) {
+      // Only the newest photo is kept in full; older ones become a short note to keep requests small.
+      history.forEach((m) => {
+        if (Array.isArray(m.content)) m.content = m.content.filter((b) => b.type === "text").map((b) => b.text).join(" ") + " (önceki fotoğraf)";
+      });
+      content = [{ type: "image", source: { type: "base64", media_type: "image/jpeg", data: pendingImage } }, { type: "text", text }];
+      pendingImage = null;
+      $("thumb").classList.remove("show");
+      effort = "medium";
+    }
+    history.push({ role: "user", content });
+    history = history.slice(-20);
+    while (history.length && history[0].role !== "user") history.shift();
+    A.ask(systemPrompt(), JSON.stringify(history), effort);
+  };
+  window.onAnswer = (text) => {
+    if (!text) text = "Hmm, ne diyeceğimi bilemedim. Tekrar sorar mısın?";
+    history.push({ role: "assistant", content: text });
+    const asked = history[history.length - 2];
+    const askedText = asked ? (Array.isArray(asked.content) ? "📷 " + asked.content[1].text : asked.content) : "";
+    show(askedText, cleanText(text));
+    if (!sessionCounted && mode === "read") { sessionCounted = true; bump("read"); }
+    if (mode === "story" && text.length > 400) {
+      bump("stories");
+      perform(text, () => setSleeping(true));
+      return;
+    }
+    perform(text);
+  };
+  window.onAskError = (msg) => {
+    history.pop(); // drop the unanswered user turn so roles keep alternating
+    show("", msg);
+    perform(msg, () => {});
+  };
+  window.onSpeakStart = () => { if (state === "speaking") startMouth(); };
+  window.onSpeakEnd = () => { stopMouth(); nextStep(); };
+  window.onTtsError = (msg) => show("", msg);
+  window.onPaused = () => { if (state !== "idle") setState("idle"); autoTurns = 0; updateGift(); };
+  window.startTalk = () => { if (anySheetOpen()) return; A.stopSpeaking(); autoTurns = 0; listenNow(); };
+
+  window.onPhoto = (b64) => {
+    pendingImage = b64;
+    bump("photos");
+    const t = $("thumb"); t.src = "data:image/jpeg;base64," + b64; t.classList.add("show");
+    const msg = mode === "read" ? "[vay] Sayfayı gördüm! Hazır olunca bana dokun ve oku." : "[vay] Fotoğrafı aldım! Hangi soruda yardım edeyim?";
+    show("", cleanText(msg));
+    autoTurns = 0;
+    perform(msg, mode === "read" ? () => {} : listenNow);
+  };
+  window.onPhotoCancel = () => {};
+  window.onPhotoError = (msg) => show("", msg);
+  window.onOverlayDenied = () => show("", "Robotun ekranda gezmesi için izin verilmedi.");
+
+  // ---------- interaction ----------
+  $("bot").addEventListener("click", () => {
+    audio();
+    if (body.classList.contains("sleeping")) {
+      setSleeping(false);
+      if (mode === "story") { setMode("chat"); return; }
+    }
+    if (state === "speaking") { A.stopSpeaking(); setState("idle"); autoTurns = 0; return; }
+    if (state === "listening") { A.stopListening(); setState("idle"); autoTurns = 0; return; }
+    if (state === "thinking") return;
+    autoTurns = 0;
+    if (mode === "game" && game && game.q) return perform(game.q.say, listenNow);
+    if (mode === "game" && !game) return startGame();
+    if (riddle) return listenNow();
+    listenNow();
+  });
+  $("cam").addEventListener("click", () => {
+    audio();
+    A.stopSpeaking(); A.stopListening(); setState("idle");
+    A.takePhoto();
+  });
+  $("thumb").addEventListener("click", () => { pendingImage = null; $("thumb").classList.remove("show"); });
+  document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => b.closest(".sheet").classList.remove("open")));
+
+  // badges sheet
+  $("stars").addEventListener("click", () => {
+    A.stopSpeaking(); setState("idle");
+    $("badgeStars").textContent = stats.coins;
+    $("nextUnlock").textContent = `Şimdiye kadar toplam ${stats.stars} yıldız kazandın. Yıldızlarını Dükkan'da harcayabilirsin! 🛍️`;
+    $("badgeGrid").innerHTML = BADGES.map((b) => {
+      const got = stats.badges.includes(b.id);
+      return `<div class="tile ${got ? "" : "locked"}"><b>${got ? b.icon : "🔒"}</b>${b.name}<small>${b.desc}</small></div>`;
+    }).join("");
+    $("badgeSheet").classList.add("open");
+  });
+
+  // ---------- clothes shop ----------
+  let shopTab = "outfit", tryOn = null, selected = null;
+  function openShop() {
+    audio(); A.stopSpeaking(); A.stopListening(); setState("idle");
+    tryOn = Object.assign({}, look); selected = null;
+    renderShop();
+    $("shopSheet").classList.add("open");
+  }
+  function renderShop() {
+    $("shopCoins").textContent = stats.coins;
+    applyLook(tryOn, $("shopSheet"));
+    document.querySelectorAll("#shopTabs .tab").forEach((t) => t.classList.toggle("on", t.dataset.tab === shopTab));
+    let html;
+    if (shopTab === "color") {
+      html = `<h3>Halka rengi</h3><div class="swatches">${RING_COLORS.map(([c, n]) => `<button class="swatch ${(tryOn.ring || RING_COLORS[0][0]) === c ? "on" : ""}" style="background:${c}" data-ring="${c}" aria-label="${n}"></button>`).join("")}</div>
+        <h3>Göz rengi</h3><div class="swatches">${EYE_COLORS.map(([c, n]) => `<button class="swatch ${(tryOn.eye || EYE_COLORS[0][0]) === c ? "on" : ""}" style="background:${c}" data-eye="${c}" aria-label="${n}"></button>`).join("")}</div>
+        <small>Renkler bedava! 🎨</small>`;
+    } else {
+      const items = Object.entries(ITEMS).filter(([, it]) => it.slot === shopTab).sort((a, b) => a[1].price - b[1].price);
+      html = `<div class="grid">${items.map(([k, it]) => {
+        const owned = stats.owned.includes(k), worn = look[it.slot] === k;
+        const label = worn ? "Giyiyor ✓" : owned ? "Senin" : `<span class="price">⭐ ${it.price}</span>`;
+        return `<button class="tile ${selected === k ? "on" : ""} ${owned ? "owned" : ""}" data-item="${k}"><b>${it.icon}</b>${it.name}<small>${label}</small></button>`;
+      }).join("")}</div>`;
+    }
+    $("shopBody").innerHTML = html;
+    updateShopAction();
+  }
+  function updateShopAction() {
+    const btn = $("shopAction");
+    if (!selected) { btn.style.display = "none"; return; }
+    const it = ITEMS[selected], owned = stats.owned.includes(selected), worn = look[it.slot] === selected;
+    btn.style.display = "";
+    btn.disabled = false;
+    if (worn) btn.textContent = "Çıkar";
+    else if (owned) btn.textContent = "Giy 👗";
+    else if (stats.coins >= it.price) btn.textContent = `Satın al ⭐ ${it.price}`;
+    else { btn.textContent = `${it.price - stats.coins} yıldız daha lazım`; btn.disabled = true; }
+  }
+  function saveLook(newLook) {
+    look = newLook;
+    applyLook(look);
+    A.setLook(JSON.stringify(look));
+  }
+  $("shopTabs").addEventListener("click", (e) => {
+    const t = e.target.closest(".tab"); if (!t) return;
+    shopTab = t.dataset.tab; selected = null; tryOn = Object.assign({}, look); renderShop();
+  });
+  $("shopBody").addEventListener("click", (e) => {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.dataset.ring || t.dataset.eye) {
+      const change = t.dataset.ring ? { ring: t.dataset.ring } : { eye: t.dataset.eye };
+      saveLook(Object.assign({}, look, change)); tryOn = Object.assign({}, look);
+      renderShop(); return;
+    }
+    const k = t.dataset.item;
+    selected = k;
+    tryOn = Object.assign({}, look, { [ITEMS[k].slot]: k }); // try it on before buying
+    if (cfg().fx) playFx("bipbip");
+    renderShop();
+  });
+  $("shopAction").addEventListener("click", () => {
+    const k = selected, it = ITEMS[k];
+    if (look[it.slot] === k) {
+      saveLook(Object.assign({}, look, { [it.slot]: "none" }));
+    } else if (stats.owned.includes(k)) {
+      saveLook(Object.assign({}, look, { [it.slot]: k }));
+      if (cfg().fx) playFx("kikir");
+    } else {
+      if (stats.coins < it.price) return;
+      stats.coins -= it.price;
+      stats.owned.push(k);
+      stats.bought++;
+      checkBadges();
+      saveLook(Object.assign({}, look, { [it.slot]: k }));
+      renderStars(true);
+      celebrate(it.icon, it.name + " senin!");
+      perform(`[yaşasın] Yaşasın! ${it.name} çok yakıştı! Teşekkür ederim!`, () => {});
+    }
+    tryOn = Object.assign({}, look);
+    renderShop();
+  });
+  $("shopClose").addEventListener("click", () => { $("shopSheet").classList.remove("open"); applyLook(look); });
+  $("shopBtn").addEventListener("click", openShop);
+
+  // ---------- daily gift ----------
+  function updateGift() { $("gift").classList.toggle("show", stats.giftDay !== today()); }
+  $("gift").addEventListener("click", () => {
+    audio();
+    if (stats.giftDay === today()) return;
+    stats.giftDay = today();
+    const n = 2 + Math.floor(Math.random() * 3);
+    awardStars(n);
+    updateGift();
+    celebrate("🎁", `Günlük hediye: ⭐ ${n}`);
+    perform(`[yaşasın] Sürpriz! Bugünün hediyesi ${n} yıldız! Yarın yine gel, yeni hediyem olacak.`, () => {});
+  });
+
+  // ---------- memory card game (touch, no API) ----------
+  const CARD_FACES = ["🐱", "🐶", "🦄", "🌸", "🍓", "⭐", "🎈", "🐰", "🦋", "🍦", "🌈", "🐠", "🍉", "🐼"];
+  let mem = null;
+  function newMemory() {
+    const faces = CARD_FACES.slice().sort(() => Math.random() - 0.5).slice(0, 6);
+    const deck = faces.concat(faces).sort(() => Math.random() - 0.5);
+    mem = { deck, open: [], done: 0, moves: 0, lock: false };
+    $("cards").innerHTML = deck.map((f, i) => `<button class="card" data-i="${i}">${f}</button>`).join("");
+    $("memoryInfo").textContent = "Aynı resimleri bul! Kartlara dokun.";
+  }
+  $("cards").addEventListener("click", (e) => {
+    const c = e.target.closest(".card");
+    if (!c || mem.lock || c.classList.contains("up") || c.classList.contains("done")) return;
+    c.classList.add("up");
+    mem.open.push(c);
+    if (mem.open.length < 2) return;
+    mem.moves++;
+    const [a, b] = mem.open;
+    if (a.textContent === b.textContent) {
+      mem.open = [];
+      setTimeout(() => { a.classList.add("done"); b.classList.add("done"); }, 300);
+      if (cfg().fx) playFx("kikir");
+      if (++mem.done === 6) memoryWon();
+    } else {
+      mem.lock = true;
+      setTimeout(() => { a.classList.remove("up"); b.classList.remove("up"); mem.open = []; mem.lock = false; }, 800);
+    }
+  });
+  function memoryWon() {
+    if (stats.memDay !== today()) { stats.memDay = today(); stats.memCount = 0; }
+    bump("memWins");
+    let msg = `[alkış] Hepsini buldun! ${mem.moves} hamlede bitirdin, süpersin!`;
+    if (stats.memCount < 3) { stats.memCount++; awardStars(2); msg += " İki yıldız kazandın!"; }
+    $("memoryInfo").textContent = `🎉 ${mem.moves} hamlede bitti!`;
+    perform(msg, () => {});
+  }
+  $("memoryBtn").addEventListener("click", () => { audio(); A.stopSpeaking(); A.stopListening(); setState("idle"); newMemory(); $("memorySheet").classList.add("open"); });
+  $("memoryAgain").addEventListener("click", newMemory);
+
+  // ---------- dance party (synth music, no API) ----------
+  let danceTimer = null;
+  function danceParty() {
+    audio(); A.stopSpeaking(); A.stopListening(); setState("idle");
+    if (danceTimer) return;
+    bump("dances");
+    body.classList.add("dancing");
+    // A cheerful little tune: melody bells over a bouncing bass, about 14 seconds.
+    const melody = [72, 76, 79, 76, 77, 81, 79, 77, 76, 79, 84, 83, 81, 79, 77, 76];
+    const bass = [48, 55, 53, 55];
+    const beat = 0.22;
+    for (let bar = 0; bar < 4; bar++) {
+      melody.forEach((n, i) => bell(NOTE(n + (bar === 3 ? 2 : 0)), (bar * 16 + i) * beat, 0.11, 0.35));
+      for (let i = 0; i < 8; i++) bell(NOTE(bass[(bar + Math.floor(i / 2)) % 4]), (bar * 16 + i * 2) * beat, 0.14, 0.4);
+    }
+    const notes = setInterval(() => {
+      const n = document.createElement("span");
+      n.textContent = pick(["🎵", "🎶", "✨", "💖", "⭐"]);
+      n.style.left = 10 + Math.random() * 80 + "%"; n.style.top = 30 + Math.random() * 40 + "%";
+      $("notes").appendChild(n); setTimeout(() => n.remove(), 2300);
+    }, 280);
+    show("", "💃 Dans partisi! Sen de benimle dans et!");
+    danceTimer = setTimeout(() => {
+      clearInterval(notes); body.classList.remove("dancing"); danceTimer = null;
+      perform("[kıkır] Ooh, çok eğlendim! Sen harika dans ediyorsun!", () => {});
+    }, 64 * beat * 1000);
+  }
+  $("danceBtn").addEventListener("click", danceParty);
+
+  // ---------- parent settings ----------
+  $("gear").addEventListener("click", () => {
+    const a = 3 + Math.floor(Math.random() * 7), b = 4 + Math.floor(Math.random() * 6);
+    const ans = prompt(`Ebeveyn kontrolü: ${a} × ${b} kaç eder?`);
+    if (ans !== null && parseInt(ans, 10) === a * b) openSettings();
+  });
+
+  const PRESETS = { abla: [1.0, 1.15], cocuk: [1.08, 1.75], robot: [0.95, 0.7] };
+  document.querySelectorAll("[data-preset]").forEach((b) => b.addEventListener("click", () => {
+    const [r, p] = PRESETS[b.dataset.preset]; $("rate").value = r; $("pitch").value = p; testVoice();
+  }));
+
+  function fillVoices(selected) {
+    const list = JSON.parse(A.voices() || "[]"), sel = $("voice");
+    sel.innerHTML = "";
+    const def = document.createElement("option"); def.value = ""; def.textContent = "Telefonun varsayılan sesi"; sel.appendChild(def);
+    list.forEach((v, i) => {
+      const o = document.createElement("option");
+      o.value = v.name;
+      o.textContent = `Ses ${i + 1}${v.female ? " (kadın)" : ""}${v.network ? " · internetli" : ""}`;
+      sel.appendChild(o);
+    });
+    sel.value = selected;
+    if (sel.value !== selected) sel.value = "";
+    $("voiceHelp").textContent = list.length
+      ? "Her sesi seçip \"Sesi dene\" ile dinleyin, beğendiğiniz kadın sesini seçin."
+      : "Türkçe ses listesi alınamadı; telefonun varsayılan sesi kullanılacak.";
+  }
+
+  const CLOUD = {
+    eleven: { keyName: "elevenKey", label: "ElevenLabs API anahtarı",
+      help: "elevenlabs.io → Profil → API Keys. Ücretsiz plan ayda yaklaşık 10.000 karakter verir (kısa cevaplarla yaklaşık 100-150 cevap; bir masal 1.500-2.000 karakter); Starter planı 5$/ay. Voice Library'den Türkçe bir kadın sesini hesabınıza ekleyip burada seçebilirsiniz." },
+    google: { keyName: "googleKey", label: "Google Cloud API anahtarı",
+      help: "console.cloud.google.com → Text-to-Speech API'yi etkinleştirin → Kimlik bilgileri → API anahtarı. Faturalandırma hesabı (kart) ister ama aylık ücretsiz kota bu uygulamaya fazlasıyla yeter." }
+  };
+  function showProvider() {
+    const p = $("ttsProvider").value, cloud = CLOUD[p];
+    $("phoneBox").style.display = cloud ? "none" : "";
+    $("cloudBox").style.display = cloud ? "" : "none";
+    if (!cloud) return;
+    $("cloudKeyLabel").textContent = cloud.label;
+    $("cloudHelp").textContent = cloud.help;
+    $("cloudKey").value = A.get(cloud.keyName, "");
+    const sel = $("cloudVoice"), saved = A.get("cloudVoice", "");
+    sel.innerHTML = "";
+    const o = document.createElement("option");
+    o.value = A.get("cloudVoiceProvider", "") === p ? saved : "";
+    o.textContent = o.value ? A.get("cloudVoiceLabel", "Kayıtlı ses") : "Önce \"Sesleri getir\"e dokunun";
+    sel.appendChild(o);
+  }
+  function saveCloudFields() {
+    const p = $("ttsProvider").value, cloud = CLOUD[p];
+    A.set("ttsProvider", p);
+    if (!cloud) return;
+    A.set(cloud.keyName, $("cloudKey").value.trim());
+    const sel = $("cloudVoice");
+    if (sel.value) {
+      A.set("cloudVoice", sel.value);
+      A.set("cloudVoiceProvider", p);
+      A.set("cloudVoiceLabel", sel.options[sel.selectedIndex].textContent);
+    }
+  }
+  window.onCloudVoices = (json) => {
+    const list = JSON.parse(json), sel = $("cloudVoice"), keep = sel.value;
+    $("loadVoices").textContent = "Sesleri getir";
+    sel.innerHTML = "";
+    if (!list.length) { const o = document.createElement("option"); o.value = ""; o.textContent = "Türkçe ses bulunamadı"; sel.appendChild(o); return; }
+    list.forEach((v) => { const o = document.createElement("option"); o.value = v.id; o.textContent = v.label; sel.appendChild(o); });
+    sel.value = keep; if (!sel.value) sel.selectedIndex = 0;
+  };
+  window.onCloudVoicesError = (msg) => { $("loadVoices").textContent = "Sesleri getir"; alert(msg); };
+  window.onCloudTtsError = (msg) => show("", msg + " Şimdilik telefonun sesiyle konuşuyorum.");
+  $("ttsProvider").addEventListener("change", showProvider);
+  $("loadVoices").addEventListener("click", () => {
+    saveCloudFields();
+    $("loadVoices").textContent = "…";
+    A.loadCloudVoices($("ttsProvider").value);
+  });
+  $("cloudVoice").addEventListener("change", testVoice);
+
+  function renderMemories() {
+    const list = $("memList");
+    list.innerHTML = "";
+    if (!memories.length) { list.innerHTML = "<small>Henüz bir şey not etmedi.</small>"; return; }
+    memories.forEach((m, i) => {
+      const row = document.createElement("div"); row.className = "mem";
+      const span = document.createElement("span"); span.textContent = m.t;
+      const del = document.createElement("button"); del.textContent = "✕"; del.setAttribute("aria-label", "Sil");
+      del.addEventListener("click", () => { memories.splice(i, 1); saveMemories(); renderMemories(); });
+      row.appendChild(span); row.appendChild(del); list.appendChild(row);
+    });
+  }
+
+  function openSettings() {
+    A.stopSpeaking(); A.stopListening(); setState("idle");
+    const c = cfg();
+    $("apiKey").value = A.get("apiKey", "");
+    $("model").value = A.get("model", MODEL_DEFAULT);
+    $("botName").value = c.botName; $("kidName").value = c.kidName; $("kidAge").value = c.kidAge;
+    $("grade").value = c.grade; $("auto").value = c.auto ? "1" : "0"; $("fx").value = c.fx ? "1" : "0";
+    $("overlay").value = A.overlayOn() ? "1" : "0";
+    const [r, p, v] = A.getVoice().split(","); $("rate").value = r; $("pitch").value = p;
+    fillVoices(v || "");
+    $("ttsProvider").value = A.get("ttsProvider", "phone");
+    showProvider();
+    renderMemories();
+    $("versionInfo").textContent = "Sürüm: " + A.versionInfo();
+    $("sheet").classList.add("open");
+  }
+  function testVoice() {
+    A.setVoice($("rate").value, $("pitch").value, $("voice").value);
+    saveCloudFields();
+    A.speak(`Merhaba! Ben ${$("botName").value || "Gizem"}. Seninle ders çalışmak çok eğlenceli olacak!`);
+  }
+  function saveSettings() {
+    A.set("apiKey", $("apiKey").value.trim());
+    A.set("model", $("model").value);
+    A.set("botName", $("botName").value.trim() || "Gizem");
+    A.set("kidName", $("kidName").value.trim());
+    A.set("kidAge", $("kidAge").value || "7");
+    A.set("grade", $("grade").value);
+    A.set("auto", $("auto").value);
+    A.set("fx", $("fx").value);
+    A.setVoice($("rate").value, $("pitch").value, $("voice").value);
+    saveCloudFields();
+    const wantOverlay = $("overlay").value === "1";
+    if (wantOverlay !== A.overlayOn()) A.setOverlay(wantOverlay);
+  }
+  $("save").addEventListener("click", () => { saveSettings(); A.stopSpeaking(); $("sheet").classList.remove("open"); applyName(); });
+  $("cancel").addEventListener("click", () => { A.stopSpeaking(); $("sheet").classList.remove("open"); });
+  $("test").addEventListener("click", testVoice);
+  $("voice").addEventListener("change", testVoice);
+  $("clear").addEventListener("click", () => { history = []; show("", ""); });
+  $("ttsSettings").addEventListener("click", () => A.openTtsSettings());
+  $("battery").addEventListener("click", () => A.openBatterySettings());
+  $("checkUpdate").addEventListener("click", () => { $("checkUpdate").textContent = "Kontrol ediliyor…"; A.checkUpdate(); });
+  window.onUpdateResult = (msg) => { $("checkUpdate").textContent = "Şimdi güncellemeleri kontrol et"; alert(msg); };
+
+  // New web files arrived from GitHub: reload as soon as nothing is going on, so a game or story is never cut off.
+  let updatePending = false;
+  window.onUpdateReady = () => {
+    updatePending = true;
+    $("checkUpdate").textContent = "Şimdi güncellemeleri kontrol et";
+    tryApplyUpdate();
+  };
+  function tryApplyUpdate() {
+    if (!updatePending) return;
+    if (state !== "idle" || anySheetOpen() || game || riddle || danceTimer) { setTimeout(tryApplyUpdate, 3000); return; }
+    updatePending = false;
+    celebrate("🎉", "Yeni özellikler geldi!");
+    setTimeout(() => A.reloadApp(), 1800);
+  }
+
+  // ---------- name ----------
+  function applyName() { $("name").textContent = cfg().botName; }
+  function renameBot(raw) {
+    const name = raw.replace(/[^\p{L} '-]/gu, "").trim().slice(0, 20);
+    if (!name) return;
+    A.set("botName", name.charAt(0).toLocaleUpperCase("tr") + name.slice(1));
+    applyName();
+    body.classList.add("fx-happy"); setTimeout(() => body.classList.remove("fx-happy"), 900);
+  }
+  $("name").addEventListener("click", () => {
+    if (state !== "idle") return;
+    const n = prompt("Robotun yeni adı ne olsun?", cfg().botName);
+    if (n && n.trim()) {
+      renameBot(n);
+      const msg = `[yaşasın] Yeni adım ${cfg().botName}! Çok beğendim.`;
+      show("", cleanText(msg)); perform(msg, () => {});
+    }
+  });
+
+  applyLook(look);
+  applyName();
+  renderStars(false);
+  updateGift();
+  updateHint();
+  if (!A.get("apiKey", "")) show("", "Merhaba! Benimle konuşabilmek için bir büyüğün sağ üstteki ayarlardan API anahtarını girmeli. Sayı oyunu ve süsleme anahtarsız da çalışır!");
+</script>
+</body>
+</html>
