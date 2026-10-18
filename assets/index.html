@@ -2371,13 +2371,14 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
     const seen = loadJson("seenNotes", []); seen.push(m.id); A.set("seenNotes", JSON.stringify(seen.slice(-200)));
     const kid = cfg().kidName || "tatlım";
     celebrate("📩", m.from ? `Mesaj var! (${m.from})` : "Sana bir mesaj var!");
-    let say = `[bipbip] ${kid}, ${m.from ? m.from + " sana bir mesaj gönderdi" : "sana bir mesaj var"}! ${m.text}`;
+    const spoken = m.text.replace(/[\p{Extended_Pictographic}\u200d\ufe0f]/gu, "").trim();
+    let say = `[bipbip] ${kid}, ${m.from ? m.from + " sana bir mesaj gönderdi" : "sana bir mesaj var"}! ${spoken}`;
     if (m.stars) { awardStars(m.stars); say += ` Bir de sana ${m.stars} yıldız hediye var!`; }
     show("", `📩 ${m.from ? m.from + ": " : ""}${m.text}`);
     perform(say, () => setTimeout(deliverNotes, 1500));
   }
   setTimeout(fetchParentNotes, 2500);
-  setInterval(fetchParentNotes, 30 * 60 * 1000);
+  setInterval(fetchParentNotes, 5 * 60 * 1000);
 
   // ---------- parent settings ----------
   $("gear").addEventListener("click", () => {
