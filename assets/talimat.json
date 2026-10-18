@@ -1,0 +1,12 @@
+{
+  "_aciklama": "Gizem'e uzaktan mesaj ve talimat. mesajlar: her mesajın id'si farklı olmalı (aynı id bir kez okunur). gun: sadece o gün göster (isteğe bağlı, YYYY-AA-GG). yildiz: hediye yıldız (0-20). talimatlar: Gizem'in davranışına eklenir. Değiştirince version artırmaya gerek yok. kimden: mesajı kimin gönderdiği (örn. Annen, Baban); boş kalabilir.",
+  "kimden": "",
+  "talimatlar": "",
+  "mesajlar": [
+    {
+      "id": "hosgeldin-1",
+      "metin": "Seni çok seviyorum! Artık sana buradan mesaj gönderebilirim. Ödevlerini yapmayı ve dişlerini fırçalamayı unutma!",
+      "yildiz": 3
+    }
+  ]
+}

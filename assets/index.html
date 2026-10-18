@@ -606,6 +606,10 @@
       </div>
       <small>Yaş doğum gününden hesaplanır. Doğum gününde Gizem sürpriz parti yapar ve özel bir elbise hediye eder.</small>
 
+      <h3>Gizem'e özel talimatlar</h3>
+      <textarea id="parentRules" rows="4" style="width:100%;padding:12px;font-size:15px;border-radius:12px;border:1px solid var(--pill-border);background:#10141a;color:var(--text);font-family:inherit" placeholder="Örn: Bu hafta kesirler konusunu çalışıyor, sohbette ara sıra kesir soruları sor. Ekran süresine dikkat etmesini hatırlat."></textarea>
+      <small>Buraya yazdıklarınız Gizem'in davranışına eklenir. Uzaktan mesaj ve talimat için GitHub'daki assets/talimat.json dosyası kullanılır.</small>
+
       <h3>Robotun hafızası</h3>
       <small>Robot sohbetlerde öğrendiği önemli şeyleri burada not eder (sevdiği şeyler, evcil hayvanı, zorlandığı dersler). İstemediğinizi silebilirsiniz.</small>
       <div id="memList"></div>
@@ -773,6 +777,11 @@ Genel kurallar:
 
 ${kid} hakkında hatırladıkların (doğal biçimde kullan, hepsini birden sayma):
 ${memories.map((m) => "- " + m.t).join("\n")}`;
+    const rules = [A.get("parentRules", "").trim(), remoteRules].filter(Boolean).join("\n");
+    if (rules) p += `
+
+Ebeveyninin sana talimatları (yukarıdaki güvenlik kurallarıyla çelişmedikçe bunlara uy):
+${rules}`;
     p += "\n\n" + MODE_PROMPTS[mode](c, kid);
     return p;
   }
@@ -2334,6 +2343,42 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   $("gamesBtn").addEventListener("click", () => { audio(); A.stopSpeaking(); A.stopListening(); setState("idle"); $("gamesSheet").classList.add("open"); });
   $("memoryBtn").addEventListener("click", () => $("gamesSheet").classList.remove("open"));
 
+  // ---------- messages & instructions from the parent (assets/talimat.json on GitHub) ----------
+  const REMOTE_URL = "https://raw.githubusercontent.com/gokhangeo/trend/robot/assets/talimat.json";
+  let remoteRules = A.get("remoteRules", "");
+  let inbox = [];
+  async function fetchParentNotes() {
+    try {
+      const res = await fetch(REMOTE_URL + "?t=" + Date.now(), { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      remoteRules = String(data.talimatlar || "").slice(0, 2000);
+      A.set("remoteRules", remoteRules);
+      const seen = loadJson("seenNotes", []);
+      (data.mesajlar || []).forEach((m) => {
+        if (!m || !m.id || !m.metin || seen.includes(m.id)) return;
+        if (m.gun && m.gun !== today()) return; // a message for a specific day only shows that day
+        inbox.push({ id: String(m.id), text: String(m.metin).slice(0, 500), from: String(m.kimden || data.kimden || "").slice(0, 30), stars: Math.max(0, Math.min(20, +m.yildiz || 0)) });
+      });
+      deliverNotes();
+    } catch (e) { /* offline: keep the last instructions */ }
+  }
+  // Reads new messages out loud once nothing else is going on.
+  function deliverNotes() {
+    if (!inbox.length) return;
+    if (state !== "idle" || anySheetOpen() || game || riddle || letters || party || ar) { setTimeout(deliverNotes, 4000); return; }
+    const m = inbox.shift();
+    const seen = loadJson("seenNotes", []); seen.push(m.id); A.set("seenNotes", JSON.stringify(seen.slice(-200)));
+    const kid = cfg().kidName || "tatlım";
+    celebrate("📩", m.from ? `Mesaj var! (${m.from})` : "Sana bir mesaj var!");
+    let say = `[bipbip] ${kid}, ${m.from ? m.from + " sana bir mesaj gönderdi" : "sana bir mesaj var"}! ${m.text}`;
+    if (m.stars) { awardStars(m.stars); say += ` Bir de sana ${m.stars} yıldız hediye var!`; }
+    show("", `📩 ${m.from ? m.from + ": " : ""}${m.text}`);
+    perform(say, () => setTimeout(deliverNotes, 1500));
+  }
+  setTimeout(fetchParentNotes, 2500);
+  setInterval(fetchParentNotes, 30 * 60 * 1000);
+
   // ---------- parent settings ----------
   $("gear").addEventListener("click", () => {
     const a = 3 + Math.floor(Math.random() * 7), b = 4 + Math.floor(Math.random() * 6);
@@ -2434,6 +2479,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
     $("model").value = A.get("model", MODEL_DEFAULT);
     $("botName").value = c.botName; $("kidName").value = c.kidName; $("birthday").value = c.birthday;
     $("morningTime").value = c.morning; $("eveningTime").value = c.evening;
+    $("parentRules").value = A.get("parentRules", "");
     $("grade").value = c.grade; $("auto").value = c.auto ? "1" : "0"; $("fx").value = c.fx ? "1" : "0";
     $("overlay").value = A.overlayOn() ? "1" : "0";
     const [r, p, v] = A.getVoice().split(","); $("rate").value = r; $("pitch").value = p;
@@ -2455,6 +2501,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
     A.set("botName", $("botName").value.trim() || "Gizem");
     A.set("kidName", $("kidName").value.trim());
     A.set("birthday", $("birthday").value);
+    A.set("parentRules", $("parentRules").value.trim().slice(0, 2000));
     A.set("morningTime", $("morningTime").value || "07:30");
     A.set("eveningTime", $("eveningTime").value || "20:30");
     setTimeout(() => { syncOverlay(); updateReminder(); }, 0);
