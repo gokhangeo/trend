@@ -21,7 +21,7 @@
   .eyes { transform-origin: 100px 104px; animation: blink 4s infinite; }
   @keyframes blink { 0%,92%,100% { transform: scaleY(1) } 95% { transform: scaleY(.1) } }
   .tip { animation: tip 1.6s ease-in-out infinite; }
-  @keyframes tip { 0%,100% { fill: var(--head-shade) } 50% { fill: var(--ring) } }
+  @keyframes tip { 0%,100% { opacity: .75 } 50% { opacity: 1 } }
   .waving .bot { animation: jump .5s ease-out 2; }
   @keyframes jump { 0%,100% { transform: translateY(0) scale(1) } 40% { transform: translateY(-10%) scale(1.08) } }
   .zzz { position: absolute; top: 0; right: 2%; font: 800 16px sans-serif; color: #c4b5fd; display: none; text-shadow: 0 0 4px #000; }
@@ -47,8 +47,6 @@
   <div class="zzz">z z</div>
 <script>
   document.getElementById("disc").innerHTML = ROBOT_SVG;
-  // Eyes sit slightly right so flipping shows which way the robot walks.
-  document.querySelectorAll(".eye").forEach((e) => e.setAttribute("x", +e.getAttribute("x") + 2));
   applyLook({});
 
   // Called by RobotOverlayService: dir = 1 (right) or -1 (left).

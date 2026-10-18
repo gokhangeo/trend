@@ -32,7 +32,7 @@
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
     font-family: "Nunito", "Roboto", system-ui, sans-serif; overflow: hidden; }
   body { display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 64px 16px 170px; transition: background .8s; }
+    padding: 64px 16px 205px; transition: background .8s; }
   button { font-family: inherit; }
 
   .top { position: fixed; top: 14px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 2; }
@@ -44,7 +44,7 @@
   @keyframes pop { 40% { transform: scale(1.25) } }
 
   .stage { position: relative; display: flex; flex-direction: column; align-items: center; }
-  .bot { position: relative; width: min(60vw, 280px); aspect-ratio: 1; animation: float 4s ease-in-out infinite; }
+  .bot { position: relative; width: min(60vw, 280px, 38vh); aspect-ratio: 1; animation: float 4s ease-in-out infinite; }
   @keyframes float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
   .glow { position: absolute; inset: -8%; border-radius: 50%;
     background: radial-gradient(circle, var(--ring-glow) 40%, transparent 70%);
@@ -53,11 +53,27 @@
   .ring { position: absolute; inset: 0; border-radius: 50%; background: var(--ring-color);
     box-shadow: 0 0 30px var(--ring-glow); transition: background .4s, box-shadow .4s, transform .08s; }
   .disc { position: absolute; inset: 9%; border-radius: 50%; background: var(--disc); overflow: hidden; }
+  /* Sparkly ring: a light sweep circles the ring (the disc hides the middle), the glow breathes, and stars twinkle around it. */
+  #bot .ring { overflow: hidden; animation: ringGlow 2.6s ease-in-out infinite; }
+  #bot .ring::after { content: ""; position: absolute; inset: -2px; border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 0 62%, rgba(255,255,255,.15) 70%, rgba(255,255,255,.9) 78%, rgba(255,255,255,.15) 84%, transparent 90%);
+    animation: sweep 3.2s linear infinite; }
+  #bot .ring::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
+    background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.55), transparent 32%); }
+  @keyframes sweep { to { transform: rotate(360deg) } }
+  @keyframes ringGlow { 0%,100% { box-shadow: 0 0 18px var(--ring-glow), 0 0 2px #fff inset; } 50% { box-shadow: 0 0 46px var(--ring-glow), 0 0 90px var(--ring-glow), 0 0 4px #fff inset; } }
+  .sparkles { position: absolute; inset: -6%; pointer-events: none; animation: sweep 24s linear infinite; }
+  .sparkles i { position: absolute; width: 16px; height: 16px; margin: -8px; font-style: normal; animation: twinkleStar 2.2s ease-in-out infinite; }
+  .sparkles i::before { content: "✦"; position: absolute; inset: 0; color: #fff; font-size: 16px; line-height: 16px; text-align: center;
+    text-shadow: 0 0 6px #fff, 0 0 12px var(--ring-color); }
+  .sparkles i.s::before { font-size: 10px; }
+  @keyframes twinkleStar { 0%,100% { opacity: 0; transform: scale(.3) rotate(0) } 45%,55% { opacity: 1; transform: scale(1.15) rotate(45deg) } }
+  body.sleeping .sparkles, body.sleeping #bot .ring::after { display: none; }
   svg.face { position: absolute; inset: 0; width: 100%; height: 100%; }
   .head-group { transform-origin: 100px 110px; animation: tilt 6s ease-in-out infinite; }
   @keyframes tilt { 0%,100% { transform: rotate(0) } 30% { transform: rotate(-4deg) } 60% { transform: rotate(3deg) } }
   .antenna-tip { animation: blinkTip 2s ease-in-out infinite; }
-  @keyframes blinkTip { 0%,100% { fill: var(--head-shade) } 50% { fill: var(--ring-color) } }
+  @keyframes blinkTip { 0%,100% { opacity: .75 } 50% { opacity: 1; filter: brightness(1.25) } }
   .eyes { transform-origin: 100px 104px; animation: blink 4.5s infinite; }
   @keyframes blink { 0%,92%,100% { transform: scaleY(1) } 95% { transform: scaleY(.1) } }
   .pupils { transition: transform .3s; }
@@ -109,11 +125,14 @@
   .hint { color: var(--muted); font-size: 15px; text-align: center; }
   .thumb { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; border: 2px solid var(--ring); display: none; }
   .thumb.show { display: block; }
-  .modes { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px; scrollbar-width: none; }
-  .modes::-webkit-scrollbar { display: none; }
-  .mode { flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 70px; padding: 9px 8px 7px;
-    border-radius: 16px; border: 1px solid var(--pill-border); background: var(--pill); color: var(--text); font-size: 12.5px; font-weight: 700; }
-  .mode b { font-size: 24px; line-height: 1.1; font-weight: 400; }
+  /* Two fixed rows, no sideways scrolling: a slightly moving finger used to scroll the row instead of pressing the button. */
+  .modes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 0 12px; max-width: 560px; margin: 0 auto; }
+  .mode { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; min-height: 58px;
+    padding: 7px 2px 6px; border-radius: 16px; border: 1px solid var(--pill-border); background: var(--pill); color: var(--text);
+    font-size: 11.5px; font-weight: 700; white-space: nowrap; touch-action: manipulation; transition: transform .08s; }
+  .mode:active { transform: scale(.92); background: #24303f; }
+  .mode b { font-size: 23px; line-height: 1.1; font-weight: 400; }
+  button { touch-action: manipulation; }
   .mode.on { border-color: var(--ring); background: #1f2b2a; }
 
   /* sheets */
@@ -165,6 +184,9 @@
   .shopPreview { width: 170px; aspect-ratio: 1; position: relative; margin: 8px auto 0; }
   .price { color: var(--gold); font-weight: 800; }
   .tile.owned small { color: var(--ring); }
+  .tile { position: relative; }
+  .newTag { position: absolute; top: 6px; right: 6px; font-style: normal; font-size: 10px; font-weight: 900; letter-spacing: .5px;
+    background: #ff5fa2; color: #fff; border-radius: 6px; padding: 2px 5px; }
   .shopBar { position: sticky; bottom: -28px; background: var(--panel); padding: 12px 0 4px; }
 
   /* memory game */
@@ -210,6 +232,7 @@
       <div class="glow"></div>
       <div class="ring" id="ring"></div>
       <div class="disc" id="disc"></div>
+      <div class="sparkles" id="sparkles"></div>
       <div class="zzz">z z</div>
     </div>
     <button class="name" id="name" aria-label="Robotun adını değiştir">Gizem</button>
@@ -225,7 +248,7 @@
     <div class="modes" id="modes">
       <button class="mode on" data-mode="chat"><b>💬</b>Sohbet</button>
       <button class="mode" id="shopBtn"><b>🛍️</b>Dükkan</button>
-      <button class="mode" data-mode="game"><b>🔢</b>Sayı oyunu</button>
+      <button class="mode" data-mode="game"><b>🔢</b>Sayılar</button>
       <button class="mode" data-mode="riddle"><b>🧩</b>Bilmece</button>
       <button class="mode" id="memoryBtn"><b>🃏</b>Hafıza</button>
       <button class="mode" id="danceBtn"><b>💃</b>Dans</button>
@@ -404,6 +427,14 @@
   $("disc").innerHTML = ROBOT_SVG;
   $("shopDisc").innerHTML = ROBOT_SVG;
   const mouth = $("disc").querySelector(".mouth");
+  // Twinkling stars spaced around the ring, each on its own rhythm.
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2, st = document.createElement("i");
+    st.style.left = 50 + 50 * Math.cos(a) + "%"; st.style.top = 50 + 50 * Math.sin(a) + "%";
+    st.style.animationDelay = (i * 0.37) % 2.2 + "s";
+    if (i % 3 === 1) st.className = "s";
+    $("sparkles").appendChild(st);
+  }
   for (let i = 0; i < 40; i++) {
     const s = document.createElement("i");
     s.style.left = Math.random() * 100 + "%"; s.style.top = Math.random() * 70 + "%"; s.style.animationDelay = Math.random() * 3 + "s";
@@ -992,7 +1023,8 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
       html = `<div class="grid">${items.map(([k, it]) => {
         const owned = stats.owned.includes(k), worn = look[it.slot] === k;
         const label = worn ? "Giyiyor ✓" : owned ? "Senin" : `<span class="price">⭐ ${it.price}</span>`;
-        return `<button class="tile ${selected === k ? "on" : ""} ${owned ? "owned" : ""}" data-item="${k}"><b>${it.icon}</b>${it.name}<small>${label}</small></button>`;
+        const badge = it.isNew && !owned ? `<i class="newTag">YENİ</i>` : "";
+        return `<button class="tile ${selected === k ? "on" : ""} ${owned ? "owned" : ""}" data-item="${k}">${badge}<b>${it.icon}</b>${it.name}<small>${label}</small></button>`;
       }).join("")}</div>`;
     }
     $("shopBody").innerHTML = html;
