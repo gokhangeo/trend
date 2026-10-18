@@ -371,7 +371,7 @@
   <!-- memory card game -->
   <div class="sheet" id="memorySheet">
     <div class="panel">
-      <h2>🃏 Hafıza oyunu</h2>
+      <h2>🃏 Hafıza oyunu · <span class="price">⭐ <span id="memStars">0</span></span></h2>
       <small id="memoryInfo">Aynı resimleri bul! Kartlara dokun.</small>
       <div class="cards" id="cards"></div>
       <div class="btns"><button class="btn ghost" data-close>Kapat</button><button class="btn primary" id="memoryAgain">Yeniden</button></div>
@@ -1184,7 +1184,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     const deck = faces.concat(faces).sort(() => Math.random() - 0.5);
     mem = { deck, open: [], done: 0, moves: 0, lock: false };
     $("cards").innerHTML = deck.map((f, i) => `<button class="card" data-i="${i}">${f}</button>`).join("");
-    $("memoryInfo").textContent = "Aynı resimleri bul! Kartlara dokun.";
+    $("memoryInfo").textContent = "Aynı resimleri bul! Her bitirişte 2 yıldız, 8 hamlede bitirirsen 3 yıldız! ⭐";
   }
   $("cards").addEventListener("click", (e) => {
     const c = e.target.closest(".card");
@@ -1204,15 +1204,18 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
       setTimeout(() => { a.classList.remove("up"); b.classList.remove("up"); mem.open = []; mem.lock = false; }, 800);
     }
   });
+  // Every finished game earns stars (a bonus star for a quick finish) and shows it right on top of the game.
   function memoryWon() {
-    if (stats.memDay !== today()) { stats.memDay = today(); stats.memCount = 0; }
     bump("memWins");
-    let msg = `[alkış] Hepsini buldun! ${mem.moves} hamlede bitirdin, süpersin!`;
-    if (stats.memCount < 3) { stats.memCount++; awardStars(2); msg += " İki yıldız kazandın!"; }
-    $("memoryInfo").textContent = `🎉 ${mem.moves} hamlede bitti!`;
+    const n = mem.moves <= 8 ? 3 : 2;
+    awardStars(n);
+    $("memStars").textContent = stats.coins;
+    $("memoryInfo").textContent = `🎉 ${mem.moves} hamlede bitti! +${n} ⭐`;
+    setTimeout(() => celebrate("⭐", `+${n} yıldız kazandın!`), 400);
+    const msg = `[alkış] Hepsini buldun! ${mem.moves} hamlede bitirdin, süpersin! ${n === 3 ? "Çok hızlıydın, üç" : "İki"} yıldız kazandın!`;
     perform(msg, () => {});
   }
-  $("memoryBtn").addEventListener("click", () => { audio(); A.stopSpeaking(); A.stopListening(); setState("idle"); newMemory(); $("memorySheet").classList.add("open"); });
+  $("memoryBtn").addEventListener("click", () => { audio(); A.stopSpeaking(); A.stopListening(); setState("idle"); newMemory(); $("memStars").textContent = stats.coins; $("memorySheet").classList.add("open"); });
   $("memoryAgain").addEventListener("click", newMemory);
 
   // ---------- dance party: instrumental tunes with party effects (no API) ----------
