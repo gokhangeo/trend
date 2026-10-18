@@ -200,20 +200,24 @@
   .party { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; display: none; }
   body.partying .party { display: block; }
   body.arOn .party { z-index: 35; }
-  .lights { position: absolute; inset: -60%; opacity: .55; mix-blend-mode: screen; animation: sweep 5s linear infinite;
+  .lights { position: absolute; inset: -60%; opacity: .4; animation: sweep 5s linear infinite; will-change: transform;
     background: conic-gradient(from 0deg, rgba(255,0,140,.35), transparent 12%, rgba(0,200,255,.35) 25%, transparent 37%, rgba(255,220,0,.35) 50%, transparent 62%, rgba(120,255,120,.35) 75%, transparent 87%, rgba(255,0,140,.35)); }
-  .spot { position: absolute; width: 70vw; height: 70vw; border-radius: 50%; filter: blur(34px); opacity: .45; mix-blend-mode: screen; animation: spotMove 2.6s ease-in-out infinite alternate; }
-  .spot.a { background: #ff4fd8; left: -20vw; top: 10vh; }
-  .spot.b { background: #3bc9ff; right: -20vw; top: 35vh; animation-delay: -1.3s; }
+  /* Soft spots drawn with gradients instead of blur filters and blend modes, which are very slow on phones. */
+  .spot { position: absolute; width: 80vw; height: 80vw; border-radius: 50%; opacity: .5; animation: spotMove 2.6s ease-in-out infinite alternate; will-change: transform; }
+  .spot.a { background: radial-gradient(circle, rgba(255,79,216,.55), transparent 65%); left: -25vw; top: 8vh; }
+  .spot.b { background: radial-gradient(circle, rgba(59,201,255,.55), transparent 65%); right: -25vw; top: 33vh; animation-delay: -1.3s; }
   @keyframes spotMove { to { transform: translate(30vw, -12vh) scale(1.2); } }
-  .discoball { position: absolute; top: -4px; left: calc(50% - 30px); font-size: 60px; transform-origin: 50% -60px; animation: swing 1.1s ease-in-out infinite alternate; filter: drop-shadow(0 0 14px #fff); }
+  .discoball { position: absolute; top: -4px; left: calc(50% - 30px); font-size: 60px; transform-origin: 50% -60px; animation: swing 1.1s ease-in-out infinite alternate; text-shadow: 0 0 14px #fff; will-change: transform; }
   @keyframes swing { from { transform: rotate(-14deg) } to { transform: rotate(14deg) } }
-  .confetti { position: absolute; top: -20px; width: 8px; height: 14px; border-radius: 2px; animation: fall linear forwards; }
+  .confetti { position: absolute; top: -20px; width: 8px; height: 14px; border-radius: 2px; animation: fall linear forwards; will-change: transform; }
   @keyframes fall { to { transform: translateY(115vh) rotate(800deg); } }
-  .balloon { position: absolute; bottom: -70px; font-size: 44px; animation: rise 6s linear forwards; }
+  .balloon { position: absolute; bottom: -70px; font-size: 44px; animation: rise 6s linear forwards; will-change: transform; }
   @keyframes rise { to { transform: translateY(-125vh) translateX(40px) rotate(10deg); } }
-  body.beat.partying #bot .ring { transform: scale(1.07); }
-  body.beat.partying .flashBg { opacity: .14; }
+  #bot .ring.beat { transform: scale(1.07); }
+  .party.beat .flashBg { opacity: .14; }
+  /* Over the live camera only the light-weight effects stay. */
+  body.arOn .lights, body.arOn .spot, body.arOn .flashBg { display: none; }
+  body.arOn .discoball { text-shadow: none; }
   .flashBg { position: absolute; inset: 0; background: #fff; opacity: 0; transition: opacity .12s; }
   body.dancing.d2 .bot, body.dancing.d2 .arBody { animation: hopSpin .9s ease-in-out infinite; }
   @keyframes hopSpin { 0%,100% { transform: translateY(0) rotate(0) } 25% { transform: translateY(-20px) rotate(-9deg) } 50% { transform: translateY(0) rotate(0) } 75% { transform: translateY(-20px) rotate(9deg) } }
@@ -1284,10 +1288,21 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     };
     scheduleBar(); scheduleBar();
     party.timers.push(setInterval(scheduleBar, barDur * 1000));
-    party.timers.push(setInterval(() => { body.classList.add("beat"); setTimeout(() => body.classList.remove("beat"), 130); }, stepDur * 4 * 1000));
-    party.timers.push(setInterval(() => spawnBit("", "confetti", { left: Math.random() * 100 + "%", background: pick(CONFETTI),
-      animationDuration: 2.5 + Math.random() * 2 + "s", width: 6 + Math.random() * 6 + "px" }, 4800), 110));
-    party.timers.push(setInterval(() => spawnBit(pick(["🎈", "🎈", "🎉", "🎊", "⭐"]), "balloon", { left: 5 + Math.random() * 85 + "%" }, 6200), 1500));
+    if (!ar) {
+      // Beat pulse on the ring and a soft flash, touching only those two elements.
+      const pulse = [ring, $("party")];
+      party.timers.push(setInterval(() => {
+        pulse.forEach((el) => el.classList.add("beat"));
+        setTimeout(() => pulse.forEach((el) => el.classList.remove("beat")), 130);
+      }, stepDur * 4 * 1000));
+    }
+    const confettiEvery = ar ? 380 : 170, maxBits = ar ? 14 : 34;
+    party.timers.push(setInterval(() => {
+      if ($("partyBits").childElementCount >= maxBits) return;
+      spawnBit("", "confetti", { left: Math.random() * 100 + "%", background: pick(CONFETTI),
+        animationDuration: 2.5 + Math.random() * 2 + "s", width: 6 + Math.random() * 6 + "px" }, 4800);
+    }, confettiEvery));
+    party.timers.push(setInterval(() => spawnBit(pick(["🎈", "🎈", "🎉", "🎊", "⭐"]), "balloon", { left: 5 + Math.random() * 85 + "%" }, 6200), ar ? 2600 : 1500));
     body.classList.add("dancing", "partying", tune.move);
     party.end = setTimeout(() => { stopParty(); if (onEnd) onEnd(tune); }, barDur * 8 * 1000 + 400);
     return tune;
@@ -1297,7 +1312,8 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     party.timers.forEach(clearInterval); clearTimeout(party.end);
     party = null;
     stopMusicBus();
-    body.classList.remove("dancing", "partying", "d1", "d2", "d3", "beat");
+    body.classList.remove("dancing", "partying", "d1", "d2", "d3");
+    ring.classList.remove("beat"); $("party").classList.remove("beat");
     $("partyBits").innerHTML = "";
   }
   function danceParty() {
