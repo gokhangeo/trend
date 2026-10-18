@@ -126,12 +126,12 @@
   .thumb { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; border: 2px solid var(--ring); display: none; }
   .thumb.show { display: block; }
   /* Two fixed rows, no sideways scrolling: a slightly moving finger used to scroll the row instead of pressing the button. */
-  .modes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 0 12px; max-width: 560px; margin: 0 auto; }
+  .modes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 0 10px; max-width: 600px; margin: 0 auto; }
   .mode { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; min-height: 58px;
     padding: 7px 2px 6px; border-radius: 16px; border: 1px solid var(--pill-border); background: var(--pill); color: var(--text);
-    font-size: 11.5px; font-weight: 700; white-space: nowrap; touch-action: manipulation; transition: transform .08s; }
+    font-size: 11px; font-weight: 700; white-space: nowrap; touch-action: manipulation; transition: transform .08s; overflow: hidden; }
   .mode:active { transform: scale(.92); background: #24303f; }
-  .mode b { font-size: 23px; line-height: 1.1; font-weight: 400; }
+  .mode b { font-size: 22px; line-height: 1.1; font-weight: 400; }
   button { touch-action: manipulation; }
   .mode.on { border-color: var(--ring); background: #1f2b2a; }
 
@@ -196,6 +196,58 @@
   .card.up, .card.done { background: #f8f9fa; color: initial; transform: rotateY(180deg) scaleX(-1); }
   .card.done { opacity: .55; }
 
+  /* party effects */
+  .party { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; display: none; }
+  body.partying .party { display: block; }
+  body.arOn .party { z-index: 35; }
+  .lights { position: absolute; inset: -60%; opacity: .55; mix-blend-mode: screen; animation: sweep 5s linear infinite;
+    background: conic-gradient(from 0deg, rgba(255,0,140,.35), transparent 12%, rgba(0,200,255,.35) 25%, transparent 37%, rgba(255,220,0,.35) 50%, transparent 62%, rgba(120,255,120,.35) 75%, transparent 87%, rgba(255,0,140,.35)); }
+  .spot { position: absolute; width: 70vw; height: 70vw; border-radius: 50%; filter: blur(34px); opacity: .45; mix-blend-mode: screen; animation: spotMove 2.6s ease-in-out infinite alternate; }
+  .spot.a { background: #ff4fd8; left: -20vw; top: 10vh; }
+  .spot.b { background: #3bc9ff; right: -20vw; top: 35vh; animation-delay: -1.3s; }
+  @keyframes spotMove { to { transform: translate(30vw, -12vh) scale(1.2); } }
+  .discoball { position: absolute; top: -4px; left: calc(50% - 30px); font-size: 60px; transform-origin: 50% -60px; animation: swing 1.1s ease-in-out infinite alternate; filter: drop-shadow(0 0 14px #fff); }
+  @keyframes swing { from { transform: rotate(-14deg) } to { transform: rotate(14deg) } }
+  .confetti { position: absolute; top: -20px; width: 8px; height: 14px; border-radius: 2px; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(115vh) rotate(800deg); } }
+  .balloon { position: absolute; bottom: -70px; font-size: 44px; animation: rise 6s linear forwards; }
+  @keyframes rise { to { transform: translateY(-125vh) translateX(40px) rotate(10deg); } }
+  body.beat.partying #bot .ring { transform: scale(1.07); }
+  body.beat.partying .flashBg { opacity: .14; }
+  .flashBg { position: absolute; inset: 0; background: #fff; opacity: 0; transition: opacity .12s; }
+  body.dancing.d2 .bot, body.dancing.d2 .arBody { animation: hopSpin .9s ease-in-out infinite; }
+  @keyframes hopSpin { 0%,100% { transform: translateY(0) rotate(0) } 25% { transform: translateY(-20px) rotate(-9deg) } 50% { transform: translateY(0) rotate(0) } 75% { transform: translateY(-20px) rotate(9deg) } }
+  body.dancing.d3 .bot, body.dancing.d3 .arBody { animation: sideStep .8s ease-in-out infinite; }
+  @keyframes sideStep { 0%,100% { transform: translateX(-18px) rotate(-6deg) } 50% { transform: translateX(18px) rotate(6deg) } }
+
+  /* camera view: the robot standing in the real world */
+  .ar { position: fixed; inset: 0; z-index: 30; background: #000; display: none; touch-action: none; }
+  body.arOn .ar { display: block; }
+  .ar video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .arStage { position: absolute; inset: 0; }
+  .arBot { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; }
+  .arBody { width: 100%; animation: float 3s ease-in-out infinite; transform-origin: 50% 90%; }
+  .arBody svg.face { position: static; display: block; width: 100%; height: auto; }
+  .arFlip { transition: transform .25s; }
+  .arShadow { position: absolute; left: 18%; right: 18%; bottom: -3%; height: 9%; border-radius: 50%; background: radial-gradient(rgba(0,0,0,.45), transparent 70%); }
+  .arBot.jump .arBody { animation: hop .45s ease-out 2; }
+  .arBot.walking .arBody { animation: sideStep .7s ease-in-out infinite; }
+  body.dancing.d1 .arBody { animation: dance .46s ease-in-out infinite; }
+  .arTop { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; align-items: center; gap: 10px; z-index: 40; }
+  .arTop button { width: 46px; height: 46px; border-radius: 50%; border: 0; background: rgba(0,0,0,.5); color: #fff; font-size: 22px; flex: none; }
+  .arTop span { flex: 1; text-align: center; color: #fff; font-size: 14px; text-shadow: 0 1px 4px #000; }
+  .arBar { position: absolute; left: 10px; right: 10px; bottom: 14px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; z-index: 40; }
+  .arBar button { border: 0; border-radius: 16px; background: rgba(0,0,0,.55); color: #fff; font-size: 11.5px; font-weight: 700; padding: 8px 2px 6px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .arBar button b { font-size: 22px; font-weight: 400; }
+  .arBar button.on { background: rgba(61,219,164,.75); color: #10141a; }
+  .arFlash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 45; transition: opacity .3s; }
+  .arFlash.go { opacity: .9; transition: none; }
+  .arShot { position: absolute; inset: 0; z-index: 50; background: rgba(0,0,0,.85); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 16px; gap: 10px; }
+  .arShot.show { display: flex; }
+  .arShot img { max-width: 100%; max-height: 72vh; border-radius: 16px; border: 3px solid #fff; }
+  .arShot small { color: #fff; text-align: center; }
+  .arMsg { position: absolute; left: 16px; right: 16px; top: 40%; text-align: center; color: #fff; font-size: 17px; line-height: 1.5; z-index: 41; }
+
   /* dance */
   body.dancing .bot { animation: dance .46s ease-in-out infinite; }
   @keyframes dance { 0%,100% { transform: rotate(-9deg) translateY(0) } 50% { transform: rotate(9deg) translateY(-16px) } }
@@ -256,10 +308,32 @@
       <button class="mode" data-mode="english"><b>🇬🇧</b>English</button>
       <button class="mode" data-mode="story"><b>🌙</b>Masal</button>
       <button class="mode" id="cam"><b>📷</b>Ödev</button>
+      <button class="mode" id="arBtn"><b>📸</b>Kamera</button>
     </div>
   </div>
 
   <div class="notes" id="notes"></div>
+  <div class="party" id="party"><div class="flashBg"></div><div class="lights"></div><div class="spot a"></div><div class="spot b"></div><div class="discoball">🪩</div><div id="partyBits"></div></div>
+
+  <!-- camera view -->
+  <div class="ar" id="ar">
+    <video id="arVideo" autoplay playsinline muted></video>
+    <div class="arStage" id="arStage">
+      <div class="arBot" id="arBot"><div class="arShadow"></div><div class="arFlip" id="arFlipBox"><div class="arBody" id="arBody"></div></div></div>
+    </div>
+    <div class="arMsg" id="arMsg"></div>
+    <div class="arTop"><button id="arClose" aria-label="Kapat">✕</button><span id="arHint">Robotu sürükle · iki parmakla büyüt</span><button id="arSwitch" aria-label="Kamerayı çevir">🔄</button></div>
+    <div class="arBar">
+      <button data-ar="dance"><b>💃</b>Dans</button>
+      <button data-ar="wave"><b>👋</b>Selam</button>
+      <button data-ar="walk"><b>🚶</b>Gez</button>
+      <button data-ar="smaller"><b>➖</b>Küçült</button>
+      <button data-ar="bigger"><b>➕</b>Büyüt</button>
+      <button data-ar="photo"><b>📸</b>Foto</button>
+    </div>
+    <div class="arFlash" id="arFlash"></div>
+    <div class="arShot" id="arShot"><img id="arShotImg" alt="Robotlu fotoğraf"><small id="arShotMsg"></small><button class="btn ghost" id="arShotClose" style="flex:none;padding:12px 30px">Tamam</button></div>
+  </div>
   <div class="celebrate" id="celebrate"><div><b id="celIcon">🏆</b><span id="celText"></span></div></div>
 
   <!-- stars & badges (for the child) -->
@@ -414,6 +488,7 @@
     get(k, d) { return localStorage.getItem(k) ?? d; }, set(k, v) { localStorage.setItem(k, v); },
     setVoice() {}, getVoice() { return "1.0,1.15,"; }, voices() { return "[]"; }, openTtsSettings() {},
     takePhoto() {}, overlayOn() { return false; }, setOverlay() {}, setLook() {}, openBatterySettings() {},
+    cameraSupported() { return true; }, savePhoto() { setTimeout(() => onPhotoSaved("Önizleme: kaydedildi"), 200); },
     reloadApp() { location.reload(); }, checkUpdate() { setTimeout(() => onUpdateResult("Tarayıcı önizlemesi"), 200); }, versionInfo() { return "önizleme"; },
     loadCloudVoices(p) { setTimeout(() => onCloudVoices(JSON.stringify([{ id: "a", label: "Aoede · kadın · en doğal" }])), 300); }
   };
@@ -443,7 +518,6 @@
 
   let state = "idle", mode = "chat", history = [], autoTurns = 0, mouthTimer = null, queue = [], pendingImage = null;
   let afterSpeak = null, rateMul = 1, sessionCounted = false, game = null, pendingNews = [];
-  let danceTimer = null, notesTimer = null, musicTimer = null, nextBarAt = 0, barNo = 0, lastSong = -1;
 
   // ---------- stored data ----------
   function loadJson(key, def) { try { return JSON.parse(A.get(key, "") || "null") || def; } catch (e) { return def; } }
@@ -530,7 +604,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     state = s;
     body.classList.remove("listening", "thinking", "speaking");
     if (s !== "idle") body.classList.add(s);
-    if (s !== "speaking") { stopMouth(); queue = []; afterSpeak = null; if (musicTimer && !danceTimer) stopDance(); }
+    if (s !== "speaking") { stopMouth(); queue = []; afterSpeak = null; }
     if (s !== "listening") ring.style.transform = "";
     updateHint();
   }
@@ -630,12 +704,6 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
       celebrate(step.news.icon, step.news.title);
       setTimeout(nextStep, cfg().fx ? playFx("alkis") : 300);
     } else {
-      if (step.lyric) {
-        if (step.outro) stopDance();
-        const el = document.createElement("div"); el.style.fontSize = "22px"; el.style.fontWeight = "800";
-        el.textContent = (step.outro ? "💖 " : "🎵 ") + step.say;
-        bubble.innerHTML = ""; bubble.appendChild(el);
-      }
       A.speakWith(step.say, step.lang, String(rateMul));
     }
   }
@@ -956,7 +1024,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   window.onSpeakStart = () => { if (state === "speaking") startMouth(); };
   window.onSpeakEnd = () => { stopMouth(); nextStep(); };
   window.onTtsError = (msg) => show("", msg);
-  window.onPaused = () => { if (state !== "idle") setState("idle"); stopDance(); autoTurns = 0; updateGift(); };
+  window.onPaused = () => { if (state !== "idle") setState("idle"); stopParty(); autoTurns = 0; updateGift(); };
   window.startTalk = () => { if (anySheetOpen()) return; A.stopSpeaking(); autoTurns = 0; listenNow(); };
 
   window.onPhoto = (b64) => {
@@ -975,7 +1043,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   // ---------- interaction ----------
   $("bot").addEventListener("click", () => {
     audio();
-    if (danceTimer) { stopDance(); return; } // tapped during the song intro
+    if (party) { stopParty(); return; } // tapping the robot ends the dance
     if (body.classList.contains("sleeping")) {
       setSleeping(false);
       if (mode === "story") { setMode("chat"); return; }
@@ -1147,75 +1215,264 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   $("memoryBtn").addEventListener("click", () => { audio(); A.stopSpeaking(); A.stopListening(); setState("idle"); newMemory(); $("memorySheet").classList.add("open"); });
   $("memoryAgain").addEventListener("click", newMemory);
 
-  // ---------- dance party: robot sings while a backing track plays (no API) ----------
-  // Original little songs; {kid} and {bot} are filled in with the child's and the robot's names.
-  const SONGS = [
-    { title: "Robot Dansı", lines: [
-      "{bot} geldi, dans başladı, la la la!", "Kollar yukarı, eller havaya, ha ha ha!", "Sağa dön, sola dön, zıpla zıpla!",
-      "{kid} ile dans ediyoruz, ne güzel ya!", "La la la, la la la, robot dansı!", "Bip bip bop, bip bip bop, haydi bir daha!"] },
-    { title: "Yıldızlar Şarkısı", lines: [
-      "Gökyüzünde yıldızlar, parıl parıl parlıyor.", "{kid} ile {bot}, neşeyle dans ediyor.", "Bir adım öne, bir adım geri,",
-      "Döndük döndük, uçtuk sanki peri!", "La la la, yıldızlar bizimle,", "Hadi sen de söyle, benimle birlikte!"] },
-    { title: "Gökkuşağı Şarkısı", lines: [
-      "Kırmızı, turuncu, sarı ve yeşil,", "Mavi ve mor, gökkuşağı ne neşeli!", "Renkler dans ediyor, biz de dans edelim,",
-      "{kid}, ellerini çırp, hep birlikte gülelim!", "Şak şak şak, şak şak şak,", "Gökkuşağı şarkısı, ne kadar parlak!"] },
-    { title: "Sayı Şarkısı", lines: [
-      "Bir, iki, üç, ellerimi çırpayım,", "Dört, beş, altı, ayaklarımı vurayım,", "Yedi, sekiz, dokuz, dönerim fır fır,",
-      "On dedim mi, zıplarım hop hop hop!", "Saymayı seviyoruz, {kid} ile ben,", "Hadi bir daha sayalım, en baştan!"] },
-    { title: "Hayvanlar Şarkısı", lines: [
-      "Kedi miyav der, köpek hav hav,", "İnek mööö der, ördek vak vak,", "Kuzu meee der, horoz ü ürü üüü,",
-      "{bot} der ki bip bip, hadi dans edelim şimdi!", "Hayvanlar dans ediyor, sen de katıl bize,", "{kid}, hadi zıpla, şarkı söyle bizimle!"] }
+  // ---------- dance party: instrumental tunes with party effects (no API) ----------
+  // Each tune plays 8 bars of 16 steps; step() places the notes of one 16th-note step.
+  const TUNES = [
+    { name: "Disko", icon: "🪩", bpm: 124, move: "d1", chords: [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]],
+      step(i, bar, ch, t, b) {
+        if (i % 4 === 0) kick(t);
+        if (i % 4 === 2) hat(t, 0.1); else if (i % 2) hat(t, 0.04);
+        if (i % 8 === 4) clap(t, 0.25);
+        if (i % 2 === 0) bass(NOTE(ch[0] - 24 + (i % 4 === 2 ? 12 : 0)), t, 0.16, b * 1.6);
+        if ([0, 3, 6, 10, 12].includes(i)) pluck(NOTE(ch[(i / 3 | 0) % 3] + 12), t, 0.06);
+      } },
+    { name: "Şeker Pop", icon: "🍭", bpm: 112, move: "d2", chords: [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]],
+      step(i, bar, ch, t, b) {
+        if (i % 8 === 0) kick(t, 0.4);
+        if (i % 8 === 4) clap(t, 0.2);
+        if (i % 4 === 2) hat(t, 0.05);
+        if (i % 4 === 0) bass(NOTE(ch[0] - 12), t, 0.14, b * 3);
+        const m = [2, null, 1, 2, 0, null, 1, null, 2, null, 0, 1, 2, null, 1, 0][i];
+        if (m !== null) bell(NOTE(ch[m] + 12 + (bar % 2 && i > 11 ? 2 : 0)), t, 0.09, 0.5);
+      } },
+    { name: "Tropik", icon: "🏝️", bpm: 104, move: "d3", chords: [[62, 65, 69], [67, 71, 74], [60, 64, 67], [65, 69, 72]],
+      step(i, bar, ch, t, b) {
+        if ([0, 3, 6, 10, 12].includes(i)) marimba(NOTE(ch[i % 3] + 12), t, 0.16);
+        if ([2, 8, 14].includes(i)) marimba(NOTE(ch[(i + 1) % 3] + 24), t, 0.08);
+        if ([0, 6, 8, 14].includes(i)) bass(NOTE(ch[0] - 12), t, 0.15, b * 2);
+        if (i % 2) hat(t, 0.03);
+        if (i === 4 || i === 12) clap(t, 0.12);
+      } },
+    { name: "Uzay", icon: "🚀", bpm: 120, move: "d1", chords: [[57, 60, 64], [53, 57, 60], [55, 59, 62], [52, 55, 59]],
+      step(i, bar, ch, t, b) {
+        pluck(NOTE(ch[i % 3] + (i % 6 < 3 ? 12 : 24)), t, 0.045, 0.25);
+        if (i % 4 === 0) kick(t, 0.35);
+        if (i % 8 === 0) bass(NOTE(ch[0] - 24), t, 0.18, b * 7);
+        if (i === 8) bell(NOTE(ch[2] + 24), t, 0.06, 1.2);
+      } },
+    { name: "Çiftlik Polkası", icon: "🐄", bpm: 132, move: "d2", chords: [[60, 64, 67], [55, 59, 62], [60, 64, 67], [55, 59, 65]],
+      step(i, bar, ch, t, b) {
+        if (i % 4 === 0) bass(NOTE(ch[0] - 12), t, 0.16, b * 1.5);
+        if (i % 4 === 2) { pluck(NOTE(ch[1]), t, 0.05, 0.15); pluck(NOTE(ch[2]), t, 0.05, 0.15); }
+        const m = [0, null, 1, 2, 2, null, 1, 0, 1, null, 2, null, 0, null, null, null][i];
+        if (m !== null) bell(NOTE(ch[m] + 12), t, 0.09, 0.3);
+      } }
   ];
-  const BEAT = 0.25;
-  // Schedules one 16-step bar of the backing track (kept soft so the singing stays clear).
-  function scheduleBar() {
-    const c = audio();
-    if (nextBarAt < c.currentTime) nextBarAt = c.currentTime + 0.05;
-    const t0 = nextBarAt - c.currentTime;
-    const progression = [[60, 64, 67], [57, 60, 64], [53, 57, 60], [55, 59, 62]]; // C Am F G
-    const chord = progression[barNo % 4];
-    const melody = [0, 2, 1, 2, 0, 1, 2, 1].map((i) => chord[i] + 12);
-    melody.forEach((n, i) => bell(NOTE(n), t0 + i * 2 * BEAT, 0.05, 0.4));
-    for (let i = 0; i < 4; i++) bell(NOTE(chord[0] - 12), t0 + i * 4 * BEAT, 0.1, 0.5);
-    clap(t0 + 4 * BEAT, 0.12); clap(t0 + 12 * BEAT, 0.12);
-    nextBarAt += 16 * BEAT; barNo++;
+  let party = null, lastTune = -1;
+  const CONFETTI = ["#ff5fa2", "#ffd43b", "#3ddba4", "#4fb3ff", "#a78bfa", "#ff922b", "#fff"];
+  function spawnBit(html, cls, styles, life) {
+    const el = document.createElement("div"); el.className = cls; el.innerHTML = html;
+    Object.assign(el.style, styles);
+    $("partyBits").appendChild(el); setTimeout(() => el.remove(), life);
   }
-  function stopDance() {
-    clearInterval(notesTimer); clearInterval(musicTimer); clearTimeout(danceTimer);
-    notesTimer = musicTimer = danceTimer = null;
-    body.classList.remove("dancing");
+  /** Starts music + lights + confetti; onEnd(tune) runs when the tune finishes (not when stopped early). */
+  function startParty(onEnd) {
+    stopParty();
+    let k; do { k = Math.floor(Math.random() * TUNES.length); } while (k === lastTune);
+    lastTune = k;
+    const tune = TUNES[k], stepDur = 60 / tune.bpm / 4, barDur = stepDur * 16, c = audio();
+    startMusicBus();
+    party = { tune, bar: 0, next: c.currentTime + 0.1, timers: [] };
+    const scheduleBar = () => {
+      if (!party || party.bar >= 8) return;
+      const t0 = Math.max(0, party.next - c.currentTime), ch = tune.chords[party.bar % tune.chords.length];
+      for (let i = 0; i < 16; i++) tune.step(i, party.bar, ch, t0 + i * stepDur, stepDur);
+      party.next += barDur; party.bar++;
+    };
+    scheduleBar(); scheduleBar();
+    party.timers.push(setInterval(scheduleBar, barDur * 1000));
+    party.timers.push(setInterval(() => { body.classList.add("beat"); setTimeout(() => body.classList.remove("beat"), 130); }, stepDur * 4 * 1000));
+    party.timers.push(setInterval(() => spawnBit("", "confetti", { left: Math.random() * 100 + "%", background: pick(CONFETTI),
+      animationDuration: 2.5 + Math.random() * 2 + "s", width: 6 + Math.random() * 6 + "px" }, 4800), 110));
+    party.timers.push(setInterval(() => spawnBit(pick(["🎈", "🎈", "🎉", "🎊", "⭐"]), "balloon", { left: 5 + Math.random() * 85 + "%" }, 6200), 1500));
+    body.classList.add("dancing", "partying", tune.move);
+    party.end = setTimeout(() => { stopParty(); if (onEnd) onEnd(tune); }, barDur * 8 * 1000 + 400);
+    return tune;
+  }
+  function stopParty() {
+    if (!party) return;
+    party.timers.forEach(clearInterval); clearTimeout(party.end);
+    party = null;
+    stopMusicBus();
+    body.classList.remove("dancing", "partying", "d1", "d2", "d3", "beat");
+    $("partyBits").innerHTML = "";
   }
   function danceParty() {
     audio(); A.stopSpeaking(); A.stopListening(); setState("idle");
-    if (danceTimer || musicTimer) return;
+    if (party) { stopParty(); return; }
     bump("dances");
-    body.classList.add("dancing");
-    let k; do { k = Math.floor(Math.random() * SONGS.length); } while (k === lastSong && SONGS.length > 1);
-    lastSong = k;
-    const c = cfg(), kid = c.kidName || "sen", song = SONGS[k];
-    const lines = song.lines.map((l) => l.replace(/\{kid\}/g, kid).replace(/\{bot\}/g, c.botName));
-    nextBarAt = 0; barNo = 0;
-    scheduleBar(); scheduleBar();
-    musicTimer = setInterval(scheduleBar, 16 * BEAT * 1000);
-    notesTimer = setInterval(() => {
-      const n = document.createElement("span");
-      n.textContent = pick(["🎵", "🎶", "✨", "💖", "⭐"]);
-      n.style.left = 10 + Math.random() * 80 + "%"; n.style.top = 30 + Math.random() * 40 + "%";
-      $("notes").appendChild(n); setTimeout(() => n.remove(), 2300);
-    }, 280);
-    show("", `🎤 ${song.title}`);
-    // One bar of music as an intro, then she sings line by line; the music stops when the song ends.
-    danceTimer = setTimeout(() => {
-      danceTimer = null;
-      setState("speaking");
-      queue = lines.map((l) => ({ say: l, lang: "tr", lyric: true }));
-      queue.push({ say: "Yaşasın! Çok eğlendim! Sen harika dans ediyorsun!", lang: "tr", lyric: true, outro: true });
-      afterSpeak = () => {};
-      rateMul = 1.05;
-      nextStep();
-    }, 16 * BEAT * 1000);
+    const tune = startParty(() => { show("", "🎉 Çok eğlendik! Bir daha dans edelim mi?"); if (cfg().fx) playFx("kikir"); });
+    show("", `${tune.icon} ${tune.name} partisi! Haydi dans!`);
   }
   $("danceBtn").addEventListener("click", danceParty);
+
+  // ---------- camera view: the robot in the real world ----------
+  let ar = null;
+  const arBot = $("arBot");
+  function arPlace() {
+    const W = window.innerWidth, H = window.innerHeight, h = ar.size * 1.11;
+    ar.x = Math.max(-ar.size * 0.3, Math.min(W - ar.size * 0.7, ar.x));
+    ar.y = Math.max(40, Math.min(H - 40, ar.y));
+    arBot.style.width = ar.size + "px";
+    arBot.style.left = ar.x + "px";
+    arBot.style.top = ar.y - h + "px"; // ar.y is where the feet stand
+    $("arFlipBox").style.transform = ar.flip ? "scaleX(-1)" : "";
+  }
+  async function startCamera() {
+    if (ar.stream) ar.stream.getTracks().forEach((t) => t.stop());
+    $("arMsg").textContent = "";
+    try {
+      ar.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: ar.facing, width: { ideal: 1280 } }, audio: false });
+      $("arVideo").srcObject = ar.stream;
+    } catch (e) {
+      $("arMsg").textContent = typeof A.cameraSupported === "function"
+        ? "Kamera açılamadı. Kamera iznini verip tekrar deneyin. 📷"
+        : "Kamerada robot için uygulamanın yeni sürümünü bir kez yüklemeniz gerekiyor (robot-arkadas.apk sürüm 2.1, GitHub robot dalındaki apk klasöründe). Sonra her şey yine kendiliğinden güncellenecek.";
+    }
+  }
+  function openAR() {
+    audio(); A.stopSpeaking(); A.stopListening(); setState("idle"); stopParty();
+    ar = { x: window.innerWidth / 2 - 90, y: window.innerHeight * 0.72, size: 180, flip: false, facing: "environment", stream: null, walk: null };
+    $("arBody").innerHTML = robotSvg({ full: true });
+    applyLook(look);
+    arPlace();
+    body.classList.add("arOn");
+    startCamera();
+    // Android stops the camera while the app is in the background (or asking for permission); restart it on return.
+    ar.watch = setInterval(() => {
+      const track = ar && ar.stream && ar.stream.getVideoTracks()[0];
+      if (track && track.readyState === "ended" && !document.hidden) startCamera();
+    }, 1500);
+  }
+  function closeAR() {
+    if (!ar) return;
+    if (ar.stream) ar.stream.getTracks().forEach((t) => t.stop());
+    clearInterval(ar.walk); clearInterval(ar.watch);
+    stopParty();
+    $("arVideo").srcObject = null;
+    body.classList.remove("arOn");
+    document.querySelectorAll(".arBar button").forEach((b) => b.classList.remove("on"));
+    ar = null;
+  }
+  function arJump() {
+    arBot.classList.remove("jump"); void arBot.offsetWidth; arBot.classList.add("jump");
+    setTimeout(() => arBot.classList.remove("jump"), 950);
+  }
+  function arToggleWalk(btn) {
+    if (ar.walk) { clearInterval(ar.walk); ar.walk = null; arBot.classList.remove("walking"); btn.classList.remove("on"); return; }
+    btn.classList.add("on"); arBot.classList.add("walking");
+    let tx = ar.x;
+    ar.walk = setInterval(() => {
+      if (Math.abs(tx - ar.x) < 3) tx = Math.random() * (window.innerWidth - ar.size);
+      const step = Math.sign(tx - ar.x) * Math.min(2.2, Math.abs(tx - ar.x));
+      ar.flip = step < 0;
+      ar.x += step;
+      arPlace();
+    }, 30);
+  }
+  function arAction(kind, btn) {
+    if (kind === "dance") {
+      if (party) { stopParty(); btn.classList.remove("on"); return; }
+      btn.classList.add("on"); bump("dances");
+      startParty(() => btn.classList.remove("on"));
+    } else if (kind === "wave") {
+      arJump(); if (cfg().fx) playFx("kikir");
+      A.speak(pick([`Merhaba ${cfg().kidName || ""}!`, "Burası çok güzel!", "Beni buraya getirdiğin için teşekkürler!", "Hihi, kamerada çok tatlı çıktım!"]));
+    } else if (kind === "walk") arToggleWalk(btn);
+    else if (kind === "smaller" || kind === "bigger") {
+      const bottomCenter = ar.x + ar.size / 2;
+      ar.size = Math.max(70, Math.min(window.innerWidth * 1.3, ar.size * (kind === "bigger" ? 1.2 : 1 / 1.2)));
+      ar.x = bottomCenter - ar.size / 2;
+      arPlace();
+    } else if (kind === "photo") arPhoto();
+  }
+  document.querySelectorAll("[data-ar]").forEach((b) => b.addEventListener("click", () => arAction(b.dataset.ar, b)));
+  $("arClose").addEventListener("click", closeAR);
+  $("arSwitch").addEventListener("click", () => { ar.facing = ar.facing === "environment" ? "user" : "environment"; startCamera(); });
+  $("arBtn").addEventListener("click", openAR);
+
+  // One finger drags the robot, two fingers pinch it bigger or smaller, a quick tap makes it jump.
+  const touches = new Map();
+  let gesture = null;
+  $("arStage").addEventListener("pointerdown", (e) => {
+    const r = arBot.getBoundingClientRect();
+    const onBot = e.clientX > r.left && e.clientX < r.right && e.clientY > r.top && e.clientY < r.bottom;
+    if (!onBot && touches.size === 0) return;
+    $("arStage").setPointerCapture(e.pointerId);
+    touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const pts = [...touches.values()];
+    if (pts.length === 1) gesture = { kind: "drag", sx: e.clientX, sy: e.clientY, ox: ar.x, oy: ar.y, t: Date.now(), moved: false };
+    else if (pts.length === 2) gesture = { kind: "pinch", d: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), size: ar.size, cx: ar.x + ar.size / 2 };
+  });
+  $("arStage").addEventListener("pointermove", (e) => {
+    if (!touches.has(e.pointerId) || !gesture) return;
+    touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const pts = [...touches.values()];
+    if (gesture.kind === "drag" && pts.length === 1) {
+      const dx = e.clientX - gesture.sx, dy = e.clientY - gesture.sy;
+      if (Math.abs(dx) + Math.abs(dy) > 8) gesture.moved = true;
+      ar.x = gesture.ox + dx; ar.y = gesture.oy + dy; arPlace();
+    } else if (gesture.kind === "pinch" && pts.length === 2) {
+      const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      ar.size = Math.max(70, Math.min(window.innerWidth * 1.3, gesture.size * d / gesture.d));
+      ar.x = gesture.cx - ar.size / 2; arPlace();
+    }
+  });
+  const endTouch = (e) => {
+    if (!touches.has(e.pointerId)) return;
+    touches.delete(e.pointerId);
+    if (gesture && gesture.kind === "drag" && !gesture.moved && Date.now() - gesture.t < 300) {
+      arJump(); if (cfg().fx) playFx(pick(["kikir", "bipbip", "vay"]));
+    }
+    gesture = touches.size === 1 ? null : gesture && touches.size ? gesture : null;
+  };
+  $("arStage").addEventListener("pointerup", endTouch);
+  $("arStage").addEventListener("pointercancel", endTouch);
+
+  // Turns the on-screen robot into a picture: hidden parts removed, CSS colours written in.
+  function svgToImage(svg, w, h) {
+    const clone = svg.cloneNode(true), orig = svg.querySelectorAll("*"), copies = clone.querySelectorAll("*");
+    orig.forEach((el, i) => { const st = getComputedStyle(el); if (st.display === "none" || st.visibility === "hidden") copies[i].setAttribute("data-drop", "1"); });
+    clone.querySelectorAll("[data-drop]").forEach((el) => el.remove());
+    clone.setAttribute("width", w); clone.setAttribute("height", h);
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    const cs = getComputedStyle(document.documentElement);
+    const xml = new XMLSerializer().serializeToString(clone).replace(/var\((--[a-z0-9-]+)\)/g, (m, name) => cs.getPropertyValue(name).trim() || "#000");
+    return new Promise((res) => {
+      const img = new Image();
+      img.onload = () => res(img); img.onerror = () => res(null);
+      img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml);
+    });
+  }
+  async function arPhoto() {
+    const v = $("arVideo"), scale = Math.min(2, window.devicePixelRatio || 1);
+    const W = Math.round(window.innerWidth * scale), H = Math.round(window.innerHeight * scale);
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const ctx = cv.getContext("2d");
+    if (v.videoWidth) {
+      const k = Math.max(W / v.videoWidth, H / v.videoHeight), dw = v.videoWidth * k, dh = v.videoHeight * k;
+      ctx.drawImage(v, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    } else { ctx.fillStyle = "#222"; ctx.fillRect(0, 0, W, H); }
+    const r = arBot.getBoundingClientRect(), svg = $("arBody").querySelector("svg");
+    const img = await svgToImage(svg, r.width, r.width * 1.11);
+    ctx.fillStyle = "rgba(0,0,0,.35)";
+    ctx.beginPath(); ctx.ellipse((r.left + r.width / 2) * scale, (r.top + r.width * 1.1) * scale, r.width * 0.32 * scale, r.width * 0.05 * scale, 0, 0, 7); ctx.fill();
+    if (img) {
+      ctx.save();
+      if (ar.flip) { ctx.translate((r.left * 2 + r.width) * scale, 0); ctx.scale(-1, 1); }
+      ctx.drawImage(img, r.left * scale, r.top * scale, r.width * scale, r.width * 1.11 * scale);
+      ctx.restore();
+    }
+    const url = cv.toDataURL("image/jpeg", 0.9);
+    $("arFlash").classList.add("go"); setTimeout(() => $("arFlash").classList.remove("go"), 60);
+    if (cfg().fx) playFx("bipbip");
+    $("arShotImg").src = url;
+    if (typeof A.savePhoto === "function") { $("arShotMsg").textContent = "Kaydediliyor…"; A.savePhoto(url.split(",")[1]); }
+    else $("arShotMsg").textContent = "Kaydetmek için ekran görüntüsü alabilirsin (yeni sürüm uygulamada galeriye kendisi kaydeder).";
+    $("arShot").classList.add("show");
+  }
+  window.onPhotoSaved = (msg) => { $("arShotMsg").textContent = msg; };
+  $("arShotClose").addEventListener("click", () => $("arShot").classList.remove("show"));
 
   // ---------- parent settings ----------
   $("gear").addEventListener("click", () => {
@@ -1364,7 +1621,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   };
   function tryApplyUpdate() {
     if (!updatePending) return;
-    if (state !== "idle" || anySheetOpen() || game || riddle || danceTimer || musicTimer) { setTimeout(tryApplyUpdate, 3000); return; }
+    if (state !== "idle" || anySheetOpen() || game || riddle || party || ar) { setTimeout(tryApplyUpdate, 3000); return; }
     updatePending = false;
     celebrate("🎉", "Yeni özellikler geldi!");
     setTimeout(() => A.reloadApp(), 1800);

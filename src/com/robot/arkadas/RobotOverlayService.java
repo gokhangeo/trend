@@ -320,6 +320,8 @@ public class RobotOverlayService extends Service {
                         | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
         blp.gravity = Gravity.TOP | Gravity.START;
+        // Android 12+ blocks touches that pass through an opaque untouchable window; at 0.8 they reach the app below.
+        blp.alpha = 0.8f;
         bubble.setLayoutParams(blp);
         bubble.measure(View.MeasureSpec.makeMeasureSpec((int) (240 * dm.density), View.MeasureSpec.AT_MOST),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));

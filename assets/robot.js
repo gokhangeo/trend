@@ -191,11 +191,16 @@ const FACE = {
 const group = (cls, map) => Object.entries(map).map(([k, svg]) => `<g class="${cls} ${cls}-${k}">${svg}</g>`).join("");
 
 let robotCount = 0;
-/** Returns a fresh robot drawing; each copy gets its own gradient ids so several robots can share a page. */
-function robotSvg() {
+/**
+ * Returns a fresh robot drawing; each copy gets its own gradient ids so several robots can share a page.
+ * opts.full draws the whole robot with little feet (for the camera view) instead of the round portrait crop.
+ */
+function robotSvg(opts = {}) {
   const id = "rb" + (++robotCount);
+  const feet = opts.full ? `<ellipse cx="82" cy="219" rx="14" ry="8" fill="var(--head-shade)"/><ellipse cx="118" cy="219" rx="14" ry="8" fill="var(--head-shade)"/>
+        <ellipse cx="78" cy="216" rx="6" ry="2.5" fill="#fff" opacity=".6"/><ellipse cx="114" cy="216" rx="6" ry="2.5" fill="#fff" opacity=".6"/>` : "";
   return `
-<svg class="face" viewBox="0 0 200 200">
+<svg class="face" viewBox="${opts.full ? "0 0 200 222" : "0 0 200 200"}">
   <defs>
     <linearGradient id="${id}head" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" style="stop-color:var(--head)"/><stop offset="1" style="stop-color:var(--head-shade)"/></linearGradient>
     <linearGradient id="${id}visor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3d5c"/><stop offset=".5" style="stop-color:var(--visor)"/><stop offset="1" stop-color="#0d1322"/></linearGradient>
@@ -207,6 +212,7 @@ function robotSvg() {
   <g transform="translate(100 88) scale(1.06) translate(-100 -104)">
     <g class="flip" id="flip">
       <g class="body-group">
+        ${feet}
         <rect x="92" y="144" width="16" height="14" rx="4" fill="var(--head-shade)"/>
         <path d="${TORSO}" fill="url(#${id}head)"/>
         <ellipse cx="78" cy="166" rx="9" ry="4" fill="#fff" opacity=".6" transform="rotate(-20 78 166)"/>

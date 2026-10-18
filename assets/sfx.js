@@ -20,7 +20,20 @@ function audio() {
   if (ac.state === "suspended") ac.resume();
   return ac;
 }
-function route(node) { node.connect(out); node.connect(wet); }
+// While dance music plays, notes go through a bus that can be muted at once when the dance stops early.
+let musicBus = null;
+function startMusicBus() {
+  audio();
+  musicBus = ac.createGain();
+  musicBus.connect(out); musicBus.connect(wet);
+}
+function stopMusicBus() {
+  if (!musicBus) return;
+  const b = musicBus; musicBus = null;
+  b.gain.setTargetAtTime(0, ac.currentTime, 0.04);
+  setTimeout(() => b.disconnect(), 400);
+}
+function route(node) { if (musicBus) node.connect(musicBus); else { node.connect(out); node.connect(wet); } }
 // A glassy bell: a few inharmonic partials with fast attack and long exponential decay.
 function bell(freq, t, vol = 0.18, dur = 0.9, bend = 0) {
   const c = audio(), s = c.currentTime + t;
@@ -86,3 +99,43 @@ function playFx(name) {
   return ms;
 }
 
+
+// ---------- party instruments (for the dance melodies) ----------
+function kick(t, vol = 0.5) {
+  const c = audio(), s = c.currentTime + t, o = c.createOscillator(), g = c.createGain();
+  o.type = "sine"; o.frequency.setValueAtTime(140, s); o.frequency.exponentialRampToValueAtTime(42, s + 0.14);
+  g.gain.setValueAtTime(vol, s); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.22);
+  o.connect(g).connect(musicBus || out); o.start(s); o.stop(s + 0.25);
+}
+function hat(t, vol = 0.08) {
+  const c = audio(), s = c.currentTime + t, len = Math.floor(c.sampleRate * 0.05), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
+  const src = c.createBufferSource(), hp = c.createBiquadFilter(), g = c.createGain();
+  src.buffer = buf; hp.type = "highpass"; hp.frequency.value = 7000; g.gain.value = vol;
+  src.connect(hp).connect(g).connect(musicBus || out); src.start(s);
+}
+// Short wooden "tok" like a marimba.
+function marimba(freq, t, vol = 0.16) {
+  const c = audio(), s = c.currentTime + t;
+  [[1, 1], [4, 0.25]].forEach(([m, a]) => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = "sine"; o.frequency.value = freq * m;
+    g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(vol * a, s + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.35 / m);
+    o.connect(g); route(g); o.start(s); o.stop(s + 0.4);
+  });
+}
+// Bright plucked string (filtered sawtooth with a quick decay).
+function pluck(freq, t, vol = 0.07, dur = 0.3) {
+  const c = audio(), s = c.currentTime + t, o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+  o.type = "sawtooth"; o.frequency.value = freq;
+  f.type = "lowpass"; f.frequency.setValueAtTime(freq * 6, s); f.frequency.exponentialRampToValueAtTime(freq * 1.5, s + dur);
+  g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(vol, s + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, s + dur);
+  o.connect(f).connect(g); route(g); o.start(s); o.stop(s + dur + 0.05);
+}
+// Warm synth bass note.
+function bass(freq, t, vol = 0.18, dur = 0.22) {
+  const c = audio(), s = c.currentTime + t, o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+  o.type = "triangle"; o.frequency.value = freq; f.type = "lowpass"; f.frequency.value = 600;
+  g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(vol, s + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, s + dur);
+  o.connect(f).connect(g).connect(musicBus || out); o.start(s); o.stop(s + dur + 0.05);
+}

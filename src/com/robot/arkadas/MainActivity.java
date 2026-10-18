@@ -29,6 +29,7 @@ import android.util.Base64;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -57,6 +58,8 @@ public class MainActivity extends Activity {
     private static final int REQ_CAMERA = 8;
     private static final int REQ_PICK = 9;
     private static final int REQ_STORAGE = 10;
+    private static final int REQ_CAM_LIVE = 12;
+    private static final int REQ_CAM_PHOTO = 13;
     private static final String API_URL = "https://api.anthropic.com/v1/messages";
 
     private WebView web;
@@ -72,6 +75,7 @@ public class MainActivity extends Activity {
     private int speakSeq = 0;
     private boolean cloudErrorShown = false;
     private Uri photoUri;
+    private PermissionRequest pendingCameraRequest;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -88,7 +92,24 @@ public class MainActivity extends Activity {
         ws.setDomStorageEnabled(true);
         ws.setMediaPlaybackRequiresUserGesture(false);
         ws.setAllowFileAccess(true); // pages downloaded from GitHub live in internal storage
-        web.setWebChromeClient(new WebChromeClient());
+        web.setWebChromeClient(new WebChromeClient() {
+            // The camera view asks for the live camera; grant it once Android's camera permission is given.
+            @Override
+            public void onPermissionRequest(final PermissionRequest request) {
+                boolean wantsVideo = false;
+                for (String r : request.getResources()) {
+                    if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(r)) wantsVideo = true;
+                }
+                if (!wantsVideo) {
+                    request.deny();
+                } else if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                    request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+                } else {
+                    pendingCameraRequest = request;
+                    requestPermissions(new String[]{Manifest.permission.CAMERA}, REQ_CAM_LIVE);
+                }
+            }
+        });
         web.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -156,9 +177,13 @@ public class MainActivity extends Activity {
         boolean granted = results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED;
         if (code == REQ_MIC && !granted) {
             js("onListenError", "Mikrofon izni olmadan seni duyamam.");
-        } else if (code == REQ_STORAGE) {
-            if (granted) launchCamera();
+        } else if (code == REQ_STORAGE || code == REQ_CAM_PHOTO) {
+            if (granted) takePhoto();
             else js("onPhotoCancel");
+        } else if (code == REQ_CAM_LIVE && pendingCameraRequest != null) {
+            if (granted) pendingCameraRequest.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+            else pendingCameraRequest.deny();
+            pendingCameraRequest = null;
         }
     }
 
@@ -333,6 +358,11 @@ public class MainActivity extends Activity {
     // ---------- homework photo ----------
 
     private void takePhoto() {
+        // Declaring CAMERA in the manifest means the camera app may only be launched once it is granted.
+        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.CAMERA}, REQ_CAM_PHOTO);
+            return;
+        }
         if (Build.VERSION.SDK_INT < 29
                 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQ_STORAGE);
@@ -907,6 +937,40 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void checkUpdate() {
             checkForUpdate(true);
+        }
+
+        @JavascriptInterface
+        public boolean cameraSupported() {
+            return true;
+        }
+
+        /** Saves a robot photo from the camera view into the gallery (Pictures/RobotArkadas). */
+        @JavascriptInterface
+        public void savePhoto(final String base64) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (Build.VERSION.SDK_INT < 29 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQ_STORAGE + 100);
+                            js("onPhotoSaved", "Galeriye kaydetmek için depolama izni gerekiyor; izin verip tekrar dene.");
+                            return;
+                        }
+                        byte[] jpg = Base64.decode(base64, Base64.DEFAULT);
+                        ContentValues cv = new ContentValues();
+                        cv.put(MediaStore.Images.Media.DISPLAY_NAME, "robot_" + System.currentTimeMillis() + ".jpg");
+                        cv.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                        if (Build.VERSION.SDK_INT >= 29) cv.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/RobotArkadas");
+                        Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv);
+                        OutputStream os = getContentResolver().openOutputStream(uri);
+                        os.write(jpg);
+                        os.close();
+                        js("onPhotoSaved", "Fotoğraf galeriye kaydedildi! 📸");
+                    } catch (Exception e) {
+                        js("onPhotoSaved", "Fotoğraf kaydedilemedi.");
+                    }
+                }
+            }).start();
         }
 
         @JavascriptInterface
