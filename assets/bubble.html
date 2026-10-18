@@ -34,6 +34,10 @@
   @keyframes dance { 0%,100% { transform: rotate(-10deg) translateY(0) } 50% { transform: rotate(10deg) translateY(-8%) } }
   .stretching .bot { animation: stretch 1.6s ease-in-out 1; }
   @keyframes stretch { 0%,100% { transform: scale(1) } 40% { transform: scale(1.12, .9) } 70% { transform: scale(.94, 1.1) } }
+  .badge { position: absolute; left: 0; top: 0; font-size: 26px; line-height: 1; display: none; animation: badgePulse 1.2s ease-in-out infinite; filter: drop-shadow(0 0 4px #fff); }
+  .badge.show { display: block; }
+  @keyframes badgePulse { 50% { transform: scale(1.25) rotate(-10deg); } }
+  .mini .badge { font-size: 16px; }
   .mini .bot { inset: 4%; animation: none; }
   .mini .ring { box-shadow: none; }
 </style>
@@ -45,6 +49,7 @@
     <div class="disc" id="disc"></div>
   </div>
   <div class="zzz">z z</div>
+  <div class="badge" id="badge"></div>
 <script>
   document.getElementById("disc").innerHTML = ROBOT_SVG;
   applyLook({});
@@ -54,6 +59,33 @@
     document.body.classList.toggle("walk", moving);
     document.getElementById("flip").style.transform = dir < 0 ? "scaleX(-1)" : "";
   }
+  // Routine reminder: the app sends the routine times and finished steps along with the robot's look.
+  let reminder = null, badgeIcons = [], badgeI = 0;
+  const baseApplyLook = applyLook;
+  applyLook = function (look) {
+    baseApplyLook(look);
+    try { reminder = (typeof look === "string" ? JSON.parse(look || "{}") : look || {}).reminder || null; } catch (e) { reminder = null; }
+    checkReminder();
+  };
+  const mins = (t) => { const [h, m] = (t || "0:0").split(":").map(Number); return h * 60 + m; };
+  function checkReminder() {
+    badgeIcons = [];
+    if (reminder) {
+      const now = new Date(), m = now.getHours() * 60 + now.getMinutes(), today = now.toISOString().slice(0, 10);
+      const done = reminder.date === today ? reminder.done || [] : [];
+      if (m >= mins(reminder.morning) && m < mins(reminder.morning) + 210) {
+        if (!done.includes("dis")) badgeIcons.push("🪥");
+        if (!done.includes("giyin")) badgeIcons.push("👕");
+      } else if (m >= mins(reminder.evening) || m < 60) {
+        if (!done.includes("pijama")) badgeIcons.push("👚");
+        if (!done.includes("dis2")) badgeIcons.push("🪥");
+      }
+    }
+    const b = document.getElementById("badge");
+    b.classList.toggle("show", badgeIcons.length > 0);
+    if (badgeIcons.length) b.textContent = badgeIcons[badgeI++ % badgeIcons.length];
+  }
+  setInterval(checkReminder, 3000);
   function setMini(m) { document.body.classList.toggle("mini", m); }
   function setSleep(on) { document.body.classList.toggle("sleeping", on); }
   function once(cls, ms) {

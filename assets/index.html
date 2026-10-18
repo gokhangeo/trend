@@ -248,6 +248,33 @@
   .reader p { font-size: 17px; line-height: 1.6; margin: 8px 0; }
   .reader p.kid { color: #ffb3d9; font-style: italic; }
 
+  /* number pad for the number game (when the microphone doesn't catch the answer) */
+  .numpad { display: none; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 0 10px 8px; max-width: 600px; margin: 0 auto; }
+  body.numpadOn .numpad { display: grid; }
+  body.numpadOn { padding-bottom: 290px; }
+  body.numpadOn .status { display: none; }
+  .numpad button { border: 1px solid var(--pill-border); background: #222936; color: var(--text); border-radius: 12px; font-size: 21px; font-weight: 800; padding: 8px 0; touch-action: manipulation; }
+  .numpad button:active { transform: scale(.92); }
+  .numpad .ok { background: var(--ring); color: #10141a; }
+  .sayNow { font-size: 18px; font-weight: 800; color: var(--ring-listen); margin-top: 6px; animation: pulseSay 1s ease-in-out infinite; }
+  @keyframes pulseSay { 50% { transform: scale(1.12); } }
+  .heard { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+  /* routine reminder on the main screen */
+  .reminder { position: fixed; top: 66px; left: 16px; right: 16px; max-width: 520px; margin: 0 auto; z-index: 3; display: none;
+    background: linear-gradient(135deg, #3b2a55, #24324a); border: 2px solid var(--gold); border-radius: 18px; padding: 10px 14px;
+    color: var(--text); font-size: 16px; font-weight: 800; text-align: left; animation: remind 1.6s ease-in-out infinite; }
+  .reminder.show { display: block; }
+  .reminder small { display: block; font-weight: 600; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  @keyframes remind { 0%,100% { box-shadow: 0 0 0 0 rgba(255,212,59,.5); } 50% { box-shadow: 0 0 0 8px rgba(255,212,59,0); } }
+  body.reminding .stage { margin-top: 70px; }
+  /* During the number game the reminder shrinks to one line and the robot gets smaller to make room for the keys. */
+  body.numpadOn .reminder { padding: 6px 12px; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.numpadOn .reminder br { display: none; }
+  body.numpadOn .reminder small { display: none; }
+  body.numpadOn.reminding .stage { margin-top: 34px; }
+  body.numpadOn .bot { width: min(50vw, 230px, 28vh); }
+
   /* party effects */
   .party { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; display: none; }
   body.partying .party { display: block; }
@@ -347,9 +374,14 @@
     <button class="name" id="name" aria-label="Robotun adını değiştir">Gizem</button>
   </div>
 
+  <button class="reminder" id="reminder"></button>
   <div class="bubble" id="bubble"></div>
 
   <div class="dock">
+    <div class="numpad" id="numpad">
+      <button>1</button><button>2</button><button>3</button><button>4</button><button>5</button><button data-k="del">⌫</button>
+      <button>6</button><button>7</button><button>8</button><button>9</button><button>0</button><button class="ok" data-k="ok">✓</button>
+    </div>
     <div class="status">
       <img class="thumb" id="thumb" alt="Ödev fotoğrafı">
       <div class="hint" id="hint">Konuşmak için robota dokun</div>
@@ -904,7 +936,8 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     setSleeping(false);
     if (mode === "english") A.listenWith("en-US", "2000");
     else if (mode === "read") A.listenWith("tr-TR", "4000");
-    else A.listenWith("tr-TR", mode === "game" ? "1200" : "1500");
+    // Quiz answers get a longer pause allowance so "elli… altı" isn't cut in half.
+    else A.listenWith("tr-TR", game ? "2000" : riddle || letters ? "1800" : "1500");
   }
 
   // ---------- stars, badges, memory ----------
@@ -977,6 +1010,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   function setMode(m) {
     A.stopSpeaking(); A.stopListening(); setState("idle");
     mode = m; game = null; riddle = null; letters = null; history = []; sessionCounted = false;
+    body.classList.remove("numpadOn");
     coStory = m === "cowrite" ? { lines: [{ by: "bot", t: "Bir varmış, bir yokmuş..." }], title: "", cover: "", done: false, saved: false } : null;
     markMode(m);
     body.classList.toggle("night", m === "story");
@@ -1019,8 +1053,16 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     return build(r(2, 10), "×", r(2, 12));
   }
   function parseNumber(s) {
-    const d = s.match(/-?\d+/);
-    if (d) return parseInt(d[0], 10);
+    const digits = (s.match(/\d+/g) || []).map(Number);
+    if (digits.length) {
+      // Recognizers sometimes split "56" into "50 6" or "100 20 5"; join tens and units back together.
+      let total = digits[0];
+      for (let i = 1; i < digits.length; i++) {
+        const prevTail = total % (digits[i] < 10 ? 10 : 100);
+        if (prevTail === 0 && digits[i] < (digits[i] < 10 ? 10 : 100)) total += digits[i]; else break;
+      }
+      return total;
+    }
     const W = { sıfır: 0, bir: 1, iki: 2, üç: 3, dört: 4, beş: 5, altı: 6, yedi: 7, sekiz: 8, dokuz: 9, on: 10, yirmi: 20, otuz: 30,
       kırk: 40, elli: 50, altmış: 60, yetmiş: 70, seksen: 80, doksan: 90 };
     let total = 0, found = false;
@@ -1036,6 +1078,19 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     show("", cleanText(intro));
     perform(intro, askGame);
   }
+  // Typing the answer on the on-screen keys works even when the microphone misses it.
+  let padValue = "";
+  $("numpad").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b || !game || !game.q || game.q.done) return;
+    if (state === "listening") A.stopListening();
+    if (state === "speaking") { A.stopSpeaking(); setState("idle"); }
+    const k = b.dataset.k;
+    if (k === "del") padValue = padValue.slice(0, -1);
+    else if (k === "ok") { if (padValue) return gameHeard(padValue); return; }
+    else if (padValue.length < 4) padValue += b.textContent;
+    showBig(game.q.show.replace("?", padValue || "?"));
+    if (k !== "ok" && padValue.length >= String(game.q.ans).length && Number(padValue) === game.q.ans) gameHeard(padValue);
+  });
   function showBig(text) {
     const big = document.createElement("div"); big.className = "big"; big.textContent = text;
     const score = document.createElement("div"); score.className = "score";
@@ -1044,6 +1099,8 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   }
   function askGame() {
     if (!game) return;
+    body.classList.add("numpadOn");
+    padValue = "";
     game.q = makeQuestion();
     showBig(game.q.show);
     perform(game.q.say, listenNow);
@@ -1053,7 +1110,9 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     if (/(^|\s)(bitir|bitsin|çık|dur|yeter|bitti)(\s|$)/.test(low)) return endGame(true);
     const num = parseNumber(low);
     const q = game.q;
-    if (num === null) return perform("Sayıyla söyler misin? " + q.say, listenNow);
+    if (q.done) return;
+    if (num === null) return perform("Sayıyla söyler misin? Ya da tuşlarla yazabilirsin. " + q.say, listenNow);
+    q.done = true; padValue = "";
     let reply;
     if (num === q.ans) {
       game.correct++; game.streak++;
@@ -1069,11 +1128,13 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
       reply = `[hmm] Neredeyse! ${q.a} ${OP_WORD[q.op]} ${q.b}, ${q.ans} eder.`;
     }
     showBig(`${q.a} ${q.op} ${q.b} = ${q.ans}`);
+    if (num !== q.ans) { const h = document.createElement("div"); h.className = "heard"; h.textContent = `Senin cevabın: ${num}`; bubble.appendChild(h); }
     game.n++;
     perform(reply, game.n >= 10 ? () => endGame(false) : askGame);
   }
   function endGame(early) {
     const g = game; game = null;
+    body.classList.remove("numpadOn");
     let msg;
     if (early && g.n === 0) msg = "Tamam, oyunu bitirdik. İstediğin zaman tekrar oynarız!";
     else if (g.correct === 10) { bump("perfect"); msg = "[alkış] İnanılmaz! 10 sorunun 10'unu da bildin! Sen bir matematik dehasısın!"; }
@@ -1165,21 +1226,42 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   }
 
   // ---------- native callbacks ----------
-  window.onListenStart = () => { setState("listening"); if (cfg().fx) { bell(NOTE(79), 0, 0.08, 0.5); bell(NOTE(86), 0.08, 0.08, 0.6); } };
+  let lastPartial = "";
+  window.onListenStart = () => {
+    setState("listening"); lastPartial = "";
+    if (game || riddle || letters) {
+      const cue = document.createElement("div"); cue.className = "sayNow"; cue.textContent = "🎤 Şimdi söyle!";
+      bubble.querySelector(".sayNow")?.remove(); bubble.appendChild(cue);
+    } else if (cfg().fx) { bell(NOTE(79), 0, 0.08, 0.5); bell(NOTE(86), 0.08, 0.08, 0.6); }
+  };
   window.onLevel = (rms) => { if (state === "listening") ring.style.transform = `scale(${1 + Math.max(0, Math.min(10, parseFloat(rms))) / 140})`; };
-  window.onPartial = (t) => { if (state === "listening" && !game) show(t, ""); };
+  window.onPartial = (t) => {
+    if (state !== "listening") return;
+    lastPartial = t;
+    if (!game && !riddle && !letters) return show(t, "");
+    // Accept the right number the moment it is heard instead of waiting for the end of speech.
+    if (game && game.q && !game.q.done && parseNumber(t.toLocaleLowerCase("tr")) === game.q.ans) { A.stopListening(); gameHeard(t); }
+  };
   window.onNothingHeard = () => {
     setState("idle"); autoTurns = 0;
     if (game) {
-      if (++game.misses <= 1) return perform(game.q.say, listenNow);
-      game.misses = 0; hint.textContent = "Hazır olunca robota dokun"; return;
+      if (game.q.done) return;
+      // The recognizer sometimes gives up even though it caught something along the way.
+      if (lastPartial && parseNumber(lastPartial.toLocaleLowerCase("tr")) !== null) return gameHeard(lastPartial);
+      if (++game.misses <= 2) return perform(`Seni duyamadım. Robot mavi olunca söyle ya da aşağıdaki tuşlarla yaz. ${game.q.say}`, listenNow);
+      game.misses = 0; hint.textContent = "Cevabı tuşlarla yazabilir ya da robota dokunup söyleyebilirsin"; return;
     }
     if (riddle || letters) { hint.textContent = "Cevabını söylemek için robota dokun"; return; }
     if (!bubble.textContent) show("", "Seni duyamadım. Bana dokunup tekrar konuşur musun?");
   };
   window.onListenError = (msg) => { setState("idle"); show("", msg); };
   window.onHeard = (text) => {
-    if (game) { game.misses = 0; return gameHeard(text); }
+    if (game) {
+      if (game.q.done) return;
+      game.misses = 0;
+      if (parseNumber(text.toLocaleLowerCase("tr")) === null && lastPartial && parseNumber(lastPartial.toLocaleLowerCase("tr")) !== null) text = lastPartial;
+      return gameHeard(text);
+    }
     if (riddle) return riddleHeard(text);
     if (letters) return lettersHeard(text);
     if (coStory) coStory.lines.push({ by: "kid", t: text });
@@ -1336,7 +1418,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     look = newLook;
     applyLook(look);
     renderPet();
-    A.setLook(JSON.stringify(look));
+    syncOverlay();
   }
   $("shopTabs").addEventListener("click", (e) => {
     const t = e.target.closest(".tab"); if (!t) return;
@@ -1851,7 +1933,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   }
   // ---------- morning & evening routine ----------
   const ROUTINES = {
-    morning: { title: "☀️ Sabah rutini", items: [["dis", "🪥", "Dişlerimi fırçaladım"], ["yuz", "💦", "Yüzümü yıkadım"], ["kahvalti", "🥣", "Kahvaltımı yaptım"], ["yatak", "🛏️", "Yatağımı topladım"]] },
+    morning: { title: "☀️ Sabah rutini", items: [["dis", "🪥", "Dişlerimi fırçaladım"], ["giyin", "👕", "Üstümü giydim"], ["yuz", "💦", "Yüzümü yıkadım"], ["kahvalti", "🥣", "Kahvaltımı yaptım"], ["yatak", "🛏️", "Yatağımı topladım"]] },
     evening: { title: "🌙 Akşam rutini", items: [["pijama", "👚", "Pijamalarımı giydim"], ["dis2", "🪥", "Dişlerimi fırçaladım"], ["canta", "🎒", "Çantamı hazırladım"], ["oyuncak", "🧸", "Oyuncaklarımı topladım"]] }
   };
   const minutesOf = (hhmm) => { const [h, m] = (hhmm || "0:0").split(":").map(Number); return h * 60 + m; };
@@ -1902,7 +1984,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   function completeRoutine(id) {
     const r = routineState();
     if (r.done.includes(id)) return;
-    r.done.push(id); saveStats();
+    r.done.push(id); saveStats(); syncOverlay();
     awardStars(ROUTINE_STARS);
     celebrate(routineItem(id)[1], `+${ROUTINE_STARS} yıldız!`);
     const k = currentRoutine();
@@ -1986,10 +2068,28 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
     }
     updateDots();
   });
+  const REMIND_TEXT = { dis: "🪥 Dişlerini fırçaladın mı?", giyin: "👕 Giyindin mi?", pijama: "👚 Pijamalarını giydin mi?", dis2: "🪥 Dişlerini fırçalamayı unutma!" };
+  // A blinking card at the top during routine time, for teeth and clothes first.
+  function updateReminder() {
+    const k = currentRoutine(), r = routineState(), el = $("reminder");
+    const pending = k ? ROUTINES[k].items.filter(([id]) => !r.done.includes(id)) : [];
+    const lines = pending.filter(([id]) => REMIND_TEXT[id]).map(([id]) => REMIND_TEXT[id]);
+    if (!pending.length) { el.classList.remove("show"); body.classList.remove("reminding"); return; }
+    el.innerHTML = (lines.length ? lines.join("<br>") : `${ROUTINES[k].title}: ${pending.length} görev kaldı`) + `<small>Dokun, fotoğrafını çek, her biri 5 ⭐</small>`;
+    el.classList.add("show"); body.classList.add("reminding");
+  }
+  $("reminder").addEventListener("click", openTasks);
+  setInterval(updateReminder, 60000);
+  // The floating robot can't ask the app, so the routine status rides along with its look.
+  function syncOverlay() {
+    const c = cfg();
+    A.setLook(JSON.stringify(Object.assign({}, look, { reminder: { morning: c.morning, evening: c.evening, date: today(), done: routineState().done } })));
+  }
   function updateDots() {
     const d = stats.daily && stats.daily.date === today() ? stats.daily : null;
     $("tasksDot").classList.toggle("show", !!(d && d.ids.every((id) => d.done.includes(id)) && !d.claimed) || routinePending());
     $("careDot").classList.toggle("show", care.hunger < 35 || care.energy < 35 || care.joy < 35);
+    updateReminder();
   }
 
   // ---------- birthday surprise ----------
@@ -2357,6 +2457,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
     A.set("birthday", $("birthday").value);
     A.set("morningTime", $("morningTime").value || "07:30");
     A.set("eveningTime", $("eveningTime").value || "20:30");
+    setTimeout(() => { syncOverlay(); updateReminder(); }, 0);
     A.set("grade", $("grade").value);
     A.set("auto", $("auto").value);
     A.set("fx", $("fx").value);
@@ -2422,6 +2523,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   else if (care.hunger < 35) show("", `${cfg().botName}'in karnı acıkmış 🍎 Bakım'dan ona yiyecek verebilirsin.`);
   // Birthday party first; otherwise the morning/evening routine greeting.
   if (!birthdayCheck()) routineGreet();
+  syncOverlay();
 </script>
 </body>
 </html>
