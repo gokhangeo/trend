@@ -196,6 +196,58 @@
   .card.up, .card.done { background: #f8f9fa; color: initial; transform: rotateY(180deg) scaleX(-1); }
   .card.done { opacity: .55; }
 
+  /* pet beside the robot */
+  .pet { position: absolute; right: -16%; bottom: -2%; font-size: clamp(34px, 12vw, 58px); line-height: 1; z-index: 3; display: none;
+    animation: petBob 1.7s ease-in-out infinite; filter: drop-shadow(0 5px 4px rgba(0,0,0,.45)); background: none; border: 0; padding: 0; }
+  .pet.show { display: block; }
+  @keyframes petBob { 0%,100% { transform: translateY(0) rotate(-4deg) } 50% { transform: translateY(-8px) rotate(4deg) } }
+  body.dancing .pet { animation: petDance .45s ease-in-out infinite; }
+  @keyframes petDance { 0%,100% { transform: translateY(0) rotate(-14deg) } 50% { transform: translateY(-18px) rotate(14deg) } }
+  .heartPop { position: fixed; font-size: 26px; pointer-events: none; z-index: 25; animation: heartUp 1.2s ease-out forwards; }
+  @keyframes heartUp { to { transform: translateY(-90px) scale(1.4); opacity: 0; } }
+  .mode { position: relative; }
+  .mode .dot { position: absolute; top: 5px; right: 7px; width: 10px; height: 10px; border-radius: 50%; background: #ff5fa2; box-shadow: 0 0 0 2px var(--pill); display: none; }
+  .mode .dot.show { display: block; }
+
+  /* care */
+  .careTop { display: flex; gap: 14px; align-items: center; margin-top: 10px; }
+  .careBot { width: 120px; flex: none; aspect-ratio: 1; position: relative; }
+  .careBot.sleepy svg .eyes { display: none; }
+  .careBot.sleepy svg .sleep-eyes { display: inline; }
+  .bars { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+  .bar { font-size: 14px; font-weight: 700; }
+  .bar .track { height: 12px; border-radius: 99px; background: #10141a; margin-top: 4px; overflow: hidden; }
+  .bar .fill { height: 100%; border-radius: 99px; transition: width .5s; }
+  .flyFood { position: fixed; font-size: 40px; z-index: 30; pointer-events: none; transition: transform .7s cubic-bezier(.4,-0.3,.6,1), opacity .7s; }
+
+  /* painting */
+  .paintCanvas { width: 100%; aspect-ratio: 1; background: #fff; border-radius: 16px; touch-action: none; display: block; margin-top: 10px; }
+  .colors { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .colors button { width: 36px; height: 36px; border-radius: 50%; border: 3px solid transparent; }
+  .colors button.on { border-color: #fff; transform: scale(1.12); }
+  .tools { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .tools button { flex: 1; min-width: 70px; padding: 10px 6px; border-radius: 12px; border: 0; background: #2a3240; color: var(--text); font-size: 14px; font-weight: 700; }
+  .tools button.on { background: var(--ring); color: #10141a; }
+
+  /* tasks & routine */
+  .task { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: #222936; margin-top: 8px; }
+  .task b { font-size: 28px; font-weight: 400; }
+  .task .info { flex: 1; font-size: 15px; font-weight: 700; }
+  .task .info small { display: block; color: var(--muted); font-weight: 600; margin-top: 2px; }
+  .task.done { background: #1f3a32; }
+  .task .check { font-size: 22px; }
+  .routineItem { width: 100%; text-align: left; border: 0; color: var(--text); }
+
+  /* story books */
+  .book { display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 14px; background: #222936; margin-top: 8px; width: 100%; border: 0; color: var(--text); text-align: left; }
+  .book b { font-size: 26px; font-weight: 400; letter-spacing: 2px; }
+  .book span { flex: 1; font-weight: 700; }
+  .book small { display: block; color: var(--muted); font-weight: 600; }
+  .reader .cover { text-align: center; font-size: 48px; letter-spacing: 6px; margin: 6px 0; }
+  .reader h2 { text-align: center; }
+  .reader p { font-size: 17px; line-height: 1.6; margin: 8px 0; }
+  .reader p.kid { color: #ffb3d9; font-style: italic; }
+
   /* party effects */
   .party { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; display: none; }
   body.partying .party { display: block; }
@@ -290,6 +342,7 @@
       <div class="disc" id="disc"></div>
       <div class="sparkles" id="sparkles"></div>
       <div class="zzz">z z</div>
+      <button class="pet" id="pet" aria-label="Evcil hayvan"></button>
     </div>
     <button class="name" id="name" aria-label="Robotun adını değiştir">Gizem</button>
   </div>
@@ -304,15 +357,16 @@
     <div class="modes" id="modes">
       <button class="mode on" data-mode="chat"><b>💬</b>Sohbet</button>
       <button class="mode" id="shopBtn"><b>🛍️</b>Dükkan</button>
-      <button class="mode" data-mode="game"><b>🔢</b>Sayılar</button>
-      <button class="mode" data-mode="riddle"><b>🧩</b>Bilmece</button>
-      <button class="mode" id="memoryBtn"><b>🃏</b>Hafıza</button>
+      <button class="mode" id="careBtn"><b>🐣</b>Bakım<i class="dot" id="careDot"></i></button>
+      <button class="mode" id="gamesBtn"><b>🎲</b>Oyunlar</button>
+      <button class="mode" id="tasksBtn"><b>📅</b>Görevler<i class="dot" id="tasksDot"></i></button>
       <button class="mode" id="danceBtn"><b>💃</b>Dans</button>
       <button class="mode" data-mode="read"><b>📖</b>Okuma</button>
       <button class="mode" data-mode="english"><b>🇬🇧</b>English</button>
-      <button class="mode" data-mode="story"><b>🌙</b>Masal</button>
+      <button class="mode" id="storyBtn" data-group="story cowrite"><b>🌙</b>Masal</button>
       <button class="mode" id="cam"><b>📷</b>Ödev</button>
       <button class="mode" id="arBtn"><b>📸</b>Kamera</button>
+      <button class="mode" id="paintBtn"><b>🎨</b>Boyama</button>
     </div>
   </div>
 
@@ -323,7 +377,7 @@
   <div class="ar" id="ar">
     <video id="arVideo" autoplay playsinline muted></video>
     <div class="arStage" id="arStage">
-      <div class="arBot" id="arBot"><div class="arShadow"></div><div class="arFlip" id="arFlipBox"><div class="arBody" id="arBody"></div></div></div>
+      <div class="arBot" id="arBot"><div class="arShadow"></div><div class="arFlip" id="arFlipBox"><div class="arBody" id="arBody"></div></div><div class="pet" id="arPet" style="right:-30%;bottom:-4%"></div></div>
     </div>
     <div class="arMsg" id="arMsg"></div>
     <div class="arTop"><button id="arClose" aria-label="Kapat">✕</button><span id="arHint">Robotu sürükle · iki parmakla büyüt</span><button id="arSwitch" aria-label="Kamerayı çevir">🔄</button></div>
@@ -355,11 +409,12 @@
   <div class="sheet" id="shopSheet">
     <div class="panel">
       <h2>🛍️ Gizem'in Dükkanı · <span class="price">⭐ <span id="shopCoins">0</span></span></h2>
-      <div class="shopPreview"><div class="ring" style="inset:0"></div><div class="disc" id="shopDisc"></div></div>
+      <div class="shopPreview"><div class="ring" style="inset:0"></div><div class="disc" id="shopDisc"></div><div class="pet" id="shopPet"></div></div>
       <div class="tabs" id="shopTabs">
         <button class="tab on" data-tab="outfit">👗 Kıyafet</button>
         <button class="tab" data-tab="head">🎀 Baş</button>
         <button class="tab" data-tab="face">👓 Yüz</button>
+        <button class="tab" data-tab="pet">🐾 Hayvan</button>
         <button class="tab" data-tab="color">🎨 Renk</button>
       </div>
       <div id="shopBody"></div>
@@ -369,6 +424,105 @@
           <button class="btn primary" id="shopAction" style="display:none"></button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- games -->
+  <div class="sheet" id="gamesSheet">
+    <div class="panel">
+      <h2>🎲 Oyunlar</h2>
+      <div class="grid">
+        <button class="tile" data-mode="game"><b>🔢</b>Sayılar<small>Sayı soruları</small></button>
+        <button class="tile" data-mode="riddle"><b>🧩</b>Bilmece<small>5 bilmece</small></button>
+        <button class="tile" data-mode="letters"><b>🔤</b>Harfler<small>Harf ve kelime</small></button>
+        <button class="tile" id="memoryBtn"><b>🃏</b>Hafıza<small>Eşini bul</small></button>
+      </div>
+      <div class="btns"><button class="btn ghost" data-close>Kapat</button></div>
+    </div>
+  </div>
+
+  <!-- stories -->
+  <div class="sheet" id="storySheet">
+    <div class="panel">
+      <h2>🌙 Masal</h2>
+      <div class="grid">
+        <button class="tile" data-mode="story"><b>🌙</b>Gizem anlatsın<small>Uyku masalı</small></button>
+        <button class="tile" data-mode="cowrite"><b>✍️</b>Birlikte yazalım<small>Sırayla anlatın</small></button>
+        <button class="tile" id="booksBtn"><b>📚</b>Masallarım<small id="booksCount">0 masal</small></button>
+      </div>
+      <div class="btns"><button class="btn ghost" data-close>Kapat</button></div>
+    </div>
+  </div>
+  <div class="sheet" id="booksSheet">
+    <div class="panel">
+      <h2>📚 Masallarım</h2>
+      <div id="booksList"></div>
+      <div class="btns"><button class="btn ghost" data-close>Kapat</button></div>
+    </div>
+  </div>
+  <div class="sheet" id="readerSheet">
+    <div class="panel reader">
+      <div class="cover" id="readerCover"></div>
+      <h2 id="readerTitle"></h2>
+      <div id="readerText"></div>
+      <div class="btns"><button class="btn ghost" id="readerDelete">🗑️ Sil</button><button class="btn primary" id="readerRead">🔊 Gizem okusun</button></div>
+      <div class="btns"><button class="btn ghost" data-close>Kapat</button></div>
+    </div>
+  </div>
+
+  <!-- robot care -->
+  <div class="sheet" id="careSheet">
+    <div class="panel">
+      <h2>🐣 <span id="careName">Gizem</span>'e bak · <span class="price">⭐ <span id="careCoins">0</span></span></h2>
+      <div class="careTop">
+        <div class="careBot" id="careBot"><div class="ring" style="inset:0"></div><div class="disc" id="careDisc"></div></div>
+        <div class="bars">
+          <div class="bar">🍎 Tokluk<div class="track"><div class="fill" id="barHunger" style="background:#ff922b"></div></div></div>
+          <div class="bar">⚡ Enerji<div class="track"><div class="fill" id="barEnergy" style="background:#4fb3ff"></div></div></div>
+          <div class="bar">💖 Mutluluk<div class="track"><div class="fill" id="barJoy" style="background:#ff5fa2"></div></div></div>
+        </div>
+      </div>
+      <small id="careMood"></small>
+      <h3>Yiyecek ver</h3>
+      <div class="grid" id="foodGrid"></div>
+      <h3>Bakım</h3>
+      <div class="tools">
+        <button id="careSleep">😴 Uyut</button>
+        <button id="careBath">🛁 Banyo</button>
+        <button id="carePet">💕 Sev</button>
+      </div>
+      <div class="btns"><button class="btn ghost" data-close>Kapat</button></div>
+    </div>
+  </div>
+
+  <!-- painting -->
+  <div class="sheet" id="paintSheet">
+    <div class="panel">
+      <h2>🎨 Boyama</h2>
+      <div class="tabs" id="paintPics"></div>
+      <canvas class="paintCanvas" id="paintCanvas" width="600" height="600"></canvas>
+      <div class="colors" id="paintColors"></div>
+      <div class="tools">
+        <button id="toolFill" class="on">🪣 Doldur</button>
+        <button id="toolBrush">🖌️ Fırça</button>
+        <button id="toolUndo">↩️ Geri</button>
+        <button id="toolSave">💾 Kaydet</button>
+      </div>
+      <small id="paintMsg">Bir renk seç, boyamak istediğin yere dokun!</small>
+      <div class="btns"><button class="btn ghost" data-close>Kapat</button></div>
+    </div>
+  </div>
+
+  <!-- daily tasks & routine -->
+  <div class="sheet" id="tasksSheet">
+    <div class="panel">
+      <h2>📅 Bugünün görevleri</h2>
+      <div id="taskList"></div>
+      <button class="btn primary" id="claimReward" style="width:100%;margin-top:12px;display:none">🎁 Ödülünü al!</button>
+      <h3 id="routineTitle">Rutin</h3>
+      <div id="routineList"></div>
+      <small id="routineNote"></small>
+      <div class="btns"><button class="btn ghost" data-close>Kapat</button></div>
     </div>
   </div>
 
@@ -404,7 +558,7 @@
         <div><label for="kidName">Çocuğun adı</label><input id="kidName"></div>
       </div>
       <div class="row">
-        <div><label for="kidAge">Yaşı</label><input id="kidAge" type="number" min="3" max="16"></div>
+        <div><label for="birthday">Doğum günü</label><input id="birthday" type="date"></div>
         <div><label for="grade">Sınıfı</label>
           <select id="grade">
             <option value="0">Okul öncesi</option>
@@ -413,6 +567,12 @@
             <option value="7">7. sınıf</option><option value="8">8. sınıf</option>
           </select></div>
       </div>
+
+      <div class="row">
+        <div><label for="morningTime">Sabah rutini</label><input id="morningTime" type="time"></div>
+        <div><label for="eveningTime">Akşam rutini</label><input id="eveningTime" type="time"></div>
+      </div>
+      <small>Yaş doğum gününden hesaplanır. Doğum gününde Gizem sürpriz parti yapar ve özel bir elbise hediye eder.</small>
 
       <h3>Robotun hafızası</h3>
       <small>Robot sohbetlerde öğrendiği önemli şeyleri burada not eder (sevdiği şeyler, evcil hayvanı, zorlandığı dersler). İstemediğinizi silebilirsiniz.</small>
@@ -527,7 +687,8 @@
   function loadJson(key, def) { try { return JSON.parse(A.get(key, "") || "null") || def; } catch (e) { return def; } }
   // stars = everything ever earned (for badges); coins = stars left to spend in the shop.
   let stats = Object.assign({ stars: 0, read: 0, english: 0, stories: 0, photos: 0, perfect: 0, badges: [], weak: {}, tagDay: "", tagCount: 0,
-    riddles: 0, memWins: 0, dances: 0, bought: 0, giftDay: "", memDay: "", memCount: 0 }, loadJson("stats", {}));
+    riddles: 0, memWins: 0, dances: 0, bought: 0, giftDay: "", memDay: "", memCount: 0,
+    gameCorrect: 0, letters: 0, drawings: 0, feeds: 0, chats: 0, cowrites: 0, bdayYear: 0, daily: null, routine: null }, loadJson("stats", {}));
   if (stats.coins === undefined) stats.coins = stats.stars;
   if (!stats.owned) {
     // Accessories that older versions unlocked by star count are kept.
@@ -539,9 +700,16 @@
   const saveStats = () => A.set("stats", JSON.stringify(stats));
   const saveMemories = () => A.set("memories", JSON.stringify(memories));
 
+  function ageOf(c) {
+    const b = new Date(c.birthday + "T12:00:00"), n = new Date();
+    if (isNaN(b)) return A.get("kidAge", "7");
+    return n.getFullYear() - b.getFullYear() - (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate()) ? 1 : 0);
+  }
+  const isBirthday = () => { const b = cfg().birthday; return !!b && b.slice(5) === today().slice(5); };
   function cfg() {
     return {
-      botName: A.get("botName", "Gizem"), kidName: A.get("kidName", ""), kidAge: A.get("kidAge", "7"),
+      botName: A.get("botName", "Gizem"), kidName: A.get("kidName", ""), birthday: A.get("birthday", "2015-03-02"),
+      morning: A.get("morningTime", "07:30"), evening: A.get("eveningTime", "20:30"),
       grade: A.get("grade", "1"), auto: A.get("auto", "1") === "1", fx: A.get("fx", "1") === "1"
     };
   }
@@ -550,7 +718,7 @@
   function systemPrompt() {
     const c = cfg();
     const kid = c.kidName || "çocuk";
-    const who = c.kidName ? `${c.kidName} adında ${c.kidAge} yaşında bir kız çocuğu` : `${c.kidAge} yaşında bir kız çocuğu`;
+    const who = c.kidName ? `${c.kidName} adında ${ageOf(c)} yaşında bir kız çocuğu` : `${ageOf(c)} yaşında bir kız çocuğu`;
     const school = c.grade === "0" ? "Henüz okula başlamadı." : `Türkiye'de ${c.grade}. sınıfa gidiyor (MEB müfredatı).`;
     let p = `Sen ${c.botName} adında sevimli, neşeli, tatlı bir kız robotsun; ona bir abla gibi davranırsın. ${who} ile sesli konuşuyorsun. ${school}
 
@@ -595,6 +763,11 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
 - Her cevapta bir iki kısa İngilizce cümle kur (süslü parantez içinde) ve gerekiyorsa Türkçe anlamını söyle.
 - Ona basit bir soru sor ve İngilizce cevap vermesini iste. Hata yaparsa doğrusunu nazikçe söyle ve tekrarlat.
 - Güzel bir İngilizce cümle kurduğunda [yıldız] ver.`,
+    cowrite: (c, kid) => `Şu an ${kid} ile birlikte masal yazıyorsunuz, sırayla anlatıyorsunuz.
+- ${kid} bir iki cümle söyler; sen onun fikrini mutlaka kullanarak hikayeyi 1-2 kısa cümleyle sürdür ve "Sonra ne oldu?" gibi bir soruyla sözü ona bırak.
+- Onun fikirlerini her zaman kabul et ve kısaca öv. Hikaye neşeli ve çocuğa uygun kalsın.
+- Yaklaşık 6 turdan sonra ya da "bitti", "son" derse masalı 2-3 cümlelik güzel bir sonla bitir ve cevabının en sonuna şu etiketleri ekle: [son] [başlık: Masalın adı] [resim: masalı anlatan 3-5 emoji].
+- Bu modda ses efekti ve [yıldız] etiketi kullanma.`,
     story: (c, kid) => `Şu an uyku masalı modundasınız, yatma saati.
 - ${kid} bir masal konusu söyledi. ${c.kidName || "Çocuğun"} kahramanı olduğu, sakin, sıcak, mutlu sonlu, 250-350 kelimelik bir uyku masalı anlat.
 - Korkutucu, heyecanlı kovalamaca ya da üzücü hiçbir şey olmasın. Yumuşak, yavaş okunacak kısa cümleler kullan; masalın sonuna doğru her şey sakinleşsin.
@@ -615,7 +788,8 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   function updateHint() {
     if (body.classList.contains("sleeping")) { hint.textContent = "Uyuyor… Uyandırmak için dokun"; return; }
     const idle = { chat: "Konuşmak için robota dokun", read: "Okumaya başlamak için robota dokun", game: "Oyun için robota dokun",
-      english: "Let's talk! Robota dokun", story: "Masal için robota dokun", riddle: "Cevabını söylemek için robota dokun" }[mode];
+      english: "Let's talk! Robota dokun", story: "Masal için robota dokun", riddle: "Cevabını söylemek için robota dokun",
+      letters: "Cevabını söylemek için robota dokun", cowrite: "Sıra sende! Robota dokun ve anlat" }[mode];
     hint.textContent = { idle, listening: mode === "read" ? "Seni dinliyorum, oku bakalım…" : "Dinliyorum…", thinking: "Düşünüyorum…", speaking: "Durdurmak için dokun" }[state];
   }
 
@@ -672,6 +846,9 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     const after = raw.slice(raw.indexOf(":") + 1);
     if (/^isim\s*:/.test(low)) return renameBot(after);
     if (/^hat[ıi]rla\s*:/.test(low)) return addMemory(after);
+    if (coStory && /^ba[şs]l[ıi]k\s*:/.test(low)) { coStory.title = after.trim().slice(0, 60); return; }
+    if (coStory && /^resim\s*:/.test(low)) { coStory.cover = after.trim().slice(0, 24); return; }
+    if (coStory && low === "son") { coStory.done = true; return; }
     if (low === "yıldız" || low === "yildiz") {
       steps.push({ star: 1, fromTag: true });
       return;
@@ -752,7 +929,12 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     checkBadges();
     renderStars(true);
   }
-  function bump(key) { stats[key]++; checkBadges(); }
+  function bump(key) {
+    stats[key] = (stats[key] || 0) + 1;
+    cheer(6);
+    checkTasks();
+    checkBadges();
+  }
   function checkBadges() {
     BADGES.forEach((b) => {
       if (!stats.badges.includes(b.id) && b.ok(stats)) {
@@ -784,24 +966,35 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     chat: () => "[bipbip] Sohbet zamanı! Ne konuşmak istersin?",
     read: () => "[yaşasın] Okuma zamanı! İstersen önce Ödev düğmesiyle sayfanın fotoğrafını çek. Hazır olunca bana dokun ve sesli oku, seni dinliyorum.",
     english: () => "[bipbip] {Hello! Let's speak English!} Hadi İngilizce konuşalım. {How are you today?}",
-    story: () => "Masal zamanı. Bu gece ne hakkında bir masal istersin? Prensesler, uzay, hayvanlar ya da deniz altı olabilir."
+    story: () => "Masal zamanı. Bu gece ne hakkında bir masal istersin? Prensesler, uzay, hayvanlar ya da deniz altı olabilir.",
+    cowrite: () => "[yaşasın] Hadi birlikte masal yazalım! Ben başlıyorum: Bir varmış, bir yokmuş... Şimdi sen söyle, masalımızın kahramanı kim?"
   };
-  function markMode(m) { document.querySelectorAll("[data-mode]").forEach((b) => b.classList.toggle("on", b.dataset.mode === m)); }
+  function markMode(m) {
+    document.querySelectorAll("[data-mode]").forEach((b) => b.classList.toggle("on", b.dataset.mode === m));
+    $("gamesBtn").classList.toggle("on", ["game", "riddle", "letters"].includes(m));
+    $("storyBtn").classList.toggle("on", ["story", "cowrite"].includes(m));
+  }
   function setMode(m) {
     A.stopSpeaking(); A.stopListening(); setState("idle");
-    mode = m; game = null; riddle = null; history = []; sessionCounted = false;
+    mode = m; game = null; riddle = null; letters = null; history = []; sessionCounted = false;
+    coStory = m === "cowrite" ? { lines: [{ by: "bot", t: "Bir varmış, bir yokmuş..." }], title: "", cover: "", done: false, saved: false } : null;
     markMode(m);
     body.classList.toggle("night", m === "story");
     setSleeping(false);
     autoTurns = 0;
     if (m === "game") return startGame();
     if (m === "riddle") return startRiddles();
+    if (m === "letters") return startLetters();
     const intro = MODE_INTROS[m]();
     show("", cleanText(intro));
     // Reading waits for a tap so she can take a photo first; the others start listening.
     perform(intro, m === "read" ? () => {} : listenNow);
   }
-  document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => { audio(); setMode(b.dataset.mode); }));
+  document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
+    audio();
+    const sheet = b.closest(".sheet"); if (sheet) sheet.classList.remove("open");
+    setMode(b.dataset.mode);
+  }));
 
   // ---------- number game (runs locally, no API cost) ----------
   const OP_WORD = { "+": "artı", "-": "eksi", "×": "çarpı", "÷": "bölü" };
@@ -865,6 +1058,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     if (num === q.ans) {
       game.correct++; game.streak++;
       if (stats.weak[q.key]) stats.weak[q.key]--;
+      bump("gameCorrect");
       awardStars(1);
       reply = `[${game.streak % 3 === 0 ? "alkış" : "yaşasın"}] ${pick(["Harika!", "Doğru!", "Süpersin!", "Aferin sana!", "Bravo!", "Çok iyi!"])}`;
       if (game.streak % 3 === 0) reply += ` Üst üste ${game.streak} doğru!`;
@@ -980,13 +1174,16 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
       if (++game.misses <= 1) return perform(game.q.say, listenNow);
       game.misses = 0; hint.textContent = "Hazır olunca robota dokun"; return;
     }
-    if (riddle) { hint.textContent = "Cevabını söylemek için robota dokun"; return; }
+    if (riddle || letters) { hint.textContent = "Cevabını söylemek için robota dokun"; return; }
     if (!bubble.textContent) show("", "Seni duyamadım. Bana dokunup tekrar konuşur musun?");
   };
   window.onListenError = (msg) => { setState("idle"); show("", msg); };
   window.onHeard = (text) => {
     if (game) { game.misses = 0; return gameHeard(text); }
     if (riddle) return riddleHeard(text);
+    if (letters) return lettersHeard(text);
+    if (coStory) coStory.lines.push({ by: "kid", t: text });
+    if (mode === "chat") bump("chats");
     setState("thinking");
     show(text, "");
     if (mode === "english") bump("english");
@@ -1007,12 +1204,22 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     A.ask(systemPrompt(), JSON.stringify(history), effort);
   };
   window.onAnswer = (text) => {
+    if (routineVerify && routineVerify.asked) return routineVerdict(text);
     if (!text) text = "Hmm, ne diyeceğimi bilemedim. Tekrar sorar mısın?";
     history.push({ role: "assistant", content: text });
     const asked = history[history.length - 2];
     const askedText = asked ? (Array.isArray(asked.content) ? "📷 " + asked.content[1].text : asked.content) : "";
     show(askedText, cleanText(text));
     if (!sessionCounted && mode === "read") { sessionCounted = true; bump("read"); }
+    if (coStory) {
+      coStory.lines.push({ by: "bot", t: cleanText(text) });
+      perform(text);
+      if (coStory.done) {
+        finishCoStory();
+        afterSpeak = () => { show("", `📚 "${coStory.title || "Bizim masalımız"}" Masallarım'a kaydedildi! +2 ⭐`); celebrate(coStory.cover || "📖", "Masal kaydedildi!"); };
+      }
+      return;
+    }
     if (mode === "story" && text.length > 400) {
       bump("stories");
       perform(text, () => setSleeping(true));
@@ -1021,6 +1228,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     perform(text);
   };
   window.onAskError = (msg) => {
+    if (routineVerify && routineVerify.asked) { routineVerify = null; $("thumb").classList.remove("show"); show("", msg); perform(msg, () => {}); return; }
     history.pop(); // drop the unanswered user turn so roles keep alternating
     show("", msg);
     perform(msg, () => {});
@@ -1028,10 +1236,11 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   window.onSpeakStart = () => { if (state === "speaking") startMouth(); };
   window.onSpeakEnd = () => { stopMouth(); nextStep(); };
   window.onTtsError = (msg) => show("", msg);
-  window.onPaused = () => { if (state !== "idle") setState("idle"); stopParty(); autoTurns = 0; updateGift(); };
+  window.onPaused = () => { if (state !== "idle") setState("idle"); stopParty(); autoTurns = 0; updateGift(); careTick(); updateDots(); };
   window.startTalk = () => { if (anySheetOpen()) return; A.stopSpeaking(); autoTurns = 0; listenNow(); };
 
   window.onPhoto = (b64) => {
+    if (routineVerify && !routineVerify.asked) return verifyRoutinePhoto(b64);
     pendingImage = b64;
     bump("photos");
     const t = $("thumb"); t.src = "data:image/jpeg;base64," + b64; t.classList.add("show");
@@ -1040,7 +1249,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     autoTurns = 0;
     perform(msg, mode === "read" ? () => {} : listenNow);
   };
-  window.onPhotoCancel = () => {};
+  window.onPhotoCancel = () => { if (routineVerify && !routineVerify.asked) { routineVerify = null; show("", "Fotoğraf çekilmedi. Hazır olunca Görevler'den tekrar dene!"); } };
   window.onPhotoError = (msg) => show("", msg);
   window.onOverlayDenied = () => show("", "Robotun ekranda gezmesi için izin verilmedi.");
 
@@ -1058,7 +1267,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     autoTurns = 0;
     if (mode === "game" && game && game.q) return perform(game.q.say, listenNow);
     if (mode === "game" && !game) return startGame();
-    if (riddle) return listenNow();
+    if (riddle || letters) return listenNow();
     listenNow();
   });
   $("cam").addEventListener("click", () => {
@@ -1092,6 +1301,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   function renderShop() {
     $("shopCoins").textContent = stats.coins;
     applyLook(tryOn, $("shopSheet"));
+    showPet($("shopPet"), tryOn.pet);
     document.querySelectorAll("#shopTabs .tab").forEach((t) => t.classList.toggle("on", t.dataset.tab === shopTab));
     let html;
     if (shopTab === "color") {
@@ -1099,10 +1309,11 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
         <h3>Göz rengi</h3><div class="swatches">${EYE_COLORS.map(([c, n]) => `<button class="swatch ${(tryOn.eye || EYE_COLORS[0][0]) === c ? "on" : ""}" style="background:${c}" data-eye="${c}" aria-label="${n}"></button>`).join("")}</div>
         <small>Renkler bedava! 🎨</small>`;
     } else {
-      const items = Object.entries(ITEMS).filter(([, it]) => it.slot === shopTab).sort((a, b) => a[1].price - b[1].price);
+      // Special items are never for sale; they appear once won.
+      const items = Object.entries(ITEMS).filter(([k, it]) => it.slot === shopTab && (!it.exclusive || stats.owned.includes(k))).sort((a, b) => a[1].price - b[1].price);
       html = `<div class="grid">${items.map(([k, it]) => {
         const owned = stats.owned.includes(k), worn = look[it.slot] === k;
-        const label = worn ? "Giyiyor ✓" : owned ? "Senin" : `<span class="price">⭐ ${it.price}</span>`;
+        const label = worn ? (it.slot === "pet" ? "Yanında ✓" : "Giyiyor ✓") : owned ? (it.exclusive ? "Özel ✨" : "Senin") : `<span class="price">⭐ ${it.price}</span>`;
         const badge = it.isNew && !owned ? `<i class="newTag">YENİ</i>` : "";
         return `<button class="tile ${selected === k ? "on" : ""} ${owned ? "owned" : ""}" data-item="${k}">${badge}<b>${it.icon}</b>${it.name}<small>${label}</small></button>`;
       }).join("")}</div>`;
@@ -1124,6 +1335,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   function saveLook(newLook) {
     look = newLook;
     applyLook(look);
+    renderPet();
     A.setLook(JSON.stringify(look));
   }
   $("shopTabs").addEventListener("click", (e) => {
@@ -1333,6 +1545,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     ar.x = Math.max(-ar.size * 0.3, Math.min(W - ar.size * 0.7, ar.x));
     ar.y = Math.max(40, Math.min(H - 40, ar.y));
     arBot.style.width = ar.size + "px";
+    $("arPet").style.fontSize = ar.size * 0.3 + "px";
     arBot.style.left = ar.x + "px";
     arBot.style.top = ar.y - h + "px"; // ar.y is where the feet stand
     $("arFlipBox").style.transform = ar.flip ? "scaleX(-1)" : "";
@@ -1353,7 +1566,8 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     audio(); A.stopSpeaking(); A.stopListening(); setState("idle"); stopParty();
     ar = { x: window.innerWidth / 2 - 90, y: window.innerHeight * 0.72, size: 180, flip: false, facing: "environment", stream: null, walk: null };
     $("arBody").innerHTML = robotSvg({ full: true });
-    applyLook(look);
+    applyLook(birthdayLook());
+    showPet($("arPet"), look.pet);
     arPlace();
     body.classList.add("arOn");
     startCamera();
@@ -1493,6 +1707,533 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   window.onPhotoSaved = (msg) => { $("arShotMsg").textContent = msg; };
   $("arShotClose").addEventListener("click", () => $("arShot").classList.remove("show"));
 
+  // ---------- pet beside the robot ----------
+  const PET_SOUNDS = { kedicik: "Miyav!", kopekcik: "Hav hav!", tavsancik: "Hop hop!", hamster: "Çik çik!", tilki: "Yip yip!", penguen: "Vak vak!", panda: "Mmm, bambu!", minikunicorn: "Pırıl pırıl!" };
+  function showPet(el, id) {
+    const it = ITEMS[id];
+    el.textContent = it && it.slot === "pet" ? it.icon : "";
+    el.classList.toggle("show", !!(it && it.slot === "pet"));
+  }
+  function renderPet() { showPet($("pet"), look.pet); if (ar) showPet($("arPet"), look.pet); }
+  function heartPop(x, y, icon = "💖") {
+    const h = document.createElement("div"); h.className = "heartPop"; h.textContent = icon;
+    h.style.left = x - 13 + "px"; h.style.top = y - 20 + "px";
+    document.body.appendChild(h); setTimeout(() => h.remove(), 1200);
+  }
+  $("pet").addEventListener("click", (e) => {
+    e.stopPropagation();
+    heartPop(e.clientX, e.clientY);
+    if (cfg().fx) playFx("kikir");
+    if (state === "idle") A.speak(PET_SOUNDS[look.pet] || "Merhaba!");
+    cheer(2);
+  });
+
+  // ---------- robot care (hunger, energy, joy) ----------
+  let care = Object.assign({ hunger: 85, energy: 85, joy: 85, t: Date.now() }, loadJson("care", {}));
+  const saveCare = () => A.set("care", JSON.stringify(care));
+  // Needs drop slowly over time but never below 15: the robot gets a little sad, never sick.
+  function careTick() {
+    const mins = (Date.now() - care.t) / 60000;
+    if (mins < 1) return;
+    care.hunger = Math.max(15, care.hunger - mins / 12);
+    care.energy = Math.max(15, care.energy - mins / 18);
+    care.joy = Math.max(15, care.joy - mins / 15);
+    care.t = Date.now();
+    saveCare();
+  }
+  function cheer(n) { careTick(); care.joy = Math.min(100, care.joy + n); saveCare(); updateDots(); }
+  const FOODS = [
+    { icon: "🍎", name: "Elma", price: 1, hunger: 15 }, { icon: "🍉", name: "Karpuz", price: 2, hunger: 20, joy: 4 },
+    { icon: "🥛", name: "Süt", price: 2, hunger: 22 }, { icon: "🥪", name: "Sandviç", price: 3, hunger: 35 },
+    { icon: "🍦", name: "Dondurma", price: 3, hunger: 20, joy: 15 }, { icon: "🍰", name: "Pasta", price: 4, hunger: 40, joy: 12 }
+  ];
+  function moodText() {
+    const n = cfg().botName;
+    if (care.hunger < 35) return `${n}'in karnı acıkmış 🍎`;
+    if (care.energy < 35) return `${n} çok uykulu 😴`;
+    if (care.joy < 35) return `${n} biraz sıkılmış, onunla oyna 💕`;
+    if (care.hunger > 80 && care.energy > 80 && care.joy > 80) return `${n} çok mutlu! 🥰`;
+    return `${n} iyi görünüyor 😊`;
+  }
+  function renderCare() {
+    careTick();
+    $("careName").textContent = cfg().botName; $("careCoins").textContent = stats.coins;
+    $("barHunger").style.width = care.hunger + "%"; $("barEnergy").style.width = care.energy + "%"; $("barJoy").style.width = care.joy + "%";
+    $("careMood").textContent = moodText();
+    $("foodGrid").innerHTML = FOODS.map((f, i) => `<button class="tile" data-food="${i}"><b>${f.icon}</b>${f.name}<small><span class="price">⭐ ${f.price}</span></small></button>`).join("");
+  }
+  function openCare() {
+    audio(); A.stopSpeaking(); A.stopListening(); setState("idle");
+    if (!$("careDisc").firstChild) $("careDisc").innerHTML = robotSvg();
+    applyLook(look);
+    renderCare();
+    $("careSheet").classList.add("open");
+  }
+  function careSay(t) { A.speak(t); $("careMood").textContent = t; }
+  $("foodGrid").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-food]"); if (!b) return;
+    const f = FOODS[+b.dataset.food];
+    if (stats.coins < f.price) { careSay(`${f.name} için ${f.price - stats.coins} yıldız daha lazım. Oyun oynayıp yıldız toplayalım!`); return; }
+    if (care.hunger >= 98) { careSay("Teşekkürler ama karnım tok! 😊"); return; }
+    stats.coins -= f.price; renderStars(true);
+    // the food flies into the robot's mouth
+    const from = b.getBoundingClientRect(), to = $("careBot").getBoundingClientRect();
+    const fly = document.createElement("div"); fly.className = "flyFood"; fly.textContent = f.icon;
+    fly.style.left = from.left + from.width / 2 - 20 + "px"; fly.style.top = from.top + 10 + "px";
+    document.body.appendChild(fly);
+    requestAnimationFrame(() => { fly.style.transform = `translate(${to.left + to.width / 2 - from.left - from.width / 2}px, ${to.top + to.height * 0.55 - from.top - 10}px) scale(.4)`; fly.style.opacity = ".2"; });
+    setTimeout(() => {
+      fly.remove();
+      care.hunger = Math.min(100, care.hunger + f.hunger); care.joy = Math.min(100, care.joy + (f.joy || 3));
+      saveCare(); bump("feeds"); renderCare();
+      if (cfg().fx) playFx("kikir");
+      careSay(pick(["Mmm, çok lezzetli!", "Ne güzel, teşekkür ederim!", "Nam nam nam!", "Bayıldım!"]));
+    }, 720);
+  });
+  $("careSleep").addEventListener("click", () => {
+    if (care.energy >= 95) { careSay("Hiç uykum yok, oyun oynayalım! 🎈"); return; }
+    $("careBot").classList.add("sleepy");
+    careSay("Biraz kestireyim… zzz 😴");
+    setTimeout(() => { $("careBot").classList.remove("sleepy"); care.energy = Math.min(100, care.energy + 45); saveCare(); renderCare(); careSay("Ohh, dinlendim! Enerjim doldu! ⚡"); }, 5000);
+  });
+  $("careBath").addEventListener("click", (e) => {
+    const r = $("careBot").getBoundingClientRect();
+    for (let i = 0; i < 8; i++) setTimeout(() => heartPop(r.left + Math.random() * r.width, r.top + Math.random() * r.height, pick(["🫧", "🫧", "✨"])), i * 120);
+    care.joy = Math.min(100, care.joy + 10); saveCare(); renderCare();
+    careSay("Hihi, köpükler gıdıklıyor! Tertemiz oldum! 🛁");
+  });
+  $("carePet").addEventListener("click", () => {
+    const r = $("careBot").getBoundingClientRect();
+    heartPop(r.left + r.width / 2, r.top + r.height / 3);
+    care.joy = Math.min(100, care.joy + 5); saveCare(); renderCare();
+    careSay(pick(["Seni seviyorum! 💖", "Hihi, çok tatlısın!", "Sarılmaya bayılıyorum!"]));
+  });
+  $("careBtn").addEventListener("click", openCare);
+
+  // ---------- daily tasks ----------
+  const TASK_POOL = [
+    { id: "riddle", icon: "🧩", text: "1 bilmece bil", stat: "riddles", need: 1 },
+    { id: "memory", icon: "🃏", text: "Hafıza oyununu bitir", stat: "memWins", need: 1 },
+    { id: "dance", icon: "💃", text: "Gizem ile dans et", stat: "dances", need: 1 },
+    { id: "numbers", icon: "🔢", text: "5 sayı sorusu bil", stat: "gameCorrect", need: 5 },
+    { id: "letters", icon: "🔤", text: "3 harf sorusu bil", stat: "letters", need: 3 },
+    { id: "draw", icon: "🎨", text: "Bir resim boya ve kaydet", stat: "drawings", need: 1 },
+    { id: "feed", icon: "🍎", text: "Gizem'i besle", stat: "feeds", need: 1 },
+    { id: "read", icon: "📖", text: "Bir okuma yap", stat: "read", need: 1, ai: true },
+    { id: "english", icon: "🇬🇧", text: "3 kez İngilizce konuş", stat: "english", need: 3, ai: true },
+    { id: "chat", icon: "💬", text: "Gizem ile 3 kez sohbet et", stat: "chats", need: 3, ai: true },
+    { id: "cowrite", icon: "✍️", text: "Birlikte bir masal yaz", stat: "cowrites", need: 1, ai: true }
+  ];
+  const TASK_REWARDS = ["galaksi", "altinelbise", "kalptac", "elmasgozluk"];
+  function ensureDaily() {
+    if (stats.daily && stats.daily.date === today()) return stats.daily;
+    // Same 3 tasks all day: shuffle with the date as the seed.
+    let seed = [...today()].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) >>> 0;
+    const rand = () => (seed = (seed * 1103515245 + 12345) >>> 0) / 4294967296;
+    const pool = TASK_POOL.filter((t) => !t.ai || A.get("apiKey", "")).map((t) => [rand(), t]).sort((a, b) => a[0] - b[0]).map((x) => x[1]).slice(0, 3);
+    const base = {}; pool.forEach((t) => { base[t.stat] = stats[t.stat] || 0; });
+    stats.daily = { date: today(), ids: pool.map((t) => t.id), base, done: [], claimed: false };
+    saveStats();
+    return stats.daily;
+  }
+  const taskById = (id) => TASK_POOL.find((t) => t.id === id);
+  const taskProgress = (t, d) => Math.min(t.need, (stats[t.stat] || 0) - (d.base[t.stat] || 0));
+  function checkTasks() {
+    const d = ensureDaily();
+    d.ids.map(taskById).forEach((t) => {
+      if (!d.done.includes(t.id) && taskProgress(t, d) >= t.need) {
+        d.done.push(t.id);
+        pendingNews.push({ icon: t.icon, title: "Görev tamam!", say: `Harika! Görev tamamlandı: ${t.text}!` });
+        if (d.done.length === d.ids.length) pendingNews.push({ icon: "🎁", title: "Bütün görevler bitti!", say: "Bugünün bütün görevlerini bitirdin! Görevler'e dokunup ödülünü al!" });
+      }
+    });
+    saveStats(); updateDots();
+  }
+  // ---------- morning & evening routine ----------
+  const ROUTINES = {
+    morning: { title: "☀️ Sabah rutini", items: [["dis", "🪥", "Dişlerimi fırçaladım"], ["yuz", "💦", "Yüzümü yıkadım"], ["kahvalti", "🥣", "Kahvaltımı yaptım"], ["yatak", "🛏️", "Yatağımı topladım"]] },
+    evening: { title: "🌙 Akşam rutini", items: [["pijama", "👚", "Pijamalarımı giydim"], ["dis2", "🪥", "Dişlerimi fırçaladım"], ["canta", "🎒", "Çantamı hazırladım"], ["oyuncak", "🧸", "Oyuncaklarımı topladım"]] }
+  };
+  const minutesOf = (hhmm) => { const [h, m] = (hhmm || "0:0").split(":").map(Number); return h * 60 + m; };
+  function currentRoutine() {
+    const c = cfg(), now = new Date(), m = now.getHours() * 60 + now.getMinutes();
+    if (m >= minutesOf(c.morning) && m < minutesOf(c.morning) + 210) return "morning";
+    if (m >= minutesOf(c.evening) || m < 60) return "evening";
+    return null;
+  }
+  function routineState() {
+    if (!stats.routine || stats.routine.date !== today()) stats.routine = { date: today(), done: [], greeted: [] };
+    return stats.routine;
+  }
+  function routinePending() {
+    const k = currentRoutine(); if (!k) return false;
+    const r = routineState();
+    return ROUTINES[k].items.some(([id]) => !r.done.includes(id));
+  }
+  function renderTasks() {
+    const d = ensureDaily();
+    $("taskList").innerHTML = d.ids.map(taskById).map((t) => {
+      const p = taskProgress(t, d), ok = p >= t.need;
+      return `<div class="task ${ok ? "done" : ""}"><b>${t.icon}</b><div class="info">${t.text}<small>${ok ? "Tamamlandı!" : p + " / " + t.need}</small></div><span class="check">${ok ? "✅" : "⬜"}</span></div>`;
+    }).join("");
+    const allDone = d.ids.every((id) => d.done.includes(id));
+    $("claimReward").style.display = allDone && !d.claimed ? "" : "none";
+    if (d.claimed) $("taskList").insertAdjacentHTML("beforeend", `<small>Bugünün ödülünü aldın! Yarın yeni görevler gelecek 🌟</small>`);
+    const k = currentRoutine(), c = cfg(), r = routineState();
+    if (k) {
+      $("routineTitle").textContent = ROUTINES[k].title;
+      $("routineList").innerHTML = ROUTINES[k].items.map(([id, icon, text]) => {
+        const ok = r.done.includes(id);
+        return `<button class="task routineItem ${ok ? "done" : ""}" data-routine="${id}"><b>${icon}</b><div class="info">${text}<small>${ok ? "Aferin! +5 ⭐" : "Yapınca dokun, fotoğrafını çek 📸"}</small></div><span class="check">${ok ? "✅" : "📸"}</span></button>`;
+      }).join("");
+      $("routineNote").textContent = A.get("apiKey", "") ? "Her biri 5 yıldız! Gizem fotoğrafa bakıp kontrol eder." : "Her biri 5 yıldız! Bir büyüğün onayıyla.";
+    } else {
+      $("routineTitle").textContent = "Rutinler";
+      $("routineList").innerHTML = "";
+      $("routineNote").textContent = `Sabah rutini ${c.morning}, akşam rutini ${c.evening} saatinde açılır.`;
+    }
+  }
+  function openTasks() { audio(); A.stopSpeaking(); A.stopListening(); setState("idle"); renderTasks(); $("tasksSheet").classList.add("open"); }
+  $("tasksBtn").addEventListener("click", openTasks);
+  // Each routine step is worth 5 stars, but only once a photo shows it was really done.
+  const ROUTINE_STARS = 5;
+  let routineVerify = null;
+  const routineItem = (id) => Object.values(ROUTINES).flatMap((r) => r.items).find(([x]) => x === id);
+  function completeRoutine(id) {
+    const r = routineState();
+    if (r.done.includes(id)) return;
+    r.done.push(id); saveStats();
+    awardStars(ROUTINE_STARS);
+    celebrate(routineItem(id)[1], `+${ROUTINE_STARS} yıldız!`);
+    const k = currentRoutine();
+    const finished = k && ROUTINES[k].items.every(([x]) => r.done.includes(x));
+    const msg = finished ? (k === "morning" ? "[yaşasın] Bütün sabah görevlerini yaptın! Harika bir gün olacak!" : "[yaşasın] Hepsi tamam! Şimdi tatlı rüyalar zamanı!")
+      : `[yaşasın] Aferin sana! ${ROUTINE_STARS} yıldız kazandın!`;
+    show("", cleanText(msg));
+    perform(msg, () => { renderTasks(); $("tasksSheet").classList.add("open"); });
+    renderTasks(); updateDots();
+  }
+  $("routineList").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-routine]"); if (!b) return;
+    const id = b.dataset.routine;
+    if (routineState().done.includes(id)) return;
+    const [, icon, text] = routineItem(id);
+    if (!A.get("apiKey", "")) {
+      // Without the AI there is nobody to look at a photo, so a grown-up confirms instead.
+      const a = 3 + Math.floor(Math.random() * 7), c2 = 4 + Math.floor(Math.random() * 6);
+      const ans = prompt(`"${text}" — bir büyük onaylasın: ${a} × ${c2} kaç eder?`);
+      if (ans !== null && parseInt(ans, 10) === a * c2) completeRoutine(id);
+      return;
+    }
+    routineVerify = { id, text, icon, asked: false };
+    $("tasksSheet").classList.remove("open");
+    const msg = `${icon} Harika! Şimdi bana göster: "${text}". Fotoğrafını çek!`;
+    show("", msg);
+    A.speak(`Harika! Şimdi bana göster. Fotoğrafını çek!`);
+    setTimeout(() => A.takePhoto(), 1600);
+  });
+  function verifyRoutinePhoto(b64) {
+    const v = routineVerify;
+    v.asked = true;
+    setState("thinking");
+    const t = $("thumb"); t.src = "data:image/jpeg;base64," + b64; t.classList.add("show");
+    show("", `${v.icon} Fotoğrafa bakıyorum…`);
+    const sys = `Sen ${cfg().botName} adında, ${ageOf(cfg())} yaşındaki bir kız çocuğunun günlük rutin görevini fotoğrafla teyit eden sevimli bir robotsun.
+Görev: "${v.text}".
+Fotoğraf bu görevin yapıldığını makul ölçüde gösteriyor mu? Örneğin diş fırçalama için diş fırçası, diş macunu ya da fırçalayan bir çocuk; pijama için pijama giymiş biri; yatak için toplanmış bir yatak; kahvaltı için kahvaltı tabağı; çanta için hazırlanmış okul çantası; oyuncaklar için toplanmış oyuncaklar ya da düzenli oda.
+Çok katı olma, ama görevle ilgisi olmayan bir fotoğrafı (tavan, rastgele eşya, karanlık ya da bulanık görüntü) kabul etme.
+Fotoğraftaki kişiyi tanımlamaya ya da görünüşü hakkında yorum yapmaya çalışma; sadece görevle ilgili olana bak.
+Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli okunacak 1-2 kısa ve sıcak cümle yaz; emoji kullanma. Ret ise neyin fotoğrafını çekmesi gerektiğini nazikçe söyle.`;
+    const msgs = [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: "image/jpeg", data: b64 } }, { type: "text", text: `Görev: ${v.text}. Yaptım, işte fotoğrafı!` }] }];
+    A.ask(sys, JSON.stringify(msgs), "low");
+  }
+  function routineVerdict(text) {
+    const v = routineVerify; routineVerify = null;
+    $("thumb").classList.remove("show");
+    const ok = /\[\s*onay\s*\]/i.test(text) && !/\[\s*ret\s*\]/i.test(text);
+    const say = cleanText(text.replace(/\[\s*(onay|ret)\s*\]/gi, ""));
+    if (ok) {
+      show("", say);
+      perform(say, () => completeRoutine(v.id));
+    } else {
+      show("", say || "Bu fotoğrafta göremedim. Bir daha dener misin?");
+      perform(say || "Bu fotoğrafta göremedim. Bir daha dener misin?", () => { renderTasks(); $("tasksSheet").classList.add("open"); });
+    }
+  }
+  // Greets once per morning/evening with the routine list, e.g. "Günaydın! Dişlerini fırçaladın mı?"
+  function routineGreet() {
+    const k = currentRoutine(); if (!k || !routinePending()) return;
+    const r = routineState(); if (r.greeted.includes(k)) return;
+    r.greeted.push(k); saveStats();
+    const kid = cfg().kidName || "tatlım";
+    const msg = k === "morning" ? `[yaşasın] Günaydın ${kid}! Dişlerini fırçaladın mı? Sabah görevlerin hazır, her biri ${ROUTINE_STARS} yıldız!`
+      : `İyi akşamlar ${kid}! Pijamalarını giydin mi? Akşam görevlerin hazır, her biri ${ROUTINE_STARS} yıldız!`;
+    setTimeout(() => { if (state !== "idle" || anySheetOpen()) return; show("", cleanText(msg)); perform(msg, openTasks); }, 1500);
+  }
+  $("claimReward").addEventListener("click", () => {
+    const d = ensureDaily(); if (d.claimed) return;
+    d.claimed = true;
+    const prize = TASK_REWARDS.find((k) => !stats.owned.includes(k));
+    $("tasksSheet").classList.remove("open");
+    if (prize) {
+      stats.owned.push(prize); saveStats();
+      celebrate(ITEMS[prize].icon, ITEMS[prize].name + " senin!");
+      perform(`[alkış] Bütün görevleri bitirdin! Sana özel bir hediyem var: ${ITEMS[prize].name}! Dükkanda seni bekliyor!`, () => {});
+    } else {
+      saveStats(); awardStars(10);
+      celebrate("🌟", "+10 yıldız!");
+      perform("[alkış] Bütün görevleri bitirdin! Bütün özel kıyafetler zaten sende, o yüzden sana on yıldız!", () => {});
+    }
+    updateDots();
+  });
+  function updateDots() {
+    const d = stats.daily && stats.daily.date === today() ? stats.daily : null;
+    $("tasksDot").classList.toggle("show", !!(d && d.ids.every((id) => d.done.includes(id)) && !d.claimed) || routinePending());
+    $("careDot").classList.toggle("show", care.hunger < 35 || care.energy < 35 || care.joy < 35);
+  }
+
+  // ---------- birthday surprise ----------
+  function birthdayLook() { return isBirthday() && (!look.head || look.head === "none") ? Object.assign({}, look, { head: "sapka" }) : look; }
+  function birthdayCheck() {
+    if (!isBirthday()) return false;
+    const year = new Date().getFullYear();
+    if (stats.bdayYear === year) return false;
+    stats.bdayYear = year;
+    if (!stats.owned.includes("dogumgunu")) stats.owned.push("dogumgunu");
+    saveStats();
+    const kid = cfg().kidName || "tatlım";
+    setTimeout(() => {
+      startParty();
+      awardStars(10);
+      celebrate("🎂", `İyi ki doğdun ${kid}!`);
+      perform(`[yaşasın] İyi ki doğdun ${kid}! Bugün ${ageOf(cfg())} yaşına girdin! Sana özel bir doğum günü elbisesi ve on yıldız hediye ettim. Seni çok seviyorum!`, () => {});
+    }, 1200);
+    return true;
+  }
+
+  // ---------- painting ----------
+  const PCV = $("paintCanvas"), PCTX = PCV.getContext("2d", { willReadFrequently: true });
+  const PAINT_COLORS = ["#ff5fa2", "#e03131", "#ff922b", "#ffd43b", "#69db7c", "#2f9e44", "#4fb3ff", "#1c3d78", "#a78bfa", "#8d5524", "#ffc9a8", "#ffffff", "#212529"];
+  let paint = { color: "#ff5fa2", tool: "fill", undo: [], actions: 0, pic: "kedi" };
+  function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); c.stroke(); }
+  const circ = (c, x, y, r) => { c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.stroke(); };
+  const ell = (c, x, y, rx, ry, rot = 0) => { c.beginPath(); c.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); c.stroke(); };
+  const line = (c, ...p) => { c.beginPath(); c.moveTo(p[0], p[1]); for (let i = 2; i < p.length; i += 2) c.lineTo(p[i], p[i + 1]); c.stroke(); };
+  const poly = (c, ...p) => { c.beginPath(); c.moveTo(p[0], p[1]); for (let i = 2; i < p.length; i += 2) c.lineTo(p[i], p[i + 1]); c.closePath(); c.stroke(); };
+  // Line drawings in a 300×300 space.
+  const PICTURES = {
+    kedi: { icon: "🐱", draw(c) { ell(c, 150, 245, 70, 45); poly(c, 90, 110, 100, 40, 140, 85); poly(c, 210, 110, 200, 40, 160, 85); circ(c, 150, 140, 70);
+      ell(c, 122, 130, 11, 15); ell(c, 178, 130, 11, 15); poly(c, 142, 158, 158, 158, 150, 168); line(c, 150, 168, 150, 178); c.beginPath(); c.arc(140, 178, 10, 0, Math.PI); c.stroke(); c.beginPath(); c.arc(160, 178, 10, 0, Math.PI); c.stroke();
+      line(c, 60, 150, 110, 160); line(c, 60, 175, 110, 170); line(c, 240, 150, 190, 160); line(c, 240, 175, 190, 170); c.beginPath(); c.moveTo(215, 260); c.quadraticCurveTo(285, 250, 265, 190); c.stroke(); } },
+    ev: { icon: "🏠", draw(c) { c.strokeRect(70, 140, 160, 130); poly(c, 55, 140, 150, 60, 245, 140); c.strokeRect(130, 200, 40, 70); c.strokeRect(85, 160, 35, 35); line(c, 102, 160, 102, 195); line(c, 85, 177, 120, 177);
+      c.strokeRect(180, 160, 35, 35); line(c, 197, 160, 197, 195); line(c, 180, 177, 215, 177); circ(c, 262, 42, 22); for (let a = 0; a < 8; a++) { const t = a * Math.PI / 4; line(c, 262 + Math.cos(t) * 28, 42 + Math.sin(t) * 28, 262 + Math.cos(t) * 38, 42 + Math.sin(t) * 38); }
+      line(c, 10, 270, 290, 270); ell(c, 45, 55, 30, 14); ell(c, 70, 48, 22, 12); } },
+    cicek: { icon: "🌸", draw(c) { for (let a = 0; a < 6; a++) { const t = a * Math.PI / 3; circ(c, 150 + Math.cos(t) * 45, 105 + Math.sin(t) * 45, 28); } circ(c, 150, 105, 26);
+      line(c, 150, 133, 150, 280); ell(c, 115, 220, 32, 13, -0.5); ell(c, 185, 240, 32, 13, 0.5); line(c, 20, 280, 280, 280); } },
+    balik: { icon: "🐟", draw(c) { ell(c, 140, 150, 85, 55); poly(c, 222, 150, 285, 100, 285, 200); circ(c, 92, 135, 10); poly(c, 130, 97, 165, 60, 185, 102); poly(c, 140, 200, 165, 235, 175, 197);
+      c.beginPath(); c.arc(70, 160, 14, -0.3, 1.2); c.stroke(); line(c, 160, 110, 160, 190); line(c, 185, 115, 185, 185); circ(c, 40, 80, 10); circ(c, 55, 50, 7); circ(c, 35, 28, 5); } },
+    kelebek: { icon: "🦋", draw(c) { ell(c, 100, 110, 52, 48, -0.3); ell(c, 200, 110, 52, 48, 0.3); ell(c, 110, 195, 38, 36, 0.3); ell(c, 190, 195, 38, 36, -0.3); ell(c, 150, 150, 11, 72);
+      circ(c, 98, 108, 16); circ(c, 202, 108, 16); circ(c, 112, 196, 11); circ(c, 188, 196, 11); c.beginPath(); c.moveTo(146, 80); c.quadraticCurveTo(130, 40, 112, 38); c.stroke(); c.beginPath(); c.moveTo(154, 80); c.quadraticCurveTo(170, 40, 188, 38); c.stroke(); circ(c, 110, 37, 6); circ(c, 190, 37, 6); } },
+    robot: { icon: "🤖", draw(c) { line(c, 150, 60, 150, 35); circ(c, 150, 27, 10); rr(c, 85, 60, 130, 105, 32); rr(c, 102, 80, 96, 58, 20); rr(c, 118, 95, 18, 26, 8); rr(c, 164, 95, 18, 26, 8); c.beginPath(); c.arc(150, 145, 14, 0.2, Math.PI - 0.2); c.stroke();
+      rr(c, 68, 95, 17, 40, 8); rr(c, 215, 95, 17, 40, 8); rr(c, 100, 172, 100, 95, 28); c.beginPath(); c.moveTo(150, 236); c.bezierCurveTo(120, 210, 135, 195, 150, 210); c.bezierCurveTo(165, 195, 180, 210, 150, 236); c.stroke();
+      ell(c, 125, 275, 18, 10); ell(c, 175, 275, 18, 10); } }
+  };
+  function paintPicture(name) {
+    paint.pic = name; paint.undo = []; paint.actions = 0;
+    const k = PCV.width / 300;
+    PCTX.setTransform(1, 0, 0, 1, 0, 0); PCTX.fillStyle = "#fff"; PCTX.fillRect(0, 0, PCV.width, PCV.height);
+    PCTX.setTransform(k, 0, 0, k, 0, 0); PCTX.strokeStyle = "#222"; PCTX.lineWidth = 4.5; PCTX.lineJoin = PCTX.lineCap = "round";
+    PICTURES[name].draw(PCTX);
+    PCTX.setTransform(1, 0, 0, 1, 0, 0);
+    document.querySelectorAll("#paintPics .tab").forEach((t) => t.classList.toggle("on", t.dataset.pic === name));
+    $("paintMsg").textContent = "Bir renk seç, boyamak istediğin yere dokun!";
+  }
+  function pushUndo() { paint.undo.push(PCTX.getImageData(0, 0, PCV.width, PCV.height)); if (paint.undo.length > 12) paint.undo.shift(); }
+  // Scanline flood fill; dark outline pixels stop the paint.
+  function floodFill(x, y, hex) {
+    const W = PCV.width, H = PCV.height, img = PCTX.getImageData(0, 0, W, H), d = img.data;
+    const n = parseInt(hex.slice(1), 16), R = n >> 16, G = (n >> 8) & 255, B = n & 255;
+    const i0 = (y * W + x) * 4, r0 = d[i0], g0 = d[i0 + 1], b0 = d[i0 + 2];
+    if (r0 + g0 + b0 < 240) return false; // tapped on a line
+    if (Math.abs(r0 - R) + Math.abs(g0 - G) + Math.abs(b0 - B) < 12) return false;
+    const same = (i) => Math.abs(d[i] - r0) + Math.abs(d[i + 1] - g0) + Math.abs(d[i + 2] - b0) < 110;
+    const seen = new Uint8Array(W * H), stack = [[x, y]];
+    while (stack.length) {
+      let [cx, cy] = stack.pop();
+      while (cx >= 0 && !seen[cy * W + cx] && same((cy * W + cx) * 4)) cx--;
+      cx++;
+      let up = false, down = false;
+      while (cx < W && !seen[cy * W + cx] && same((cy * W + cx) * 4)) {
+        const p = cy * W + cx, i = p * 4;
+        seen[p] = 1; d[i] = R; d[i + 1] = G; d[i + 2] = B; d[i + 3] = 255;
+        if (cy > 0) { const q = p - W; if (!seen[q] && same(q * 4)) { if (!up) { stack.push([cx, cy - 1]); up = true; } } else up = false; }
+        if (cy < H - 1) { const q = p + W; if (!seen[q] && same(q * 4)) { if (!down) { stack.push([cx, cy + 1]); down = true; } } else down = false; }
+        cx++;
+      }
+    }
+    PCTX.putImageData(img, 0, 0);
+    return true;
+  }
+  let brushLast = null;
+  const canvasPoint = (e) => { const r = PCV.getBoundingClientRect(); return [Math.round((e.clientX - r.left) * PCV.width / r.width), Math.round((e.clientY - r.top) * PCV.height / r.height)]; };
+  PCV.addEventListener("pointerdown", (e) => {
+    PCV.setPointerCapture(e.pointerId);
+    const [x, y] = canvasPoint(e);
+    if (paint.tool === "fill") {
+      pushUndo();
+      if (floodFill(x, y, paint.color)) { paint.actions++; if (cfg().fx && paint.actions % 4 === 0) playFx("bipbip"); }
+      else paint.undo.pop();
+    } else {
+      pushUndo(); brushLast = [x, y]; paint.actions++;
+      PCTX.fillStyle = paint.color; PCTX.beginPath(); PCTX.arc(x, y, 9, 0, 7); PCTX.fill();
+    }
+  });
+  PCV.addEventListener("pointermove", (e) => {
+    if (paint.tool !== "brush" || !brushLast) return;
+    const [x, y] = canvasPoint(e);
+    PCTX.strokeStyle = paint.color; PCTX.lineWidth = 18; PCTX.lineCap = "round";
+    PCTX.beginPath(); PCTX.moveTo(brushLast[0], brushLast[1]); PCTX.lineTo(x, y); PCTX.stroke();
+    brushLast = [x, y];
+  });
+  ["pointerup", "pointercancel"].forEach((ev) => PCV.addEventListener(ev, () => { brushLast = null; }));
+  $("paintColors").innerHTML = PAINT_COLORS.map((c) => `<button style="background:${c}" data-color="${c}" class="${c === paint.color ? "on" : ""}"></button>`).join("");
+  $("paintColors").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-color]"); if (!b) return;
+    paint.color = b.dataset.color;
+    document.querySelectorAll("#paintColors button").forEach((x) => x.classList.toggle("on", x === b));
+  });
+  $("paintPics").innerHTML = Object.entries(PICTURES).map(([k, p]) => `<button class="tab" data-pic="${k}">${p.icon}</button>`).join("");
+  $("paintPics").addEventListener("click", (e) => { const b = e.target.closest("[data-pic]"); if (b) paintPicture(b.dataset.pic); });
+  const setTool = (t) => { paint.tool = t; $("toolFill").classList.toggle("on", t === "fill"); $("toolBrush").classList.toggle("on", t === "brush"); };
+  $("toolFill").addEventListener("click", () => setTool("fill"));
+  $("toolBrush").addEventListener("click", () => setTool("brush"));
+  $("toolUndo").addEventListener("click", () => { const img = paint.undo.pop(); if (img) PCTX.putImageData(img, 0, 0); });
+  $("toolSave").addEventListener("click", () => {
+    const url = PCV.toDataURL("image/jpeg", 0.92);
+    if (typeof A.savePhoto === "function") A.savePhoto(url.split(",")[1]);
+    let msg = "Resmin galeriye kaydedildi! 🖼️";
+    if (typeof A.savePhoto !== "function") msg = "Çok güzel olmuş! (Galeriye kaydetmek için uygulamanın yeni sürümü gerekiyor.)";
+    // Stars only for a real coloring, so saving the same picture again doesn't count.
+    if (paint.actions >= 6) {
+      paint.actions = 0; bump("drawings"); awardStars(2); msg += " +2 ⭐";
+      celebrate("🎨", "+2 yıldız!");
+      A.speak(pick(["Vay, harika bir resim! Çok yeteneklisin!", "Bu resim çok güzel olmuş! Duvara asalım!", "Renkleri çok güzel seçmişsin!"]));
+    }
+    $("paintMsg").textContent = msg;
+  });
+  window.onPhotoSaved = ((orig) => (msg) => { if ($("paintSheet").classList.contains("open")) return; orig(msg); })(window.onPhotoSaved);
+  $("paintBtn").addEventListener("click", () => {
+    audio(); A.stopSpeaking(); A.stopListening(); setState("idle");
+    paintPicture(paint.pic);
+    $("paintSheet").classList.add("open");
+  });
+
+  // ---------- letters game (local, no API) ----------
+  const LETTER_NAMES = { A: "a", B: "be", C: "ce", Ç: "çe", D: "de", E: "e", F: "fe", G: "ge", H: "he", I: "ı", İ: "i", K: "ke", L: "le", M: "me", N: "ne",
+    O: "o", Ö: "ö", P: "pe", R: "re", S: "se", Ş: "şe", T: "te", U: "u", Ü: "ü", V: "ve", Y: "ye", Z: "ze" };
+  const LETTER_EXAMPLES = { A: "araba, ayı", B: "balık, balon", C: "ceket, cam", Ç: "çiçek, çilek", D: "deniz, dondurma", E: "elma, ev", F: "fil, fare", G: "güneş, gözlük",
+    H: "havuç, horoz", I: "ırmak, ıhlamur", İ: "inek, ip", K: "kedi, kitap", L: "limon, lale", M: "muz, masa", N: "nar, nehir", O: "okul, oyuncak", Ö: "ördek, örümcek",
+    P: "penguen, pasta", R: "robot, resim", S: "su, sincap", Ş: "şeker, şapka", T: "top, tavşan", U: "uçak, uyku", Ü: "üzüm, ütü", V: "vazo, vapur", Y: "yıldız, yumurta", Z: "zürafa, zeytin" };
+  const PICTURE_WORDS = [["🐱", "kedi"], ["🐶", "köpek"], ["🍎", "elma"], ["🌞", "güneş"], ["🐟", "balık"], ["🏠", "ev"], ["🌙", "ay"], ["🦋", "kelebek"], ["🍓", "çilek"],
+    ["🐸", "kurbağa"], ["🚗", "araba"], ["🌳", "ağaç"], ["🐻", "ayı"], ["🍌", "muz"], ["⭐", "yıldız"], ["🐝", "arı"], ["🥕", "havuç"], ["🎈", "balon"], ["🐢", "kaplumbağa"],
+    ["🌸", "çiçek"], ["🦁", "aslan"], ["🐮", "inek"], ["🍉", "karpuz"], ["🐧", "penguen"], ["🚂", "tren"], ["⚽", "top"], ["🐑", "koyun"], ["🦊", "tilki"], ["🍦", "dondurma"], ["📚", "kitap"]];
+  let letters = null;
+  const up = (t) => t.toLocaleUpperCase("tr");
+  function startLetters() {
+    letters = { n: 0, correct: 0, q: null, hinted: false };
+    const intro = "[yaşasın] Harf oyunu başlıyor! Sana 6 soru soracağım. Bitirmek istersen \"bitir\" de.";
+    show("", cleanText(intro));
+    perform(intro, askLetter);
+  }
+  function askLetter() {
+    if (!letters) return;
+    letters.hinted = false;
+    const big = +cfg().grade >= 3;
+    if (letters.n % 2 === 0) {
+      const L = pick(Object.keys(LETTER_NAMES).filter((l) => l !== "Ğ"));
+      letters.q = { type: "start", L, minLen: big ? 5 : 2 };
+      show("", `🔤 ${letters.n + 1}/6   ${L}`);
+      perform(`${L} harfiyle başlayan ${big ? "en az beş harfli " : ""}bir kelime söyler misin?`, listenNow);
+    } else {
+      const [emoji, word] = pick(PICTURE_WORDS);
+      letters.q = { type: "which", emoji, word, L: up(word[0]) };
+      show("", `🔤 ${letters.n + 1}/6   ${emoji}  ?${word.slice(1)}`);
+      perform(`${word} kelimesi hangi harfle başlar?`, listenNow);
+    }
+  }
+  function lettersHeard(text) {
+    const q = letters.q, low = text.toLocaleLowerCase("tr").trim();
+    if (/(^|\s)(bitir|çık|dur|yeter)(\s|$)/.test(low)) return endLetters();
+    const words = up(text).split(/[^A-ZÇĞIİÖŞÜ]+/).filter(Boolean);
+    let ok;
+    if (q.type === "start") ok = words.some((w) => w[0] === q.L && w.length >= q.minLen);
+    else ok = words.length > 0 && (words[0] === q.L || plain(words[0].toLocaleLowerCase("tr")) === plain(LETTER_NAMES[q.L]) || words[0][0] === q.L);
+    let reply, next = true;
+    if (ok) {
+      letters.correct++; bump("letters"); awardStars(1);
+      reply = `[alkış] ${pick(["Doğru!", "Harika!", "Süpersin!", "Bravo!"])} ${q.type === "which" ? `${q.word} ${q.L} harfiyle başlar.` : ""}`;
+    } else if (!letters.hinted) {
+      letters.hinted = true; next = false;
+      reply = q.type === "start" ? `[hmm] Hmm, bir daha dene. Örneğin ${LETTER_EXAMPLES[q.L]} gibi.` : `[hmm] İpucu: ${q.word} kelimesini yavaşça söyle. İlk sesi ne?`;
+    } else {
+      reply = q.type === "start" ? `Mesela ${LETTER_EXAMPLES[q.L]} diyebilirdin. Bir sonrakinde olacak!` : `${q.word} kelimesi ${q.L} harfiyle başlar. Bir sonrakini bileceksin!`;
+    }
+    show(text, cleanText(reply));
+    if (!next) return perform(reply, listenNow);
+    letters.n++;
+    perform(reply, letters.n >= 6 ? endLetters : askLetter);
+  }
+  function endLetters() {
+    const l = letters; letters = null;
+    const msg = l.n === 0 ? "Tamam, harfleri sonra oynarız!" : `[yaşasın] Harf oyunu bitti! ${l.n} sorudan ${l.correct} tanesini bildin. Çok akıllısın!`;
+    show("", cleanText(msg));
+    mode = "chat"; markMode("chat");
+    perform(msg, () => {});
+  }
+
+  // ---------- writing a story together ----------
+  let coStory = null;
+  let stories = loadJson("stories", []);
+  const saveStories = () => A.set("stories", JSON.stringify(stories));
+  function finishCoStory() {
+    if (!coStory || coStory.saved) return;
+    coStory.saved = true;
+    stories.unshift({ title: coStory.title || "Bizim masalımız", cover: coStory.cover || "📖✨", lines: coStory.lines, date: today() });
+    stories = stories.slice(0, 50);
+    saveStories();
+    bump("cowrites"); awardStars(2);
+  }
+  function renderBooks() {
+    $("booksCount").textContent = stories.length + " masal";
+    $("booksList").innerHTML = stories.length ? stories.map((st, i) => `<button class="book" data-book="${i}"><b>${st.cover}</b><span>${st.title.replace(/</g, "&lt;")}<small>${st.date}</small></span></button>`).join("")
+      : "<small>Henüz masal yok. Masal → Birlikte yazalım ile ilk masalınızı yazın!</small>";
+  }
+  let openBook = -1;
+  $("booksBtn").addEventListener("click", () => { $("storySheet").classList.remove("open"); renderBooks(); $("booksSheet").classList.add("open"); });
+  $("booksList").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-book]"); if (!b) return;
+    openBook = +b.dataset.book;
+    const st = stories[openBook], kid = cfg().kidName || "Sen";
+    $("readerCover").textContent = st.cover; $("readerTitle").textContent = st.title;
+    $("readerText").innerHTML = "";
+    st.lines.forEach((l) => { const p = document.createElement("p"); p.className = l.by === "kid" ? "kid" : ""; p.textContent = (l.by === "kid" ? kid + ": " : "") + l.t; $("readerText").appendChild(p); });
+    $("booksSheet").classList.remove("open"); $("readerSheet").classList.add("open");
+  });
+  $("readerRead").addEventListener("click", () => {
+    const st = stories[openBook]; if (!st) return;
+    $("readerSheet").classList.remove("open");
+    show("", `📖 ${st.title}`);
+    perform(st.title + ". " + st.lines.map((l) => l.t).join(" "), () => {});
+  });
+  $("readerDelete").addEventListener("click", () => {
+    if (openBook < 0 || !confirm("Bu masal silinsin mi?")) return;
+    stories.splice(openBook, 1); saveStories(); openBook = -1;
+    $("readerSheet").classList.remove("open"); renderBooks(); $("booksSheet").classList.add("open");
+  });
+  $("storyBtn").addEventListener("click", () => { audio(); A.stopSpeaking(); A.stopListening(); setState("idle"); renderBooks(); $("storySheet").classList.add("open"); });
+  $("gamesBtn").addEventListener("click", () => { audio(); A.stopSpeaking(); A.stopListening(); setState("idle"); $("gamesSheet").classList.add("open"); });
+  $("memoryBtn").addEventListener("click", () => $("gamesSheet").classList.remove("open"));
+
   // ---------- parent settings ----------
   $("gear").addEventListener("click", () => {
     const a = 3 + Math.floor(Math.random() * 7), b = 4 + Math.floor(Math.random() * 6);
@@ -1591,7 +2332,8 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     const c = cfg();
     $("apiKey").value = A.get("apiKey", "");
     $("model").value = A.get("model", MODEL_DEFAULT);
-    $("botName").value = c.botName; $("kidName").value = c.kidName; $("kidAge").value = c.kidAge;
+    $("botName").value = c.botName; $("kidName").value = c.kidName; $("birthday").value = c.birthday;
+    $("morningTime").value = c.morning; $("eveningTime").value = c.evening;
     $("grade").value = c.grade; $("auto").value = c.auto ? "1" : "0"; $("fx").value = c.fx ? "1" : "0";
     $("overlay").value = A.overlayOn() ? "1" : "0";
     const [r, p, v] = A.getVoice().split(","); $("rate").value = r; $("pitch").value = p;
@@ -1612,7 +2354,9 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     A.set("model", $("model").value);
     A.set("botName", $("botName").value.trim() || "Gizem");
     A.set("kidName", $("kidName").value.trim());
-    A.set("kidAge", $("kidAge").value || "7");
+    A.set("birthday", $("birthday").value);
+    A.set("morningTime", $("morningTime").value || "07:30");
+    A.set("eveningTime", $("eveningTime").value || "20:30");
     A.set("grade", $("grade").value);
     A.set("auto", $("auto").value);
     A.set("fx", $("fx").value);
@@ -1640,7 +2384,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   };
   function tryApplyUpdate() {
     if (!updatePending) return;
-    if (state !== "idle" || anySheetOpen() || game || riddle || party || ar) { setTimeout(tryApplyUpdate, 3000); return; }
+    if (state !== "idle" || anySheetOpen() || game || riddle || letters || party || ar) { setTimeout(tryApplyUpdate, 3000); return; }
     updatePending = false;
     celebrate("🎉", "Yeni özellikler geldi!");
     setTimeout(() => A.reloadApp(), 1800);
@@ -1665,12 +2409,19 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     }
   });
 
-  applyLook(look);
+  applyLook(birthdayLook());
+  renderPet();
+  careTick();
+  ensureDaily();
+  updateDots();
   applyName();
   renderStars(false);
   updateGift();
   updateHint();
   if (!A.get("apiKey", "")) show("", "Merhaba! Benimle konuşabilmek için bir büyüğün sağ üstteki ayarlardan API anahtarını girmeli. Sayı oyunu ve süsleme anahtarsız da çalışır!");
+  else if (care.hunger < 35) show("", `${cfg().botName}'in karnı acıkmış 🍎 Bakım'dan ona yiyecek verebilirsin.`);
+  // Birthday party first; otherwise the morning/evening routine greeting.
+  if (!birthdayCheck()) routineGreet();
 </script>
 </body>
 </html>

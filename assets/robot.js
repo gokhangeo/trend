@@ -53,9 +53,24 @@ const ITEMS = {
   parilti: { slot: "face", name: "Pırıltı yanaklar", icon: "✨", price: 9, isNew: true },
   biyik: { slot: "face", name: "Komik bıyık", icon: "🥸", price: 10, isNew: true },
   maske: { slot: "face", name: "Kelebek maske", icon: "🦋", price: 18, isNew: true },
-  yildizgozluk: { slot: "face", name: "Yıldız gözlük", icon: "🤩", price: 22, isNew: true }
+  yildizgozluk: { slot: "face", name: "Yıldız gözlük", icon: "🤩", price: 22, isNew: true },
+  // special items: not sold, only won (daily tasks, birthday)
+  galaksi: { slot: "outfit", name: "Galaksi elbisesi", icon: "🪐", price: 0, exclusive: true },
+  altinelbise: { slot: "outfit", name: "Altın pırıltılı elbise", icon: "🌟", price: 0, exclusive: true },
+  dogumgunu: { slot: "outfit", name: "Doğum günü elbisesi", icon: "🎂", price: 0, exclusive: true },
+  kalptac: { slot: "head", name: "Kalpli taç", icon: "💖", price: 0, exclusive: true },
+  elmasgozluk: { slot: "face", name: "Elmas gözlük", icon: "💎", price: 0, exclusive: true },
+  // pets that keep the robot company
+  kedicik: { slot: "pet", name: "Kedicik", icon: "🐱", price: 10, isNew: true },
+  kopekcik: { slot: "pet", name: "Köpecik", icon: "🐶", price: 10, isNew: true },
+  tavsancik: { slot: "pet", name: "Tavşancık", icon: "🐰", price: 12, isNew: true },
+  hamster: { slot: "pet", name: "Hamster", icon: "🐹", price: 12, isNew: true },
+  tilki: { slot: "pet", name: "Tilki", icon: "🦊", price: 15, isNew: true },
+  penguen: { slot: "pet", name: "Penguen", icon: "🐧", price: 18, isNew: true },
+  panda: { slot: "pet", name: "Panda", icon: "🐼", price: 20, isNew: true },
+  minikunicorn: { slot: "pet", name: "Minik unicorn", icon: "🦄", price: 40, isNew: true }
 };
-const SLOTS = ["outfit", "head", "face"];
+const SLOTS = ["outfit", "head", "face"]; // drawn on the robot; "pet" is shown beside it
 
 const STAR = (cx, cy, r, fill) => {
   const pts = [];
@@ -131,6 +146,15 @@ const OUTFITS_CLIPPED = {
     + `<circle cx="92" cy="158" r="7" fill="#fff"/><circle cx="108" cy="158" r="7" fill="#fff"/>`,
   denizci: `<rect x="56" y="150" width="90" height="70" fill="#f8f9fa"/><path d="M68 155 L100 186 L132 155 L140 166 L100 198 L60 166 Z" fill="#1c3d78"/>`
     + `<path d="M72 162 L100 190 L128 162" stroke="#fff" stroke-width="2" fill="none"/><path d="M93 190 L107 190 L100 204 Z" fill="#e03131"/>`,
+  galaksi: `<rect x="56" y="150" width="90" height="70" fill="#1b1b4b"/><circle cx="80" cy="182" r="9" fill="#ff922b"/><ellipse cx="80" cy="182" rx="15" ry="4" fill="none" stroke="#ffd8a8" stroke-width="2"/>`
+    + `<circle cx="118" cy="194" r="6" fill="#74c0fc"/><circle cx="116" cy="192" r="2" fill="#a5d8ff"/>` + STAR(104, 170, 3, "#fff") + STAR(126, 172, 2.5, "#ffe066") + STAR(70, 204, 2.5, "#fff") + STAR(98, 206, 2, "#fff")
+    + `<path d="M86 155 Q100 164 114 155" stroke="#b197fc" stroke-width="3" fill="none"/>`,
+  altinelbise: `<rect x="56" y="150" width="90" height="70" fill="#ffd43b"/><rect x="56" y="150" width="90" height="70" fill="url(#none)" opacity="0"/>`
+    + `<path d="M56 170 L146 160 M56 190 L146 180 M56 210 L146 200" stroke="#fff3bf" stroke-width="3" opacity=".7"/>`
+    + SPARKLE(78, 178, 4, "#fff") + SPARKLE(120, 186, 5, "#fff") + SPARKLE(96, 202, 3.5, "#fff") + SPARKLE(130, 166, 3, "#fff")
+    + `<circle cx="92" cy="158" r="6.5" fill="#fff"/><circle cx="108" cy="158" r="6.5" fill="#fff"/>`,
+  dogumgunu: `<rect x="56" y="150" width="90" height="70" fill="#ff8cc6"/>` + [[66, 170, "#ffd43b"], [128, 168, "#4fb3ff"], [72, 204, "#3ddba4"], [132, 204, "#fff"], [110, 162, "#a78bfa"]].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="2.5" fill="${c}"/>`).join("")
+    + `<rect x="86" y="182" width="28" height="16" rx="3" fill="#fff"/><rect x="86" y="182" width="28" height="5" fill="#ffa8cc"/><rect x="98" y="172" width="4" height="10" fill="#4fb3ff"/><path d="M100 166 Q103 170 100 172 Q97 170 100 166 Z" fill="#ff922b"/>`,
   forma: [56, 72, 88, 104, 120, 136].map((x, i) => `<rect x="${x}" y="150" width="16" height="70" fill="${i % 2 ? "#fff" : "#e03131"}"/>`).join("")
     + `<path d="M86 155 Q100 166 114 155" stroke="#212529" stroke-width="3" fill="none"/>`
     + `<text x="100" y="202" font-size="20" font-weight="900" font-family="sans-serif" text-anchor="middle" fill="#212529" stroke="#fff" stroke-width="1">10</text>`
@@ -142,6 +166,8 @@ const HEAD_BACK = {
   kulaklik: `<path d="M50 104 Q48 46 100 46 Q152 46 150 104" stroke="var(--acc2)" stroke-width="7" fill="none" stroke-linecap="round"/>`
 };
 const HEAD_FRONT = {
+  kalptac: `<path d="M70 80 Q100 70 130 80" stroke="#ffd43b" stroke-width="5" fill="none"/>` + HEART(80, 70, 7, "#ff5fa2") + HEART(100, 62, 9, "#ff2d7a") + HEART(120, 70, 7, "#ff5fa2")
+    + SPARKLE(100, 46, 3.5, "#fff"),
   yildiztoka: STAR(133, 76, 9, "#ffd43b") + STAR(120, 69, 5, "#ffe066") + `<circle cx="131" cy="73" r="1.6" fill="#fff"/>`,
   bant: `<path d="M57 90 Q100 56 143 90" stroke="#a78bfa" stroke-width="6" fill="none" stroke-linecap="round"/>`
     + `<path d="M124 68 L112 60 L112 76 Z" fill="#da77f2"/><path d="M124 68 L136 60 L136 76 Z" fill="#da77f2"/><circle cx="124" cy="68" r="4" fill="#f3d9fa"/>`,
@@ -174,6 +200,8 @@ const HEAD_FRONT = {
     + `<circle cx="100" cy="60" r="3.5" fill="#ff5fa2"/><circle cx="84" cy="67" r="2.8" fill="#4fb3ff"/><circle cx="116" cy="67" r="2.8" fill="#4fb3ff"/>`
 };
 const FACE = {
+  elmasgozluk: `<g stroke="#66d9e8" stroke-width="3" fill="rgba(153,233,242,.3)" stroke-linejoin="round"><path d="M84.5 89 L98 104 L84.5 119 L71 104 Z"/><path d="M115.5 89 L129 104 L115.5 119 L102 104 Z"/></g>`
+    + SPARKLE(70, 90, 3, "#fff") + SPARKLE(130, 90, 3, "#fff"),
   burun: `<circle cx="100" cy="128" r="6" fill="#ff4757"/><circle cx="98" cy="126" r="1.8" fill="#fff" opacity=".8"/>`,
   parilti: SPARKLE(66, 132, 4.5, "#ffd43b") + SPARKLE(136, 130, 4.5, "#ffd43b") + SPARKLE(142, 120, 2.5, "#fff3bf") + SPARKLE(60, 122, 2.5, "#fff3bf"),
   biyik: `<path d="M100 132 Q92 125 82 130 Q78 133 80 137 Q84 133 90 135 Q96 137 100 134 Q104 137 110 135 Q116 133 120 137 Q122 133 118 130 Q108 125 100 132 Z" fill="#6b4226"/>`,
