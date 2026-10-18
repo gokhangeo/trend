@@ -443,6 +443,7 @@
 
   let state = "idle", mode = "chat", history = [], autoTurns = 0, mouthTimer = null, queue = [], pendingImage = null;
   let afterSpeak = null, rateMul = 1, sessionCounted = false, game = null, pendingNews = [];
+  let danceTimer = null, notesTimer = null, musicTimer = null, nextBarAt = 0, barNo = 0, lastSong = -1;
 
   // ---------- stored data ----------
   function loadJson(key, def) { try { return JSON.parse(A.get(key, "") || "null") || def; } catch (e) { return def; } }
@@ -529,7 +530,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
     state = s;
     body.classList.remove("listening", "thinking", "speaking");
     if (s !== "idle") body.classList.add(s);
-    if (s !== "speaking") { stopMouth(); queue = []; afterSpeak = null; }
+    if (s !== "speaking") { stopMouth(); queue = []; afterSpeak = null; if (musicTimer && !danceTimer) stopDance(); }
     if (s !== "listening") ring.style.transform = "";
     updateHint();
   }
@@ -629,6 +630,12 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
       celebrate(step.news.icon, step.news.title);
       setTimeout(nextStep, cfg().fx ? playFx("alkis") : 300);
     } else {
+      if (step.lyric) {
+        if (step.outro) stopDance();
+        const el = document.createElement("div"); el.style.fontSize = "22px"; el.style.fontWeight = "800";
+        el.textContent = (step.outro ? "💖 " : "🎵 ") + step.say;
+        bubble.innerHTML = ""; bubble.appendChild(el);
+      }
       A.speakWith(step.say, step.lang, String(rateMul));
     }
   }
@@ -949,7 +956,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   window.onSpeakStart = () => { if (state === "speaking") startMouth(); };
   window.onSpeakEnd = () => { stopMouth(); nextStep(); };
   window.onTtsError = (msg) => show("", msg);
-  window.onPaused = () => { if (state !== "idle") setState("idle"); autoTurns = 0; updateGift(); };
+  window.onPaused = () => { if (state !== "idle") setState("idle"); stopDance(); autoTurns = 0; updateGift(); };
   window.startTalk = () => { if (anySheetOpen()) return; A.stopSpeaking(); autoTurns = 0; listenNow(); };
 
   window.onPhoto = (b64) => {
@@ -968,6 +975,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   // ---------- interaction ----------
   $("bot").addEventListener("click", () => {
     audio();
+    if (danceTimer) { stopDance(); return; } // tapped during the song intro
     if (body.classList.contains("sleeping")) {
       setSleeping(false);
       if (mode === "story") { setMode("chat"); return; }
@@ -1139,32 +1147,73 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   $("memoryBtn").addEventListener("click", () => { audio(); A.stopSpeaking(); A.stopListening(); setState("idle"); newMemory(); $("memorySheet").classList.add("open"); });
   $("memoryAgain").addEventListener("click", newMemory);
 
-  // ---------- dance party (synth music, no API) ----------
-  let danceTimer = null;
+  // ---------- dance party: robot sings while a backing track plays (no API) ----------
+  // Original little songs; {kid} and {bot} are filled in with the child's and the robot's names.
+  const SONGS = [
+    { title: "Robot Dansı", lines: [
+      "{bot} geldi, dans başladı, la la la!", "Kollar yukarı, eller havaya, ha ha ha!", "Sağa dön, sola dön, zıpla zıpla!",
+      "{kid} ile dans ediyoruz, ne güzel ya!", "La la la, la la la, robot dansı!", "Bip bip bop, bip bip bop, haydi bir daha!"] },
+    { title: "Yıldızlar Şarkısı", lines: [
+      "Gökyüzünde yıldızlar, parıl parıl parlıyor.", "{kid} ile {bot}, neşeyle dans ediyor.", "Bir adım öne, bir adım geri,",
+      "Döndük döndük, uçtuk sanki peri!", "La la la, yıldızlar bizimle,", "Hadi sen de söyle, benimle birlikte!"] },
+    { title: "Gökkuşağı Şarkısı", lines: [
+      "Kırmızı, turuncu, sarı ve yeşil,", "Mavi ve mor, gökkuşağı ne neşeli!", "Renkler dans ediyor, biz de dans edelim,",
+      "{kid}, ellerini çırp, hep birlikte gülelim!", "Şak şak şak, şak şak şak,", "Gökkuşağı şarkısı, ne kadar parlak!"] },
+    { title: "Sayı Şarkısı", lines: [
+      "Bir, iki, üç, ellerimi çırpayım,", "Dört, beş, altı, ayaklarımı vurayım,", "Yedi, sekiz, dokuz, dönerim fır fır,",
+      "On dedim mi, zıplarım hop hop hop!", "Saymayı seviyoruz, {kid} ile ben,", "Hadi bir daha sayalım, en baştan!"] },
+    { title: "Hayvanlar Şarkısı", lines: [
+      "Kedi miyav der, köpek hav hav,", "İnek mööö der, ördek vak vak,", "Kuzu meee der, horoz ü ürü üüü,",
+      "{bot} der ki bip bip, hadi dans edelim şimdi!", "Hayvanlar dans ediyor, sen de katıl bize,", "{kid}, hadi zıpla, şarkı söyle bizimle!"] }
+  ];
+  const BEAT = 0.25;
+  // Schedules one 16-step bar of the backing track (kept soft so the singing stays clear).
+  function scheduleBar() {
+    const c = audio();
+    if (nextBarAt < c.currentTime) nextBarAt = c.currentTime + 0.05;
+    const t0 = nextBarAt - c.currentTime;
+    const progression = [[60, 64, 67], [57, 60, 64], [53, 57, 60], [55, 59, 62]]; // C Am F G
+    const chord = progression[barNo % 4];
+    const melody = [0, 2, 1, 2, 0, 1, 2, 1].map((i) => chord[i] + 12);
+    melody.forEach((n, i) => bell(NOTE(n), t0 + i * 2 * BEAT, 0.05, 0.4));
+    for (let i = 0; i < 4; i++) bell(NOTE(chord[0] - 12), t0 + i * 4 * BEAT, 0.1, 0.5);
+    clap(t0 + 4 * BEAT, 0.12); clap(t0 + 12 * BEAT, 0.12);
+    nextBarAt += 16 * BEAT; barNo++;
+  }
+  function stopDance() {
+    clearInterval(notesTimer); clearInterval(musicTimer); clearTimeout(danceTimer);
+    notesTimer = musicTimer = danceTimer = null;
+    body.classList.remove("dancing");
+  }
   function danceParty() {
     audio(); A.stopSpeaking(); A.stopListening(); setState("idle");
-    if (danceTimer) return;
+    if (danceTimer || musicTimer) return;
     bump("dances");
     body.classList.add("dancing");
-    // A cheerful little tune: melody bells over a bouncing bass, about 14 seconds.
-    const melody = [72, 76, 79, 76, 77, 81, 79, 77, 76, 79, 84, 83, 81, 79, 77, 76];
-    const bass = [48, 55, 53, 55];
-    const beat = 0.22;
-    for (let bar = 0; bar < 4; bar++) {
-      melody.forEach((n, i) => bell(NOTE(n + (bar === 3 ? 2 : 0)), (bar * 16 + i) * beat, 0.11, 0.35));
-      for (let i = 0; i < 8; i++) bell(NOTE(bass[(bar + Math.floor(i / 2)) % 4]), (bar * 16 + i * 2) * beat, 0.14, 0.4);
-    }
-    const notes = setInterval(() => {
+    let k; do { k = Math.floor(Math.random() * SONGS.length); } while (k === lastSong && SONGS.length > 1);
+    lastSong = k;
+    const c = cfg(), kid = c.kidName || "sen", song = SONGS[k];
+    const lines = song.lines.map((l) => l.replace(/\{kid\}/g, kid).replace(/\{bot\}/g, c.botName));
+    nextBarAt = 0; barNo = 0;
+    scheduleBar(); scheduleBar();
+    musicTimer = setInterval(scheduleBar, 16 * BEAT * 1000);
+    notesTimer = setInterval(() => {
       const n = document.createElement("span");
       n.textContent = pick(["🎵", "🎶", "✨", "💖", "⭐"]);
       n.style.left = 10 + Math.random() * 80 + "%"; n.style.top = 30 + Math.random() * 40 + "%";
       $("notes").appendChild(n); setTimeout(() => n.remove(), 2300);
     }, 280);
-    show("", "💃 Dans partisi! Sen de benimle dans et!");
+    show("", `🎤 ${song.title}`);
+    // One bar of music as an intro, then she sings line by line; the music stops when the song ends.
     danceTimer = setTimeout(() => {
-      clearInterval(notes); body.classList.remove("dancing"); danceTimer = null;
-      perform("[kıkır] Ooh, çok eğlendim! Sen harika dans ediyorsun!", () => {});
-    }, 64 * beat * 1000);
+      danceTimer = null;
+      setState("speaking");
+      queue = lines.map((l) => ({ say: l, lang: "tr", lyric: true }));
+      queue.push({ say: "Yaşasın! Çok eğlendim! Sen harika dans ediyorsun!", lang: "tr", lyric: true, outro: true });
+      afterSpeak = () => {};
+      rateMul = 1.05;
+      nextStep();
+    }, 16 * BEAT * 1000);
   }
   $("danceBtn").addEventListener("click", danceParty);
 
@@ -1315,7 +1364,7 @@ ${memories.map((m) => "- " + m.t).join("\n")}`;
   };
   function tryApplyUpdate() {
     if (!updatePending) return;
-    if (state !== "idle" || anySheetOpen() || game || riddle || danceTimer) { setTimeout(tryApplyUpdate, 3000); return; }
+    if (state !== "idle" || anySheetOpen() || game || riddle || danceTimer || musicTimer) { setTimeout(tryApplyUpdate, 3000); return; }
     updatePending = false;
     celebrate("🎉", "Yeni özellikler geldi!");
     setTimeout(() => A.reloadApp(), 1800);
