@@ -249,13 +249,13 @@
   .reader p.kid { color: #ffb3d9; font-style: italic; }
 
   /* number pad for the number game (when the microphone doesn't catch the answer) */
-  .numpad { display: none; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 0 10px 8px; max-width: 600px; margin: 0 auto; }
+  .numpad { display: none; grid-template-columns: repeat(7, 1fr); gap: 5px; padding: 0 10px 8px; max-width: 600px; margin: 0 auto; }
   body.numpadOn .numpad { display: grid; }
   body.numpadOn { padding-bottom: 290px; }
   body.numpadOn .status { display: none; }
   .numpad button { border: 1px solid var(--pill-border); background: #222936; color: var(--text); border-radius: 12px; font-size: 21px; font-weight: 800; padding: 8px 0; touch-action: manipulation; }
   .numpad button:active { transform: scale(.92); }
-  .numpad .ok { background: var(--ring); color: #10141a; }
+  .numpad .ok { background: var(--ring); color: #10141a; grid-column: span 2; }
   .sayNow { font-size: 18px; font-weight: 800; color: var(--ring-listen); margin-top: 6px; animation: pulseSay 1s ease-in-out infinite; }
   @keyframes pulseSay { 50% { transform: scale(1.12); } }
   .heard { color: var(--muted); font-size: 14px; margin-top: 4px; }
@@ -274,6 +274,36 @@
   body.numpadOn .reminder small { display: none; }
   body.numpadOn.reminding .stage { margin-top: 34px; }
   body.numpadOn .bot { width: min(50vw, 230px, 28vh); }
+
+  /* typing instead of talking, and the English/Turkish microphone switch */
+  .miniBtn { border: 1px solid var(--pill-border); background: var(--pill); color: var(--text); border-radius: 999px; padding: 7px 12px; font-size: 14px; font-weight: 700; display: none; flex: none; }
+  .miniBtn.show { display: inline-block; }
+  .typeRow { display: none; gap: 8px; padding: 0 12px 8px; max-width: 600px; margin: 0 auto; }
+  body.typing .typeRow { display: flex; }
+  .typeRow input { flex: 1; min-width: 0; padding: 12px 14px; font-size: 17px; border-radius: 14px; border: 1px solid var(--pill-border); background: #10141a; color: var(--text); user-select: text; }
+  .typeRow button { border: 0; border-radius: 14px; background: var(--ring); color: #10141a; font-size: 20px; padding: 0 18px; font-weight: 800; }
+
+  /* tap games */
+  .qText { font-size: 19px; font-weight: 800; line-height: 1.45; margin: 12px 0; text-align: center; }
+  .qEmoji { font-size: 72px; text-align: center; line-height: 1.1; margin-top: 6px; }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .choice { padding: 16px 8px; min-height: 64px; font-size: 16px; font-weight: 700; border-radius: 16px; border: 2px solid transparent; background: #222936; color: var(--text); touch-action: manipulation; }
+  .choice.big { font-size: 44px; padding: 8px; }
+  .choice.right { background: #2b8a3e; border-color: #8ce99a; }
+  .choice.wrong { background: #a61e4d; }
+  .explain { display: block; text-align: center; margin-top: 10px; font-size: 15px; color: var(--muted); }
+  .slots { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin: 12px 0; min-height: 52px; }
+  .slot { width: 40px; height: 48px; border-radius: 10px; border: 2px dashed var(--pill-border); display: grid; place-items: center; font-size: 24px; font-weight: 900; }
+  .slot.filled { border-style: solid; border-color: var(--ring); }
+  .slots.shake { animation: shake .4s; }
+  @keyframes shake { 25% { transform: translateX(-8px) } 75% { transform: translateX(8px) } }
+  .tiles { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .tileL { width: 46px; height: 52px; border-radius: 12px; border: 0; background: #ffd43b; color: #1b2433; font-size: 24px; font-weight: 900; box-shadow: 0 4px 0 #f08c00; touch-action: manipulation; }
+  .tileL:disabled { opacity: .25; box-shadow: none; }
+  .pads { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px auto 0; max-width: 340px; }
+  .pad { aspect-ratio: 1; border-radius: 26px; border: 0; opacity: .45; transition: opacity .1s, transform .1s; touch-action: manipulation; }
+  .pad.lit { opacity: 1; transform: scale(1.05); box-shadow: 0 0 30px currentColor; }
+  .topicTabs { display: flex; gap: 8px; overflow-x: auto; margin-top: 10px; padding-bottom: 4px; }
 
   /* party effects */
   .party { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; display: none; }
@@ -378,13 +408,16 @@
   <div class="bubble" id="bubble"></div>
 
   <div class="dock">
+    <div class="typeRow" id="typeRow"><input id="typeBox" placeholder="Buraya yaz…" autocomplete="off" enterkeyhint="send"><button id="typeSend" aria-label="Gönder">➤</button></div>
     <div class="numpad" id="numpad">
-      <button>1</button><button>2</button><button>3</button><button>4</button><button>5</button><button data-k="del">⌫</button>
-      <button>6</button><button>7</button><button>8</button><button>9</button><button>0</button><button class="ok" data-k="ok">✓</button>
+      <button>1</button><button>2</button><button>3</button><button>4</button><button>5</button><button>6</button><button data-k="del">⌫</button>
+      <button>7</button><button>8</button><button>9</button><button>0</button><button data-k="neg">−</button><button class="ok" data-k="ok">✓</button>
     </div>
     <div class="status">
       <img class="thumb" id="thumb" alt="Ödev fotoğrafı">
+      <button class="miniBtn" id="langBtn">🎤 English</button>
       <div class="hint" id="hint">Konuşmak için robota dokun</div>
+      <button class="miniBtn" id="typeBtn" aria-label="Yazarak cevap ver">⌨️ Yaz</button>
     </div>
     <div class="modes" id="modes">
       <button class="mode on" data-mode="chat"><b>💬</b>Sohbet</button>
@@ -468,6 +501,11 @@
         <button class="tile" data-mode="riddle"><b>🧩</b>Bilmece<small>5 bilmece</small></button>
         <button class="tile" data-mode="letters"><b>🔤</b>Harfler<small>Harf ve kelime</small></button>
         <button class="tile" id="memoryBtn"><b>🃏</b>Hafıza<small>Eşini bul</small></button>
+        <button class="tile" id="quizBtn"><b>🏆</b>Bilgi yarışması<small>~100 soru</small></button>
+        <button class="tile" id="wordsBtn"><b>🇬🇧</b>Kelime kartları<small>İngilizce</small></button>
+        <button class="tile" id="anagramBtn"><b>🔠</b>Kelime avı<small>Harfleri diz</small></button>
+        <button class="tile" id="simonBtn"><b>🎨</b>Renk hafızası<small>Sırayı tekrarla</small></button>
+        <button class="tile" id="lessonBtn"><b>🎓</b>Mini ders<small>6. sınıf konuları</small></button>
       </div>
       <div class="btns"><button class="btn ghost" data-close>Kapat</button></div>
     </div>
@@ -555,6 +593,16 @@
       <div id="routineList"></div>
       <small id="routineNote"></small>
       <div class="btns"><button class="btn ghost" data-close>Kapat</button></div>
+    </div>
+  </div>
+
+  <!-- tap games share this sheet -->
+  <div class="sheet" id="playSheet">
+    <div class="panel">
+      <h2 id="playTitle"></h2>
+      <small id="playInfo"></small>
+      <div id="playBody"></div>
+      <div class="btns"><button class="btn ghost" id="playClose">Kapat</button></div>
     </div>
   </div>
 
@@ -724,7 +772,8 @@
   // stars = everything ever earned (for badges); coins = stars left to spend in the shop.
   let stats = Object.assign({ stars: 0, read: 0, english: 0, stories: 0, photos: 0, perfect: 0, badges: [], weak: {}, tagDay: "", tagCount: 0,
     riddles: 0, memWins: 0, dances: 0, bought: 0, giftDay: "", memDay: "", memCount: 0,
-    gameCorrect: 0, letters: 0, drawings: 0, feeds: 0, chats: 0, cowrites: 0, bdayYear: 0, daily: null, routine: null }, loadJson("stats", {}));
+    gameCorrect: 0, letters: 0, drawings: 0, feeds: 0, chats: 0, cowrites: 0, bdayYear: 0, daily: null, routine: null,
+    quiz: 0, wordsOk: 0, simon5: 0, anagram: 0, lessons: 0 }, loadJson("stats", {}));
   if (stats.coins === undefined) stats.coins = stats.stars;
   if (!stats.owned) {
     // Accessories that older versions unlocked by star count are kept.
@@ -799,11 +848,19 @@ ${rules}`;
 - Zorlandığı en fazla iki kelimeyi hecele (örneğin ke-le-bek) ve tekrar etmesini iste. Her şeyi düzeltme.
 - Okuduğu kısım hakkında basit bir anlama sorusu sor.
 - Bir sayfayı ya da bölümü bitirince [yıldız] ver. Kısa konuş; okumanın kendisi ön planda.`,
-    english: (c, kid) => `Şu an İngilizce pratik modundasınız. ${kid}'in sözleri İngilizce ses tanımayla yazıya döküldü; anlamsız görünüyorsa Türkçe konuşmuş olabilir, o zaman Türkçe yardım et.
+    english: (c, kid) => `Şu an İngilizce pratik modundasınız. ${kid}'in sözleri ses tanımayla yazıya döküldü ve ses tanıma Türk aksanlı İngilizceyi sık sık yanlış yazar (örneğin "I'm fine" yerine "I'm find", "apple" yerine "a pole").
+- Yazılan metni sesine göre yorumla: sorduğun soruya sesçe benzeyen makul cevabı onun söylediğini varsay ve doğru kabul et. Sadece ses tanıma hatası olabilecek farklar için asla "yanlış söyledin" deme.
+- Metin tamamen anlamsızsa ya da Türkçe gibi duruyorsa Türkçe konuşmuş olabilir; o zaman Türkçe yardım et.
+- Bazen klavyeyle yazarak da cevap verebilir; yazım hatalarını nazikçe düzelt.
 - Seviyesine uygun çok basit İngilizce kullan: selamlaşma, renkler, hayvanlar, sayılar, aile, yiyecekler, duygular.
 - Her cevapta bir iki kısa İngilizce cümle kur (süslü parantez içinde) ve gerekiyorsa Türkçe anlamını söyle.
 - Ona basit bir soru sor ve İngilizce cevap vermesini iste. Hata yaparsa doğrusunu nazikçe söyle ve tekrarlat.
 - Güzel bir İngilizce cümle kurduğunda [yıldız] ver.`,
+    lesson: (c, kid) => `Şu an mini ders modundasınız. Ders: ${lessonTopic.subject.replace(/^\S+\s/, "")}, konu: ${lessonTopic.topic} (Türkiye'de 6. sınıf MEB müfredatı seviyesi).
+- Konuyu 3-4 küçük adımda öğret. Her adımda 2-4 kısa cümle ve günlük hayattan bir örnek kullan, sonra o adımla ilgili tek bir kısa soru sor ve cevabını bekle.
+- Doğru cevapta kısaca öv ve [yıldız] ver (her adımda en fazla bir kez). Yanlışsa moralini bozmadan açıkla ve benzer kolay bir soru sor.
+- Adımlar bitince 3 soruluk mini bir test yap, sonra konuyu iki cümleyle özetleyip dersi bitir.
+- ${/English/.test(lessonTopic.subject) ? "İngilizce kelime ve cümleleri süslü parantez içinde yaz; açıklamaları Türkçe yap." : "Sembol yerine kelime kullan (örneğin üzeri yerine 'üssü', kesir için 'üçte iki')."}`,
     cowrite: (c, kid) => `Şu an ${kid} ile birlikte masal yazıyorsunuz, sırayla anlatıyorsunuz.
 - ${kid} bir iki cümle söyler; sen onun fikrini mutlaka kullanarak hikayeyi 1-2 kısa cümleyle sürdür ve "Sonra ne oldu?" gibi bir soruyla sözü ona bırak.
 - Onun fikirlerini her zaman kabul et ve kısaca öv. Hikaye neşeli ve çocuğa uygun kalsın.
@@ -830,7 +887,7 @@ ${rules}`;
     if (body.classList.contains("sleeping")) { hint.textContent = "Uyuyor… Uyandırmak için dokun"; return; }
     const idle = { chat: "Konuşmak için robota dokun", read: "Okumaya başlamak için robota dokun", game: "Oyun için robota dokun",
       english: "Let's talk! Robota dokun", story: "Masal için robota dokun", riddle: "Cevabını söylemek için robota dokun",
-      letters: "Cevabını söylemek için robota dokun", cowrite: "Sıra sende! Robota dokun ve anlat" }[mode];
+      letters: "Cevabını söylemek için robota dokun", cowrite: "Sıra sende! Robota dokun ve anlat", lesson: "Cevap vermek için robota dokun ya da yaz" }[mode];
     hint.textContent = { idle, listening: mode === "read" ? "Seni dinliyorum, oku bakalım…" : "Dinliyorum…", thinking: "Düşünüyorum…", speaking: "Durdurmak için dokun" }[state];
   }
 
@@ -943,7 +1000,7 @@ ${rules}`;
 
   function listenNow() {
     setSleeping(false);
-    if (mode === "english") A.listenWith("en-US", "2000");
+    if (mode === "english") A.listenWith(englishMicTr ? "tr-TR" : "en-US", "2200");
     else if (mode === "read") A.listenWith("tr-TR", "4000");
     // Quiz answers get a longer pause allowance so "elli… altı" isn't cut in half.
     else A.listenWith("tr-TR", game ? "2000" : riddle || letters ? "1800" : "1500");
@@ -963,7 +1020,11 @@ ${rules}`;
     { id: "moda", icon: "👗", name: "Moda İkonu", desc: "Dükkandan 5 şey al", ok: (s) => s.bought >= 5 },
     { id: "bilmece", icon: "🧩", name: "Bilmece Ustası", desc: "10 bilmece bil", ok: (s) => s.riddles >= 10 },
     { id: "hafiza", icon: "🃏", name: "Hafıza Şampiyonu", desc: "Hafıza oyununu 5 kez bitir", ok: (s) => s.memWins >= 5 },
-    { id: "dans", icon: "💃", name: "Dans Kraliçesi", desc: "5 kez dans et", ok: (s) => s.dances >= 5 }
+    { id: "dans", icon: "💃", name: "Dans Kraliçesi", desc: "5 kez dans et", ok: (s) => s.dances >= 5 },
+    { id: "bilgi", icon: "🦉", name: "Bilgi Kurdu", desc: "Yarışmada 30 doğru", ok: (s) => s.quiz >= 30 },
+    { id: "engpro", icon: "🌍", name: "English Pro", desc: "30 kelime kartı bil", ok: (s) => s.wordsOk >= 30 },
+    { id: "kelime", icon: "🔠", name: "Kelime Ustası", desc: "20 kelime avı", ok: (s) => s.anagram >= 20 },
+    { id: "ogrenci", icon: "🎓", name: "Süper Öğrenci", desc: "5 mini ders", ok: (s) => s.lessons >= 5 }
   ];
   function awardStars(n) {
     stats.stars += n;
@@ -1009,11 +1070,12 @@ ${rules}`;
     read: () => "[yaşasın] Okuma zamanı! İstersen önce Ödev düğmesiyle sayfanın fotoğrafını çek. Hazır olunca bana dokun ve sesli oku, seni dinliyorum.",
     english: () => "[bipbip] {Hello! Let's speak English!} Hadi İngilizce konuşalım. {How are you today?}",
     story: () => "Masal zamanı. Bu gece ne hakkında bir masal istersin? Prensesler, uzay, hayvanlar ya da deniz altı olabilir.",
+    lesson: () => `[yaşasın] ${lessonTopic.topic} dersine başlıyoruz! Hazırsan başlayalım.`,
     cowrite: () => "[yaşasın] Hadi birlikte masal yazalım! Ben başlıyorum: Bir varmış, bir yokmuş... Şimdi sen söyle, masalımızın kahramanı kim?"
   };
   function markMode(m) {
     document.querySelectorAll("[data-mode]").forEach((b) => b.classList.toggle("on", b.dataset.mode === m));
-    $("gamesBtn").classList.toggle("on", ["game", "riddle", "letters"].includes(m));
+    $("gamesBtn").classList.toggle("on", ["game", "riddle", "letters", "lesson"].includes(m));
     $("storyBtn").classList.toggle("on", ["story", "cowrite"].includes(m));
   }
   function setMode(m) {
@@ -1030,7 +1092,9 @@ ${rules}`;
     if (m === "letters") return startLetters();
     const intro = MODE_INTROS[m]();
     show("", cleanText(intro));
-    // Reading waits for a tap so she can take a photo first; the others start listening.
+    updateModeButtons();
+    // The lesson starts by itself; reading waits for a tap so she can take a photo first; the others start listening.
+    if (m === "lesson") return perform(intro, () => onHeard("Hazırım, başlayalım!"));
     perform(intro, m === "read" ? () => {} : listenNow);
   }
   document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
@@ -1041,6 +1105,10 @@ ${rules}`;
 
   // ---------- number game (runs locally, no API cost) ----------
   const OP_WORD = { "+": "artı", "-": "eksi", "×": "çarpı", "÷": "bölü" };
+  // Questions that don't fit "a op b": squares, order of operations, negatives, fractions and percents.
+  function special(showText, say, ans, explain) {
+    return { ans, say, show: showText, full: showText.replace("?", ans), explain, key: null };
+  }
   function build(a, op, b) {
     const ans = op === "+" ? a + b : op === "-" ? a - b : op === "×" ? a * b : a / b;
     return { a, op, b, ans, key: `${a} ${op} ${b}`, say: `${a} ${OP_WORD[op]} ${b} kaç eder?`, show: `${a} ${op} ${b} = ?` };
@@ -1058,10 +1126,24 @@ ${rules}`;
       return build(pick([2, 5, 10]), "×", r(1, 10));
     }
     if (g <= 4) return build(r(2, 9), "×", r(2, 9));
-    if (Math.random() < 0.35) { const b = r(2, 9); return build(b * r(2, 10), "÷", b); }
-    return build(r(2, 10), "×", r(2, 12));
+    const t = Math.random();
+    if (t < 0.2) return build(r(2, 10), "×", r(2, 12));
+    if (t < 0.32) { const b = r(2, 9); return build(b * r(2, 10), "÷", b); }
+    if (t < 0.44) { const a = r(2, 12); return special(`${a}² = ?`, `${a} sayısının karesi kaç?`, a * a, `${a} çarpı ${a}, ${a * a} eder.`); }
+    if (t < 0.52) { const a = r(2, 5); return special(`${a}³ = ?`, `${a} sayısının küpü kaç?`, a * a * a, `${a} çarpı ${a} çarpı ${a}, ${a * a * a} eder.`); }
+    if (t < 0.66) { const a = r(1, 9), b = r(2, 6), c = r(2, 6); return special(`${a} + ${b} × ${c} = ?`, `${a} artı ${b} çarpı ${c} kaç eder?`, a + b * c, `Önce çarpma yapılır: ${b} çarpı ${c}, ${b * c}. Sonra ${a} eklenir: ${a + b * c}.`); }
+    if (t < 0.8) { const a = r(1, 15), b = r(a + 1, 25); return special(`${a} − ${b} = ?`, `${a} eksi ${b} kaç eder?`, a - b, `${a} eksi ${b}, eksi ${b - a} eder. Sıfırın altına iniyoruz.`); }
+    if (t < 0.9) { const d = pick([2, 3, 4, 5]), q = r(2, 12), n = d * q, name = { 2: "yarısı", 3: "üçte biri", 4: "çeyreği", 5: "beşte biri" }[d];
+      return special(`${n} sayısının ${name} = ?`, `${n} sayısının ${name} kaç?`, q, `${n} bölü ${d}, ${q} eder.`); }
+    const [base, pct] = pick([[40, 25], [80, 25], [60, 50], [200, 10], [50, 20], [120, 25], [300, 10], [90, 10], [20, 50], [100, 30]]);
+    return special(`${base} sayısının %${pct}'i = ?`, `${base} sayısının yüzde ${pct}'i kaç?`, base * pct / 100, `${base} çarpı ${pct}, bölü yüz: ${base * pct / 100}.`);
   }
   function parseNumber(s) {
+    const neg = /^\s*(eksi|-|−)/.test(s);
+    const v = parsePositive(s.replace(/^\s*(eksi|-|−)\s*/, ""));
+    return v === null ? null : neg ? -v : v;
+  }
+  function parsePositive(s) {
     const digits = (s.match(/\d+/g) || []).map(Number);
     if (digits.length) {
       // Recognizers sometimes split "56" into "50 6" or "100 20 5"; join tens and units back together.
@@ -1096,9 +1178,10 @@ ${rules}`;
     const k = b.dataset.k;
     if (k === "del") padValue = padValue.slice(0, -1);
     else if (k === "ok") { if (padValue) return gameHeard(padValue); return; }
-    else if (padValue.length < 4) padValue += b.textContent;
+    else if (k === "neg") padValue = padValue.startsWith("-") ? padValue.slice(1) : "-" + padValue;
+    else if (padValue.replace("-", "").length < 4) padValue += b.textContent;
     showBig(game.q.show.replace("?", padValue || "?"));
-    if (k !== "ok" && padValue.length >= String(game.q.ans).length && Number(padValue) === game.q.ans) gameHeard(padValue);
+    if (k !== "ok" && padValue.length >= String(game.q.ans).length && Number(padValue) === game.q.ans) gameHeard(padValue.replace("-", "eksi "));
   });
   function showBig(text) {
     const big = document.createElement("div"); big.className = "big"; big.textContent = text;
@@ -1125,18 +1208,18 @@ ${rules}`;
     let reply;
     if (num === q.ans) {
       game.correct++; game.streak++;
-      if (stats.weak[q.key]) stats.weak[q.key]--;
+      if (q.key && stats.weak[q.key]) stats.weak[q.key]--;
       bump("gameCorrect");
       awardStars(1);
       reply = `[${game.streak % 3 === 0 ? "alkış" : "yaşasın"}] ${pick(["Harika!", "Doğru!", "Süpersin!", "Aferin sana!", "Bravo!", "Çok iyi!"])}`;
       if (game.streak % 3 === 0) reply += ` Üst üste ${game.streak} doğru!`;
     } else {
       game.streak = 0;
-      stats.weak[q.key] = (stats.weak[q.key] || 0) + 1;
+      if (q.key) stats.weak[q.key] = (stats.weak[q.key] || 0) + 1;
       saveStats();
-      reply = `[hmm] Neredeyse! ${q.a} ${OP_WORD[q.op]} ${q.b}, ${q.ans} eder.`;
+      reply = `[hmm] Neredeyse! ${q.explain || `${q.a} ${OP_WORD[q.op]} ${q.b}, ${q.ans} eder.`}`;
     }
-    showBig(`${q.a} ${q.op} ${q.b} = ${q.ans}`);
+    showBig(q.full || `${q.a} ${q.op} ${q.b} = ${q.ans}`);
     if (num !== q.ans) { const h = document.createElement("div"); h.className = "heard"; h.textContent = `Senin cevabın: ${num}`; bubble.appendChild(h); }
     game.n++;
     perform(reply, game.n >= 10 ? () => endGame(false) : askGame);
@@ -1302,6 +1385,7 @@ ${rules}`;
     const askedText = asked ? (Array.isArray(asked.content) ? "📷 " + asked.content[1].text : asked.content) : "";
     show(askedText, cleanText(text));
     if (!sessionCounted && mode === "read") { sessionCounted = true; bump("read"); }
+    if (!sessionCounted && mode === "lesson") { sessionCounted = true; bump("lessons"); }
     if (coStory) {
       coStory.lines.push({ by: "bot", t: cleanText(text) });
       perform(text);
@@ -1913,7 +1997,12 @@ ${rules}`;
     { id: "read", icon: "📖", text: "Bir okuma yap", stat: "read", need: 1, ai: true },
     { id: "english", icon: "🇬🇧", text: "3 kez İngilizce konuş", stat: "english", need: 3, ai: true },
     { id: "chat", icon: "💬", text: "Gizem ile 3 kez sohbet et", stat: "chats", need: 3, ai: true },
-    { id: "cowrite", icon: "✍️", text: "Birlikte bir masal yaz", stat: "cowrites", need: 1, ai: true }
+    { id: "cowrite", icon: "✍️", text: "Birlikte bir masal yaz", stat: "cowrites", need: 1, ai: true },
+    { id: "quiz", icon: "🏆", text: "Bilgi yarışmasında 5 doğru yap", stat: "quiz", need: 5 },
+    { id: "words", icon: "🇬🇧", text: "4 İngilizce kelime kartı bil", stat: "wordsOk", need: 4 },
+    { id: "simon", icon: "🎨", text: "Renk hafızasında 5. seviyeye ulaş", stat: "simon5", need: 1 },
+    { id: "anagram", icon: "🔠", text: "Kelime avında 3 kelime bul", stat: "anagram", need: 3 },
+    { id: "lesson", icon: "🎓", text: "Bir mini ders yap", stat: "lessons", need: 1, ai: true }
   ];
   const TASK_REWARDS = ["galaksi", "altinelbise", "kalptac", "elmasgozluk"];
   function ensureDaily() {
@@ -2366,7 +2455,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   // Reads new messages out loud once nothing else is going on.
   function deliverNotes() {
     if (!inbox.length) return;
-    if (state !== "idle" || anySheetOpen() || game || riddle || letters || party || ar) { setTimeout(deliverNotes, 4000); return; }
+    if (state !== "idle" || anySheetOpen() || game || riddle || letters || party || ar || play) { setTimeout(deliverNotes, 4000); return; }
     const m = inbox.shift();
     const seen = loadJson("seenNotes", []); seen.push(m.id); A.set("seenNotes", JSON.stringify(seen.slice(-200)));
     const kid = cfg().kidName || "tatlım";
@@ -2379,6 +2468,363 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   }
   setTimeout(fetchParentNotes, 2500);
   setInterval(fetchParentNotes, 5 * 60 * 1000);
+
+  // ---------- typing instead of talking; English/Turkish microphone ----------
+  let englishMicTr = false;
+  function updateModeButtons() {
+    const canType = ["chat", "english", "read", "cowrite", "lesson", "story"].includes(mode);
+    $("typeBtn").classList.toggle("show", canType);
+    $("langBtn").classList.toggle("show", mode === "english");
+    $("langBtn").textContent = englishMicTr ? "🎤 Türkçe" : "🎤 English";
+    if (!canType) body.classList.remove("typing");
+  }
+  $("langBtn").addEventListener("click", () => { englishMicTr = !englishMicTr; updateModeButtons(); if (state === "listening") { A.stopListening(); setTimeout(listenNow, 300); } });
+  $("typeBtn").addEventListener("click", () => {
+    body.classList.toggle("typing");
+    if (body.classList.contains("typing")) { if (state === "listening") A.stopListening(); setTimeout(() => $("typeBox").focus(), 50); }
+  });
+  function sendTyped() {
+    const t = $("typeBox").value.trim(); if (!t) return;
+    $("typeBox").value = "";
+    if (state === "speaking") { A.stopSpeaking(); setState("idle"); }
+    if (state === "listening") { A.stopListening(); setState("idle"); }
+    if (state === "thinking") return;
+    autoTurns = 99; // after typing, don't jump straight back to the microphone
+    onHeard(t);
+  }
+  $("typeSend").addEventListener("click", sendTyped);
+  $("typeBox").addEventListener("keydown", (e) => { if (e.key === "Enter") sendTyped(); });
+
+  // ---------- tap games (one shared sheet) ----------
+  let play = null;
+  const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  const shuffle = (a) => a.map((x) => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map((x) => x[1]);
+  function openPlay(title, info) {
+    audio(); A.stopSpeaking(); A.stopListening(); setState("idle");
+    $("gamesSheet").classList.remove("open");
+    $("playTitle").textContent = title; $("playInfo").textContent = info || "";
+    $("playSheet").classList.add("open");
+  }
+  function closePlay() {
+    if (play && play.timer) clearTimeout(play.timer);
+    play = null; A.stopSpeaking(); setState("idle");
+    $("playSheet").classList.remove("open");
+  }
+  $("playClose").addEventListener("click", closePlay);
+  const say1 = (t, lang = "tr") => A.speakWith(t, lang, "1");
+  function playAgainButton(label, fn) {
+    const b = document.createElement("button"); b.className = "btn primary"; b.style.width = "100%"; b.style.marginTop = "12px";
+    b.textContent = label; b.addEventListener("click", fn); $("playBody").appendChild(b);
+  }
+
+  // ----- quiz: ~100 questions, the first option is the right one -----
+  const QUIZ = {
+    fen: { name: "Fen", icon: "🔬", q: [
+      ["Güneş Sistemi'nin merkezinde ne vardır?", ["Güneş", "Dünya", "Ay", "Mars"], "Gezegenler Güneş'in çevresinde dolanır."],
+      ["Güneş'e en yakın gezegen hangisidir?", ["Merkür", "Venüs", "Mars", "Jüpiter"], "Merkür Güneş'e en yakın ve en küçük gezegendir."],
+      ["Güneş Sistemi'nin en büyük gezegeni hangisidir?", ["Jüpiter", "Satürn", "Dünya", "Neptün"], "Jüpiter o kadar büyük ki içine binden fazla Dünya sığar."],
+      ["Halkalarıyla ünlü gezegen hangisidir?", ["Satürn", "Mars", "Merkür", "Venüs"], "Satürn'ün halkaları buz ve kaya parçalarından oluşur."],
+      ["Ay, Dünya ile Güneş'in arasına girerse ne olur?", ["Güneş tutulması", "Ay tutulması", "Mevsim değişir", "Gece olur"], "Ay, Güneş'in ışığını kapattığı için Güneş tutulması olur."],
+      ["Dünya, Güneş ile Ay'ın arasına girerse ne olur?", ["Ay tutulması", "Güneş tutulması", "Yaz gelir", "Gelgit biter"], "Dünya'nın gölgesi Ay'a düşer."],
+      ["Kanı vücuda pompalayan organ hangisidir?", ["Kalp", "Akciğer", "Mide", "Böbrek"], "Kalp bir pompa gibi çalışır."],
+      ["Solunumda gaz alışverişi hangi organda olur?", ["Akciğer", "Kalp", "Karaciğer", "Mide"], "Akciğerlerde oksijen alınır, karbondioksit verilir."],
+      ["Besinlerin sindirimi hangi organda tamamlanır?", ["İnce bağırsak", "Mide", "Ağız", "Kalın bağırsak"], "Sindirim ince bağırsakta tamamlanır ve besinler kana geçer."],
+      ["Kanı süzerek idrar oluşturan organ hangisidir?", ["Böbrek", "Kalp", "Akciğer", "Dalak"], "Böbrekler kanı temizler."],
+      ["Ses hangi ortamda yayılamaz?", ["Boşlukta", "Suda", "Havada", "Tahtada"], "Sesin yayılması için madde gerekir, boşlukta ses yoktur."],
+      ["Kuvvetin birimi nedir?", ["Newton", "Metre", "Kilogram", "Litre"], "Kuvvet newton ile ölçülür."],
+      ["Kuvveti ölçen alet hangisidir?", ["Dinamometre", "Termometre", "Barometre", "Cetvel"], "Dinamometre yaylı bir ölçüm aletidir."],
+      ["Isınan bir maddenin tanecikleri nasıl hareket eder?", ["Daha hızlı", "Daha yavaş", "Hiç değişmez", "Durur"], "Isı alan taneciklerin hareketi artar."],
+      ["Hangisi elektriği iyi iletir?", ["Bakır", "Plastik", "Tahta", "Cam"], "Metaller elektriği iyi iletir."],
+      ["Saf su kaç derecede donar?", ["0 °C", "100 °C", "10 °C", "-20 °C"], "Su 0 derecede donar, 100 derecede kaynar."],
+      ["Bitkiler besinlerini hangi olayla üretir?", ["Fotosentez", "Solunum", "Sindirim", "Boşaltım"], "Fotosentezde güneş ışığı, su ve karbondioksit kullanılır."],
+      ["Vücudumuzu dik tutan ve şekil veren sistem hangisidir?", ["Destek ve hareket sistemi", "Sindirim sistemi", "Boşaltım sistemi", "Solunum sistemi"], "Kemikler ve kaslar bu sistemdedir."]] },
+    mat: { name: "Matematik", icon: "📐", q: [
+      ["2 üssü 3 kaçtır?", ["8", "6", "9", "5"], "2 çarpı 2 çarpı 2, 8 eder."],
+      ["5'in karesi kaçtır?", ["25", "10", "7", "55"], "5 çarpı 5, 25 eder."],
+      ["12 ve 18'in EBOB'u kaçtır?", ["6", "3", "12", "36"], "İkisini de bölen en büyük sayı 6'dır."],
+      ["4 ve 6'nın EKOK'u kaçtır?", ["12", "24", "2", "10"], "İkisinin de katı olan en küçük sayı 12'dir."],
+      ["Hangisi asal sayıdır?", ["13", "15", "21", "27"], "13 yalnızca 1'e ve kendisine bölünür."],
+      ["3 + 4 × 2 işleminin sonucu kaçtır?", ["11", "14", "10", "9"], "Önce çarpma: 4 × 2 = 8, sonra 3 + 8 = 11."],
+      ["(-5) + 8 kaçtır?", ["3", "-3", "13", "-13"], "Eksi 5'ten 8 adım ileri gidince 3'e gelinir."],
+      ["Hangisi en büyüktür?", ["0,7", "0,07", "0,5", "0,65"], "0,7 yani 0,70 en büyüğüdür."],
+      ["3/4 kesrinin ondalık gösterimi nedir?", ["0,75", "0,34", "0,25", "0,4"], "3 bölü 4, 0,75 eder."],
+      ["40'ın %25'i kaçtır?", ["10", "25", "4", "15"], "%25 dörtte bir demektir: 40 ÷ 4 = 10."],
+      ["Kenarları 6 cm ve 4 cm olan dikdörtgenin alanı kaç cm²?", ["24", "20", "10", "12"], "Alan = uzun kenar × kısa kenar = 24."],
+      ["Bir üçgenin iç açıları toplamı kaç derecedir?", ["180", "360", "90", "270"], "Her üçgenin iç açıları toplamı 180 derecedir."],
+      ["Dik açı kaç derecedir?", ["90", "180", "45", "60"], "Dik açı 90 derecedir."],
+      ["1 litre kaç mililitredir?", ["1000", "100", "10", "10000"], "1 litre = 1000 mililitre."],
+      ["1/2 + 1/4 kaçtır?", ["3/4", "2/6", "1/6", "2/4"], "1/2 = 2/4, 2/4 + 1/4 = 3/4."],
+      ["Hangisi 3'ün katıdır?", ["27", "28", "25", "22"], "27 = 3 × 9."],
+      ["A = {1, 2, 3} kümesinin kaç elemanı vardır?", ["3", "2", "1", "6"], "Kümede 1, 2 ve 3 var."],
+      ["Bir çemberin merkezinden çembere uzanan doğru parçasına ne denir?", ["Yarıçap", "Çap", "Kiriş", "Yay"], "Çap, yarıçapın iki katıdır."]] },
+    tr: { name: "Türkçe", icon: "📝", q: [
+      ["'Siyah' kelimesinin eş anlamlısı hangisidir?", ["Kara", "Beyaz", "Koyu", "Gri"], "Siyah ve kara aynı anlamdadır."],
+      ["'Uzun' kelimesinin zıt anlamlısı hangisidir?", ["Kısa", "Yüksek", "Büyük", "Geniş"], "Uzun ↔ kısa."],
+      ["'Yaşlı' kelimesinin eş anlamlısı hangisidir?", ["İhtiyar", "Genç", "Çocuk", "Yeni"], "Yaşlı ve ihtiyar aynı anlamdadır."],
+      ["'Cevap' kelimesinin eş anlamlısı hangisidir?", ["Yanıt", "Soru", "Sonuç", "Mektup"], "Cevap = yanıt."],
+      ["'Hızlı' kelimesinin zıt anlamlısı hangisidir?", ["Yavaş", "Çabuk", "Seri", "Atik"], "Hızlı ↔ yavaş."],
+      ["'Zengin' kelimesinin zıt anlamlısı hangisidir?", ["Yoksul", "Varlıklı", "Mutlu", "Akıllı"], "Zengin ↔ yoksul."],
+      ["'Kırmızı elma' sözünde sıfat hangisidir?", ["Kırmızı", "Elma", "İkisi de", "Hiçbiri"], "Kırmızı, elmanın rengini bildirir."],
+      ["Soru cümlesinin sonuna hangi işaret konur?", ["Soru işareti", "Nokta", "Virgül", "Ünlem"], "Soru cümleleri soru işaretiyle biter."],
+      ["'Ben, sen, o' kelimeleri hangi tür sözcüktür?", ["Zamir", "Sıfat", "Fiil", "Edat"], "İsimlerin yerine kullanılan sözcüklere zamir denir."],
+      ["'Koşmak' hangi tür sözcüktür?", ["Fiil", "İsim", "Sıfat", "Zamir"], "İş ve hareket bildiren sözcükler fiildir."],
+      ["Hangisinin yazımı doğrudur?", ["Herkes", "Herkez", "Herkeş", "Her kez"], "Doğrusu 'herkes'tir."],
+      ["Hangisinin yazımı doğrudur?", ["Yalnız", "Yanlız", "Yalınız", "Yannız"], "'Yalın' kökünden gelir: yalnız."],
+      ["Bir metnin 'ana fikri' nedir?", ["Verilmek istenen asıl mesaj", "Metnin başlığı", "İlk cümle", "Yazarın adı"], "Ana fikir, yazarın asıl anlatmak istediğidir."],
+      ["'Kitap' kelimesi kaç hecelidir?", ["2", "3", "1", "4"], "Ki-tap: iki hece."],
+      ["'Yüz' kelimesi hangi cümlede sayı anlamında kullanılmıştır?", ["Yüz sayfa okudum.", "Yüzünü yıkadı.", "Denizde yüzdük.", "Yüzü güldü."], "Burada yüz, 100 sayısıdır."],
+      ["'Taş kalpli' sözünde 'taş' hangi anlamdadır?", ["Mecaz", "Gerçek", "Terim", "Yan anlam değil"], "Taş kalpli, acımasız demektir; mecaz anlam."]] },
+    sos: { name: "Sosyal", icon: "🌍", q: [
+      ["Türkiye'nin başkenti neresidir?", ["Ankara", "İstanbul", "İzmir", "Bursa"], "Ankara 13 Ekim 1923'te başkent oldu."],
+      ["Türkiye Cumhuriyeti hangi yıl ilan edildi?", ["1923", "1920", "1919", "1938"], "Cumhuriyet 29 Ekim 1923'te ilan edildi."],
+      ["Türkiye Cumhuriyeti'nin kurucusu kimdir?", ["Mustafa Kemal Atatürk", "İsmet İnönü", "Fatih Sultan Mehmet", "Kanuni Sultan Süleyman"], "Atatürk, Türkiye Cumhuriyeti'nin kurucusu ve ilk cumhurbaşkanıdır."],
+      ["Türkiye'nin en yüksek dağı hangisidir?", ["Ağrı Dağı", "Erciyes", "Uludağ", "Palandöken"], "Ağrı Dağı yaklaşık 5137 metredir."],
+      ["Türkiye'nin en büyük gölü hangisidir?", ["Van Gölü", "Tuz Gölü", "Eğirdir Gölü", "Beyşehir Gölü"], "Van Gölü Türkiye'nin en büyük gölüdür."],
+      ["Hangisi Türkiye'yi çevreleyen denizlerden değildir?", ["Kızıldeniz", "Karadeniz", "Ege Denizi", "Akdeniz"], "Türkiye'yi Karadeniz, Ege ve Akdeniz çevreler; Marmara da içindedir."],
+      ["Ekvator'a paralel hayali çizgilere ne denir?", ["Enlem", "Boylam", "Meridyen", "Ufuk"], "Enlemler doğu-batı yönünde uzanır."],
+      ["Kutuplardan geçen hayali çizgilere ne denir?", ["Boylam", "Enlem", "Paralel", "Ekvator"], "Boylamlara meridyen de denir."],
+      ["İstanbul hangi yıl fethedildi?", ["1453", "1071", "1299", "1923"], "Fatih Sultan Mehmet İstanbul'u 1453'te fethetti."],
+      ["Malazgirt Savaşı hangi yıl yapıldı?", ["1071", "1453", "1176", "1923"], "Malazgirt Zaferi Anadolu'nun kapılarını Türklere açtı."],
+      ["Göktürklerden kalan ünlü yazıtlar hangileridir?", ["Orhun Yazıtları", "Kutadgu Bilig", "Divanü Lügati't-Türk", "Dede Korkut Hikâyeleri"], "Orhun Yazıtları bilinen ilk Türkçe yazılı belgelerdendir."],
+      ["23 Nisan hangi bayramdır?", ["Ulusal Egemenlik ve Çocuk Bayramı", "Cumhuriyet Bayramı", "Zafer Bayramı", "Gençlik ve Spor Bayramı"], "TBMM 23 Nisan 1920'de açıldı."],
+      ["29 Ekim hangi bayramdır?", ["Cumhuriyet Bayramı", "Zafer Bayramı", "Çocuk Bayramı", "Gençlik Bayramı"], "29 Ekim 1923'te Cumhuriyet ilan edildi."],
+      ["İstiklal Marşı'nın yazarı kimdir?", ["Mehmet Akif Ersoy", "Yunus Emre", "Namık Kemal", "Ziya Gökalp"], "İstiklal Marşı 1921'de kabul edildi."],
+      ["Haritada kuzey yönü genellikle nereyi gösterir?", ["Yukarıyı", "Aşağıyı", "Sağı", "Solu"], "Haritalarda kuzey genellikle yukarıdadır."],
+      ["Fabrikada ürün üretmek hangi ekonomik faaliyettir?", ["Sanayi", "Tarım", "Hayvancılık", "Turizm"], "Fabrikalar sanayi faaliyetidir."]] },
+    eng: { name: "English", icon: "🇬🇧", q: [
+      ["'Apple' ne demektir?", ["Elma", "Armut", "Muz", "Portakal"], "Apple = elma."],
+      ["'Kahvaltı' İngilizce nedir?", ["Breakfast", "Lunch", "Dinner", "Snack"], "Breakfast = kahvaltı."],
+      ["'Weather' ne demektir?", ["Hava durumu", "Su", "Rüzgâr", "Kış"], "Weather = hava durumu."],
+      ["'It's sunny.' ne demektir?", ["Hava güneşli.", "Hava yağmurlu.", "Hava karlı.", "Hava rüzgârlı."], "Sunny = güneşli."],
+      ["Hangisi bir meslektir?", ["Teacher", "Table", "Window", "Happy"], "Teacher = öğretmen."],
+      ["'Happy' ne demektir?", ["Mutlu", "Üzgün", "Kızgın", "Yorgun"], "Happy = mutlu."],
+      ["'I wake up at 7.' ne demektir?", ["Saat 7'de uyanırım.", "Saat 7'de uyurum.", "7 yaşındayım.", "7 elmam var."], "Wake up = uyanmak."],
+      ["'Library' ne demektir?", ["Kütüphane", "Hastane", "Market", "Park"], "Library = kütüphane."],
+      ["'Ferris wheel' nedir?", ["Dönme dolap", "Atlıkarınca", "Çarpışan araba", "Pamuk şeker"], "Lunaparktaki büyük dönen tekerlek."],
+      ["'Holiday' ne demektir?", ["Tatil", "Okul", "Ev", "Ödev"], "Holiday = tatil."],
+      ["'Recycle' ne demektir?", ["Geri dönüştürmek", "Çöpe atmak", "Satın almak", "Yıkamak"], "Recycle = geri dönüştürmek."],
+      ["'Cheese' ne demektir?", ["Peynir", "Zeytin", "Yumurta", "Bal"], "Cheese = peynir."],
+      ["'Saturday' hangi gündür?", ["Cumartesi", "Pazar", "Cuma", "Pazartesi"], "Saturday = cumartesi, Sunday = pazar."],
+      ["'What time is it?' ne demektir?", ["Saat kaç?", "Kaç yaşındasın?", "Neredesin?", "Nasılsın?"], "Time = zaman, saat."],
+      ["'Rainy' ne demektir?", ["Yağmurlu", "Karlı", "Bulutlu", "Sıcak"], "Rain = yağmur, rainy = yağmurlu."],
+      ["Where do we watch films?", ["Cinema", "Bakery", "Bank", "Hospital"], "Cinema = sinema."]] },
+    genel: { name: "Genel kültür", icon: "💡", q: [
+      ["Bir yılda kaç ay vardır?", ["12", "10", "11", "13"], "Ocak'tan Aralık'a 12 ay."],
+      ["Gökkuşağında kaç renk vardır?", ["7", "5", "6", "8"], "Kırmızı, turuncu, sarı, yeşil, mavi, lacivert, mor."],
+      ["En hızlı kara hayvanı hangisidir?", ["Çita", "Aslan", "At", "Tavşan"], "Çita saatte 100 km'nin üzerine çıkabilir."],
+      ["Dünyanın en büyük okyanusu hangisidir?", ["Büyük Okyanus", "Atlas Okyanusu", "Hint Okyanusu", "Arktik Okyanusu"], "Büyük Okyanus'a Pasifik de denir."],
+      ["Hangisi memeli bir hayvandır?", ["Yunus", "Köpekbalığı", "Kartal", "Kurbağa"], "Yunuslar yavrularını sütle besler."],
+      ["Bir saatte kaç dakika vardır?", ["60", "100", "30", "24"], "1 saat = 60 dakika."],
+      ["Mona Lisa tablosunu kim yaptı?", ["Leonardo da Vinci", "Picasso", "Van Gogh", "Michelangelo"], "Leonardo da Vinci hem ressam hem mucitti."],
+      ["Hangisi bir sebzedir?", ["Havuç", "Elma", "Çilek", "Muz"], "Havuç toprağın altında yetişen bir sebzedir."],
+      ["Dünya'nın doğal uydusu hangisidir?", ["Ay", "Güneş", "Mars", "Venüs"], "Ay, Dünya'nın çevresinde dolanır."],
+      ["Türk bayrağında hangi şekiller vardır?", ["Ay ve yıldız", "Güneş ve yıldız", "Kartal", "Güneş"], "Kırmızı zemin üzerinde beyaz ay yıldız."],
+      ["Penguenler çoğunlukla nerede yaşar?", ["Güney Yarım Küre'de", "Kuzey Kutbu'nda", "Çölde", "Ormanda"], "Penguenler en çok Antarktika çevresinde yaşar."],
+      ["Bir haftada kaç gün vardır?", ["7", "5", "6", "8"], "Pazartesi'den Pazar'a 7 gün."],
+      ["Arıların ürettiği yiyecek hangisidir?", ["Bal", "Süt", "Peynir", "Reçel"], "Arılar çiçek özünden bal yapar."],
+      ["Hangisi bir enerji kaynağı olarak güneşi kullanır?", ["Güneş paneli", "Kömür ocağı", "Doğal gaz", "Petrol"], "Güneş panelleri ışığı elektriğe çevirir."]] }
+  };
+  function quizMenu() {
+    openPlay("🏆 Bilgi yarışması", "Bir ders seç! Her doğru cevap 1 yıldız.");
+    play = { kind: "quizMenu" };
+    $("playBody").innerHTML = `<div class="grid">${Object.entries(QUIZ).map(([k, c]) => `<button class="tile" data-quiz="${k}"><b>${c.icon}</b>${c.name}</button>`).join("")}<button class="tile" data-quiz="mix"><b>🎲</b>Karışık</button></div>`;
+  }
+  function startQuiz(cat) {
+    const pool = cat === "mix" ? Object.values(QUIZ).flatMap((c) => c.q) : QUIZ[cat].q;
+    play = { kind: "quiz", cat, qs: shuffle(pool).slice(0, 10), i: 0, correct: 0 };
+    quizShow();
+  }
+  function quizShow() {
+    const p = play, [q, opts] = p.qs[p.i];
+    p.answered = false;
+    $("playInfo").textContent = `Soru ${p.i + 1}/${p.qs.length} · ✅ ${p.correct}`;
+    $("playBody").innerHTML = `<p class="qText">${esc(q)}</p><div class="choices">${shuffle(opts).map((o) => `<button class="choice" data-ans="${esc(o)}">${esc(o)}</button>`).join("")}</div><span class="explain" id="qExplain"></span>`;
+    say1(q.replace(/'/g, ""));
+  }
+  function quizAnswer(btn) {
+    const p = play; if (p.answered) return; p.answered = true;
+    const [, opts, ex] = p.qs[p.i], right = opts[0], ok = btn.dataset.ans === right;
+    document.querySelectorAll("#playBody .choice").forEach((b) => { if (b.dataset.ans === right) b.classList.add("right"); });
+    if (!ok) btn.classList.add("wrong");
+    $("qExplain").textContent = ex;
+    if (ok) { p.correct++; bump("quiz"); awardStars(1); }
+    perform(ok ? `[alkış] Doğru! ${ex}` : `Doğru cevap: ${right}. ${ex}`, () => {
+      if (!play || play !== p) return;
+      if (++p.i < p.qs.length) quizShow();
+      else {
+        $("playInfo").textContent = "";
+        $("playBody").innerHTML = `<div class="qEmoji">${p.correct >= 8 ? "🏆" : p.correct >= 5 ? "🌟" : "💪"}</div><p class="qText">${p.qs.length} sorudan ${p.correct} doğru!</p>`;
+        playAgainButton("Bir daha oyna", () => startQuiz(p.cat));
+        perform(`[yaşasın] Yarışma bitti! ${p.qs.length} sorudan ${p.correct} tanesini bildin.`, () => {});
+      }
+    });
+  }
+
+  // ----- English word cards -----
+  const WORDS = [["🍎", "apple", "elma"], ["🐱", "cat", "kedi"], ["🐶", "dog", "köpek"], ["🏠", "house", "ev"], ["🚗", "car", "araba"], ["☀️", "sun", "güneş"],
+    ["🌧️", "rain", "yağmur"], ["❄️", "snow", "kar"], ["📚", "book", "kitap"], ["🍞", "bread", "ekmek"], ["🧀", "cheese", "peynir"], ["🥚", "egg", "yumurta"],
+    ["🥛", "milk", "süt"], ["🐟", "fish", "balık"], ["🌳", "tree", "ağaç"], ["🌸", "flower", "çiçek"], ["🚌", "bus", "otobüs"], ["🏥", "hospital", "hastane"],
+    ["🏫", "school", "okul"], ["😊", "happy", "mutlu"], ["😢", "sad", "üzgün"], ["😠", "angry", "kızgın"], ["😴", "tired", "yorgun"], ["🎡", "Ferris wheel", "dönme dolap"],
+    ["🍦", "ice cream", "dondurma"], ["⚽", "ball", "top"], ["🎂", "cake", "pasta"], ["🐻", "bear", "ayı"], ["🦁", "lion", "aslan"], ["🐘", "elephant", "fil"],
+    ["🌙", "moon", "ay"], ["⭐", "star", "yıldız"], ["👕", "T-shirt", "tişört"], ["👟", "shoes", "ayakkabı"], ["☂️", "umbrella", "şemsiye"], ["🍊", "orange", "portakal"],
+    ["🍌", "banana", "muz"], ["🍇", "grapes", "üzüm"], ["👩‍⚕️", "doctor", "doktor"], ["👩‍🏫", "teacher", "öğretmen"], ["🚲", "bike", "bisiklet"], ["🌊", "sea", "deniz"]];
+  function startWords() {
+    openPlay("🇬🇧 Kelime kartları", "Doğru olanı seç! Her doğru 1 yıldız.");
+    play = { kind: "words", qs: shuffle(WORDS).slice(0, 10), i: 0, correct: 0 };
+    wordShow();
+  }
+  function wordShow() {
+    const p = play, w = p.qs[p.i], opts = shuffle([w].concat(shuffle(WORDS.filter((x) => x !== w)).slice(0, 3)));
+    p.answered = false; p.type = p.i % 2;
+    $("playInfo").textContent = `Kart ${p.i + 1}/${p.qs.length} · ✅ ${p.correct}`;
+    if (p.type === 0) {
+      $("playBody").innerHTML = `<div class="qEmoji">${w[0]}</div><p class="qText">Bu İngilizce nedir?</p><div class="choices">${opts.map((o) => `<button class="choice" data-ans="${esc(o[1])}">${esc(o[1])}</button>`).join("")}</div>`;
+      say1("Bu İngilizce nedir?");
+    } else {
+      $("playBody").innerHTML = `<p class="qText">🔊 "${esc(w[1])}"</p><div style="text-align:center"><button class="chip" id="hearAgain">🔊 Tekrar dinle</button></div><div class="choices">${opts.map((o) => `<button class="choice big" data-ans="${esc(o[1])}">${o[0]}</button>`).join("")}</div>`;
+      say1(w[1], "en");
+      $("hearAgain").addEventListener("click", () => say1(w[1], "en"));
+    }
+  }
+  function wordAnswer(btn) {
+    const p = play; if (p.answered) return; p.answered = true;
+    const w = p.qs[p.i], ok = btn.dataset.ans === w[1];
+    document.querySelectorAll("#playBody .choice").forEach((b) => { if (b.dataset.ans === w[1]) b.classList.add("right"); });
+    if (!ok) btn.classList.add("wrong");
+    if (ok) { p.correct++; bump("wordsOk"); awardStars(1); }
+    perform(`${ok ? "[yaşasın] Doğru! " : ""}{${w[1]}} ${w[2]} demek.`, () => {
+      if (!play || play !== p) return;
+      if (++p.i < p.qs.length) wordShow();
+      else {
+        $("playInfo").textContent = "";
+        $("playBody").innerHTML = `<div class="qEmoji">🌍</div><p class="qText">${p.qs.length} karttan ${p.correct} doğru!</p>`;
+        playAgainButton("Yeni kartlar", startWords);
+        perform(`[alkış] {Great job!} ${p.qs.length} karttan ${p.correct} tanesini bildin.`, () => {});
+      }
+    });
+  }
+
+  // ----- word hunt: tap the scrambled letters in order -----
+  const ANAGRAM_TR = [["🦋", "KELEBEK"], ["🐋", "BALİNA"], ["☀️", "GÜNEŞ"], ["🌸", "ÇİÇEK"], ["📚", "KİTAP"], ["🦒", "ZÜRAFA"], ["🐧", "PENGUEN"], ["🍦", "DONDURMA"],
+    ["🐢", "KAPLUMBAĞA"], ["✈️", "UÇAK"], ["🍓", "ÇİLEK"], ["🏫", "OKUL"], ["⭐", "YILDIZ"], ["🍉", "KARPUZ"], ["🐸", "KURBAĞA"], ["🚲", "BİSİKLET"], ["🌈", "GÖKKUŞAĞI"],
+    ["🦁", "ASLAN"], ["🎈", "BALON"], ["🍰", "PASTA"], ["🐝", "ARI"], ["🌳", "AĞAÇ"], ["🎒", "ÇANTA"], ["🧸", "OYUNCAK"], ["🌍", "DÜNYA"], ["🔭", "TELESKOP"]];
+  function startAnagram(lang) {
+    openPlay("🔠 Kelime avı", "Harflere doğru sırayla dokun!");
+    const list = lang === "en" ? WORDS.filter((w) => /^[a-z]{3,8}$/.test(w[1])).map((w) => [w[0], w[1].toUpperCase(), w[2]]) : ANAGRAM_TR;
+    play = { kind: "anagram", lang, qs: shuffle(list).slice(0, 8), i: 0, correct: 0 };
+    anagramShow();
+  }
+  function anagramMenu() {
+    openPlay("🔠 Kelime avı", "Hangi dilde oynayalım?");
+    play = { kind: "anagramMenu" };
+    $("playBody").innerHTML = `<div class="grid"><button class="tile" data-ana="tr"><b>🇹🇷</b>Türkçe</button><button class="tile" data-ana="en"><b>🇬🇧</b>English</button></div>`;
+  }
+  function anagramShow() {
+    const p = play, [emoji, word] = p.qs[p.i], letters = [...word];
+    let mixed; do { mixed = shuffle(letters.map((l, i) => ({ l, i }))); } while (letters.length > 1 && mixed.map((x) => x.l).join("") === word);
+    p.typed = [];
+    $("playInfo").textContent = `Kelime ${p.i + 1}/${p.qs.length} · ✅ ${p.correct}`;
+    $("playBody").innerHTML = `<div class="qEmoji">${emoji}</div><div class="slots" id="slots">${letters.map(() => `<div class="slot"></div>`).join("")}</div>
+      <div class="tiles">${mixed.map((x, k) => `<button class="tileL" data-k="${k}" data-l="${x.l}">${x.l}</button>`).join("")}</div>
+      <div class="btns"><button class="btn ghost" id="anaDel">⌫ Sil</button><button class="btn ghost" id="anaHint">💡 İpucu</button></div>`;
+    $("anaDel").addEventListener("click", () => { const k = p.typed.pop(); if (k !== undefined) { document.querySelector(`.tileL[data-k="${k}"]`).disabled = false; drawSlots(); } });
+    $("anaHint").addEventListener("click", () => say1(p.lang === "en" ? `İpucu: ${p.qs[p.i][2]}. İlk harf ${word[0]}.` : `İpucu: ilk harf ${word[0]}.`));
+  }
+  function drawSlots() {
+    const p = play, word = p.qs[p.i][1];
+    document.querySelectorAll("#slots .slot").forEach((sl, i) => {
+      const k = p.typed[i]; sl.textContent = k === undefined ? "" : document.querySelector(`.tileL[data-k="${k}"]`).dataset.l;
+      sl.classList.toggle("filled", k !== undefined);
+    });
+    if (p.typed.length === word.length) {
+      const guess = p.typed.map((k) => document.querySelector(`.tileL[data-k="${k}"]`).dataset.l).join("");
+      if (guess === word) {
+        p.correct++; bump("anagram"); awardStars(1);
+        perform(p.lang === "en" ? `[yaşasın] Harika! {${word.toLowerCase()}} ${p.qs[p.i][2]} demek.` : `[yaşasın] Harika! ${word.toLocaleLowerCase("tr")}!`, () => {
+          if (!play || play !== p) return;
+          if (++p.i < p.qs.length) anagramShow();
+          else { $("playInfo").textContent = ""; $("playBody").innerHTML = `<div class="qEmoji">🔠</div><p class="qText">${p.qs.length} kelimenin ${p.correct} tanesini buldun!</p>`; playAgainButton("Bir daha oyna", () => startAnagram(p.lang)); }
+        });
+      } else {
+        const sl = $("slots"); sl.classList.remove("shake"); void sl.offsetWidth; sl.classList.add("shake");
+        setTimeout(() => { p.typed = []; document.querySelectorAll(".tileL").forEach((b) => (b.disabled = false)); drawSlots(); }, 500);
+      }
+    }
+  }
+
+  // ----- color memory (Simon) -----
+  const PADS = [["#ff5fa2", 72], ["#ffd43b", 76], ["#3ddba4", 79], ["#4fb3ff", 84]];
+  function startSimon() {
+    openPlay("🎨 Renk hafızası", "Yanan renkleri izle, sonra aynı sırayla dokun!");
+    play = { kind: "simon", seq: [], step: 0, level: 0, input: false };
+    $("playBody").innerHTML = `<div class="pads">${PADS.map(([c], i) => `<button class="pad" data-pad="${i}" style="background:${c};color:${c}"></button>`).join("")}</div><p class="qText" id="simonMsg">Hazır ol…</p>`;
+    play.timer = setTimeout(simonNext, 900);
+  }
+  function simonLight(i, ms = 380) {
+    const el = document.querySelector(`.pad[data-pad="${i}"]`); if (!el) return;
+    el.classList.add("lit"); bell(NOTE(PADS[i][1]), 0, 0.15, 0.5);
+    setTimeout(() => el.classList.remove("lit"), ms);
+  }
+  function simonNext() {
+    const p = play; if (!p || p.kind !== "simon") return;
+    p.seq.push(Math.floor(Math.random() * 4)); p.step = 0; p.input = false;
+    $("playInfo").textContent = `Seviye ${p.seq.length}`; $("simonMsg").textContent = "İzle 👀";
+    const gap = Math.max(260, 620 - p.seq.length * 25);
+    p.seq.forEach((n, k) => setTimeout(() => { if (play === p) simonLight(n, gap * 0.7); }, k * gap));
+    p.timer = setTimeout(() => { if (play !== p) return; p.input = true; $("simonMsg").textContent = "Sıra sende! 👆"; }, p.seq.length * gap);
+  }
+  function simonTap(i) {
+    const p = play; if (!p.input) return;
+    simonLight(i, 220);
+    if (i !== p.seq[p.step]) {
+      p.input = false;
+      const lvl = p.seq.length - 1, stars = lvl >= 12 ? 3 : lvl >= 8 ? 2 : lvl >= 5 ? 1 : 0;
+      if (lvl >= 5) bump("simon5");
+      if (stars) awardStars(stars);
+      $("simonMsg").textContent = `Oyun bitti! ${lvl}. seviyeye ulaştın${stars ? ` · +${stars} ⭐` : ""}`;
+      playAgainButton("Bir daha oyna", startSimon);
+      perform(lvl >= 5 ? `[alkış] Süper hafıza! ${lvl}. seviyeye kadar geldin!` : `[hmm] Bir daha deneyelim! ${lvl}. seviyeye geldin.`, () => {});
+      return;
+    }
+    if (++p.step === p.seq.length) { p.input = false; $("simonMsg").textContent = "Aferin! ✨"; p.timer = setTimeout(simonNext, 750); }
+  }
+
+  // ----- mini lessons (6th grade topics; uses Claude) -----
+  const LESSONS = {
+    "🔢 Matematik": ["Üslü ifadeler", "İşlem önceliği", "Asal sayılar ve çarpanlar", "EBOB ve EKOK", "Kümeler", "Tam sayılar", "Kesirlerle işlemler", "Ondalık gösterim", "Oran", "Cebirsel ifadeler", "Açılar", "Alan ölçme", "Çember"],
+    "🔬 Fen": ["Güneş Sistemi", "Güneş ve Ay tutulmaları", "Destek ve hareket sistemi", "Sindirim sistemi", "Dolaşım sistemi", "Solunum sistemi", "Boşaltım sistemi", "Kuvvet ve hareket", "Madde ve ısı", "Ses ve özellikleri", "Elektriğin iletimi"],
+    "📝 Türkçe": ["Eş ve zıt anlamlı sözcükler", "Eş sesli sözcükler", "Gerçek ve mecaz anlam", "Paragrafta ana fikir", "İsimler", "Sıfatlar", "Zamirler", "Yazım kuralları", "Noktalama işaretleri"],
+    "🌍 Sosyal": ["Enlem ve boylam", "Türkiye'nin iklimi", "İlk Türk devletleri", "Türklerin İslamiyet'i kabulü", "Haklarımız ve sorumluluklarımız", "Ekonomik faaliyetler"],
+    "🇬🇧 English": ["Life (daily routines)", "Yummy Breakfast", "Downtown (places)", "Weather and Emotions", "At the Fair", "Occupations", "Holidays", "Bookworms", "Saving the Planet"]
+  };
+  let lessonTopic = { subject: "", topic: "" }, lessonTab = Object.keys(LESSONS)[0];
+  function lessonMenu() {
+    openPlay("🎓 Mini ders", A.get("apiKey", "") ? "Bir ders ve konu seç, Gizem anlatsın!" : "Mini ders için ayarlardan Claude API anahtarı girilmeli.");
+    play = { kind: "lessonMenu" };
+    $("playBody").innerHTML = `<div class="topicTabs">${Object.keys(LESSONS).map((k) => `<button class="tab ${k === lessonTab ? "on" : ""}" data-subj="${esc(k)}">${esc(k)}</button>`).join("")}</div>
+      <div class="grid">${LESSONS[lessonTab].map((t) => `<button class="tile" data-topic="${esc(t)}">${esc(t)}</button>`).join("")}</div>`;
+  }
+
+  $("playBody").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b || !play) return;
+    if (play.kind === "quizMenu" && b.dataset.quiz) return startQuiz(b.dataset.quiz);
+    if (play.kind === "quiz" && b.classList.contains("choice")) return quizAnswer(b);
+    if (play.kind === "words" && b.classList.contains("choice")) return wordAnswer(b);
+    if (play.kind === "anagramMenu" && b.dataset.ana) return startAnagram(b.dataset.ana);
+    if (play.kind === "anagram" && b.classList.contains("tileL")) { b.disabled = true; play.typed.push(+b.dataset.k); return drawSlots(); }
+    if (play.kind === "simon" && b.dataset.pad) return simonTap(+b.dataset.pad);
+    if (play.kind === "lessonMenu" && b.dataset.subj) { lessonTab = b.dataset.subj; return lessonMenu(); }
+    if (play.kind === "lessonMenu" && b.dataset.topic) {
+      if (!A.get("apiKey", "")) return;
+      lessonTopic = { subject: lessonTab, topic: b.dataset.topic };
+      closePlay(); setMode("lesson");
+    }
+  });
+  $("quizBtn").addEventListener("click", quizMenu);
+  $("wordsBtn").addEventListener("click", startWords);
+  $("anagramBtn").addEventListener("click", anagramMenu);
+  $("simonBtn").addEventListener("click", startSimon);
+  $("lessonBtn").addEventListener("click", lessonMenu);
 
   // ---------- parent settings ----------
   $("gear").addEventListener("click", () => {
@@ -2560,6 +3006,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
 
   applyLook(birthdayLook());
   renderPet();
+  updateModeButtons();
   careTick();
   ensureDaily();
   updateDots();
