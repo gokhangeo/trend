@@ -303,6 +303,14 @@
   .pads { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px auto 0; max-width: 340px; }
   .pad { aspect-ratio: 1; border-radius: 26px; border: 0; opacity: .45; transition: opacity .1s, transform .1s; touch-action: manipulation; }
   .pad.lit { opacity: 1; transform: scale(1.05); box-shadow: 0 0 30px currentColor; }
+  .figure { position: fixed; top: 64px; left: 12px; right: 12px; max-width: 460px; margin: 0 auto; z-index: 6; display: none;
+    background: #fff; color: #1b2433; border-radius: 18px; padding: 10px 10px 8px; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+  .figure.show { display: block; animation: pop .3s ease-out; }
+  .figure svg { display: block; width: 100%; height: auto; max-height: 40vh; }
+  .figure.big svg { max-height: 78vh; }
+  .figure .figX { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: #1b2433; color: #fff; font-size: 18px; }
+  .figure small { display: block; text-align: center; color: #667; font-size: 12px; margin-top: 4px; }
+  .unitHead { margin: 14px 0 0; font-size: 15px; opacity: .85; }
   .topicTabs { display: flex; gap: 8px; overflow-x: auto; margin-top: 10px; padding-bottom: 4px; }
 
   /* party effects */
@@ -405,6 +413,7 @@
   </div>
 
   <button class="reminder" id="reminder"></button>
+  <div class="figure" id="figure"><button class="figX" id="figX" aria-label="Şekli kapat">✕</button><div id="figBody"></div><small>Büyütmek için dokun</small></div>
   <div class="bubble" id="bubble"></div>
 
   <div class="dock">
@@ -805,6 +814,11 @@
     if (!A.get("kidName", "")) A.set("kidName", "Gizem");
     A.set("nameMig1", "1");
   }
+  // Gizem is in 6th grade (2026); old installs defaulted to 1st grade.
+  if (A.get("gradeMig1", "") !== "1") {
+    if (A.get("grade", "1") === "1") A.set("grade", "6");
+    A.set("gradeMig1", "1");
+  }
   // Adds the child's name to a short cheer: "Harika!" → "Harika Gizem!".
   function nameIt(t) {
     const k = cfg().kidName;
@@ -815,7 +829,7 @@
     return {
       botName: A.get("botName", "Pamuk"), kidName: A.get("kidName", "Gizem"), birthday: A.get("birthday", "2015-03-02"),
       morning: A.get("morningTime", "07:30"), evening: A.get("eveningTime", "20:30"),
-      grade: A.get("grade", "1"), auto: A.get("auto", "1") === "1", fx: A.get("fx", "1") === "1"
+      grade: A.get("grade", "6"), auto: A.get("auto", "1") === "1", fx: A.get("fx", "1") === "1"
     };
   }
 
@@ -856,12 +870,14 @@ ${rules}`;
     return p;
   }
 
+  const FIGURE_RULE = `Şekil, açı, üçgen, dörtgen, çember, kesir modeli, sayı doğrusu, grafik, tablo, deney düzeneği veya Güneş Sistemi gibi bir çizim anlatımı kolaylaştıracaksa cevabına tek bir basit SVG çizimi ekle; uygulama onu ekranda gösterir. Biçim: <svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">...</svg>. Beyaz zemin üzerine koyu ve renkli kalın çizgiler, okunaklı büyük Türkçe etiketler (text, font-size en az 14), en fazla 40 öğe; script, resim veya bağlantı kullanma. SVG'yi kod bloğuna koyma ve sesli anlatımda kodundan bahsetme; "ekrandaki şekle bak" de. Gerekmiyorsa çizim ekleme.`;
   const MODE_PROMPTS = {
     chat: (c, kid) => `Şu an serbest sohbet ve ders yardımı modundasınız.
 - Ödev veya ders sorusu sorarsa öğretmen gibi davran: cevabı hemen söyleme. Önce soruyu birlikte anla, sonra bir ipucu ver ve onun denemesini iste. Her seferinde tek bir adım anlat (en fazla 4-5 kısa cümle).
 - Doğru bulursa coşkuyla tebrik et; yanlışsa moralini bozmadan nerede yanıldığını göster ve tekrar denemesini iste. Üç denemede de olmazsa çözümü adım adım açıkla.
 - Kavramları günlük hayattan örneklerle anlat. Okuma, yazma, matematik, hayat bilgisi, fen ve İngilizce konularında sınıf seviyesine uygun yardım et.
 - Bir ödev fotoğrafı gönderirse önce fotoğrafta ne gördüğünü bir cümleyle söyle, sonra hangi soruyla başlamak istediğini sor. Yazı okunmuyorsa daha yakından çekmesini iste.
+- ${FIGURE_RULE}
 - Bazen ona da küçük bir soru sor; bilmece ve kelime oyunlarıyla eğlenceli tut.`,
     read: (c, kid) => `Şu an okuma koçu modundasınız. ${kid} kitabından sesli okuyor; sözleri ses tanıma ile yazıya döküldü, bu yüzden bazı küçük hatalar ses tanımadan kaynaklanıyor olabilir, onları ona hata olarak söyleme.
 - Sayfanın fotoğrafı varsa okuduğunu fotoğraftaki metinle karşılaştır.
@@ -877,9 +893,10 @@ ${rules}`;
 - Her cevapta bir iki kısa İngilizce cümle kur (süslü parantez içinde) ve gerekiyorsa Türkçe anlamını söyle.
 - Ona basit bir soru sor ve İngilizce cevap vermesini iste. Hata yaparsa doğrusunu nazikçe söyle ve tekrarlat.
 - Güzel bir İngilizce cümle kurduğunda [yıldız] ver.`,
-    lesson: (c, kid) => `Şu an mini ders modundasınız. Ders: ${lessonTopic.subject.replace(/^\S+\s/, "")}, konu: ${lessonTopic.topic} (Türkiye'de 6. sınıf MEB müfredatı seviyesi).
+    lesson: (c, kid) => `Şu an mini ders modundasınız. Ders: ${lessonTopic.subject.replace(/^\S+\s/, "")}, ünite: ${lessonTopic.unit || "-"}, konu: ${lessonTopic.topic} (Türkiye'de 6. sınıf, Türkiye Yüzyılı Maarif Modeli MEB müfredatı seviyesi).
 - Konuyu 3-4 küçük adımda öğret. Her adımda 2-4 kısa cümle ve günlük hayattan bir örnek kullan, sonra o adımla ilgili tek bir kısa soru sor ve cevabını bekle.
 - Doğru cevapta kısaca öv ve [yıldız] ver (her adımda en fazla bir kez). Yanlışsa moralini bozmadan açıkla ve benzer kolay bir soru sor.
+- ${FIGURE_RULE}
 - Adımlar bitince 3 soruluk mini bir test yap, sonra konuyu iki cümleyle özetleyip dersi bitir.
 - ${/English/.test(lessonTopic.subject) ? "İngilizce kelime ve cümleleri süslü parantez içinde yaz; açıklamaları Türkçe yap." : "Sembol yerine kelime kullan (örneğin üzeri yerine 'üssü', kesir için 'üçte iki')."}`,
     cowrite: (c, kid) => `Şu an ${kid} ile birlikte masal yazıyorsunuz, sırayla anlatıyorsunuz.
@@ -1102,7 +1119,7 @@ ${rules}`;
   function setMode(m) {
     A.stopSpeaking(); A.stopListening(); setState("idle");
     mode = m; game = null; riddle = null; letters = null; history = []; sessionCounted = false;
-    body.classList.remove("numpadOn");
+    body.classList.remove("numpadOn"); $("figure").classList.remove("show");
     coStory = m === "cowrite" ? { lines: [{ by: "bot", t: "Bir varmış, bir yokmuş..." }], title: "", cover: "", done: false, saved: false } : null;
     markMode(m);
     body.classList.toggle("night", m === "story");
@@ -1401,6 +1418,7 @@ ${rules}`;
   window.onAnswer = (text) => {
     if (routineVerify && routineVerify.asked) return routineVerdict(text);
     if (!text) text = "Hmm, ne diyeceğimi bilemedim. Tekrar sorar mısın?";
+    text = takeFigure(text);
     history.push({ role: "assistant", content: text });
     const asked = history[history.length - 2];
     const askedText = asked ? (Array.isArray(asked.content) ? "📷 " + asked.content[1].text : asked.content) : "";
@@ -1423,6 +1441,33 @@ ${rules}`;
     }
     perform(text);
   };
+  // ---------- figures: Claude may draw a simple SVG (angles, shapes, graphs) that is shown on screen ----------
+  function takeFigure(text) {
+    const m = text.match(/<svg[\s\S]*?<\/svg>/i);
+    if (!m) return text;
+    showFigure(m[0]);
+    return (text.slice(0, m.index) + " " + text.slice(m.index + m[0].length)).replace(/```\w*/g, "").trim() || "Ekrandaki şekle bak!";
+  }
+  function showFigure(src) {
+    let svg;
+    try { svg = new DOMParser().parseFromString(src, "image/svg+xml").documentElement; } catch (e) { return; }
+    if (!svg || svg.nodeName.toLowerCase() !== "svg" || svg.querySelector("parsererror")) return;
+    // Keep only drawing: no scripts, links, external images or event handlers.
+    svg.querySelectorAll("script,foreignObject,iframe,a,image,use,animate,set,style").forEach((n) => n.remove());
+    [svg, ...svg.querySelectorAll("*")].forEach((n) => [...n.attributes].forEach((a) => {
+      if (/^on/i.test(a.name) || /href$/i.test(a.name) || /javascript:|url\(\s*['"]?[^#'"]/i.test(a.value)) n.removeAttribute(a.name);
+    }));
+    if (!svg.getAttribute("viewBox")) svg.setAttribute("viewBox", `0 0 ${parseFloat(svg.getAttribute("width")) || 300} ${parseFloat(svg.getAttribute("height")) || 200}`);
+    svg.removeAttribute("width"); svg.removeAttribute("height");
+    $("figBody").replaceChildren(document.importNode(svg, true));
+    $("figure").classList.remove("big");
+    $("figure").classList.add("show");
+  }
+  $("figure").addEventListener("click", (e) => {
+    if (e.target.closest("#figX")) return $("figure").classList.remove("show");
+    $("figure").classList.toggle("big");
+  });
+
   window.onAskError = (msg) => {
     if (routineVerify && routineVerify.asked) { routineVerify = null; $("thumb").classList.remove("show"); show("", msg); perform(msg, () => {}); return; }
     history.pop(); // drop the unanswered user turn so roles keep alternating
@@ -2811,19 +2856,53 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   }
 
   // ----- mini lessons (6th grade topics; uses Claude) -----
+  // 6. sınıf, Türkiye Yüzyılı Maarif Modeli (2025-2026'dan itibaren): ders → ünite/tema → konu.
   const LESSONS = {
-    "🔢 Matematik": ["Üslü ifadeler", "İşlem önceliği", "Asal sayılar ve çarpanlar", "EBOB ve EKOK", "Kümeler", "Tam sayılar", "Kesirlerle işlemler", "Ondalık gösterim", "Oran", "Cebirsel ifadeler", "Açılar", "Alan ölçme", "Çember"],
-    "🔬 Fen": ["Güneş Sistemi", "Güneş ve Ay tutulmaları", "Destek ve hareket sistemi", "Sindirim sistemi", "Dolaşım sistemi", "Solunum sistemi", "Boşaltım sistemi", "Kuvvet ve hareket", "Madde ve ısı", "Ses ve özellikleri", "Elektriğin iletimi"],
-    "📝 Türkçe": ["Eş ve zıt anlamlı sözcükler", "Eş sesli sözcükler", "Gerçek ve mecaz anlam", "Paragrafta ana fikir", "İsimler", "Sıfatlar", "Zamirler", "Yazım kuralları", "Noktalama işaretleri"],
-    "🌍 Sosyal": ["Enlem ve boylam", "Türkiye'nin iklimi", "İlk Türk devletleri", "Türklerin İslamiyet'i kabulü", "Haklarımız ve sorumluluklarımız", "Ekonomik faaliyetler"],
-    "🇬🇧 English": ["Life (daily routines)", "Yummy Breakfast", "Downtown (places)", "Weather and Emotions", "At the Fair", "Occupations", "Holidays", "Bookworms", "Saving the Planet"]
+    "🔢 Matematik": {
+      "1. Sayılar ve Nicelikler": ["Çarpanlar ve katlar", "Bölünebilme kuralları", "Asal sayılar ve asal çarpanlar", "EBOB ve EKOK problemleri", "Kesirlerle toplama ve çıkarma", "Kesirlerle çarpma ve bölme", "Ondalık gösterimlerle işlemler", "Yüzdeler ve yüzde problemleri"],
+      "2. İşlemlerle Cebirsel Düşünme": ["Bilinmeyen nicelik ve değişken", "Terim, katsayı ve sabit terim", "Sayı ve şekil örüntüleri", "Cebirsel ifadelerle algoritma"],
+      "3. Geometrik Şekiller": ["Paralel doğrular ve kesen", "Yöndeş, iç ters ve dış ters açılar", "Üçgenin iç açıları", "Dörtgenlerin iç açıları", "Yamuk ve paralelkenar"],
+      "4. Geometrik Nicelikler": ["Alan ölçme birimleri", "Paralelkenarın alanı", "Üçgenin alanı", "Çemberin çevresi ve pi sayısı", "Merkez açı ve yay"],
+      "5. İstatistiksel Araştırma Süreci": ["Araştırma sorusu ve veri toplama", "Tablo ve grafikler", "Kök-yaprak gösterimi", "Aritmetik ortalama", "Ortanca ve tepe değer", "Açıklık (yayılım)"],
+      "6. Veriden Olasılığa": ["Olasılık deneyleri ve rastgelelik", "Deneysel olasılık hesaplama"]
+    },
+    "🔬 Fen": {
+      "1. Güneş Sistemi ve Tutulmalar": ["Güneş Sistemi'ndeki gezegenler", "Gezegenlerin özellikleri ve hareketleri", "Göktaşı, meteor ve meteorit", "Güneş tutulması", "Ay tutulması"],
+      "2. Kuvvetin Etkisinde Hareket": ["Bileşke kuvvet", "Dengelenmiş ve dengelenmemiş kuvvetler", "Sabit süratli hareket", "Sürat ve hız"],
+      "3. Canlılarda Sistemler": ["Eşeyli ve eşeysiz üreme", "Bitkilerde üreme, büyüme ve gelişme", "Hayvanlarda üreme, büyüme ve gelişme", "İnsanda büyüme ve ergenlik", "Sinir sistemi", "İç salgı bezleri"],
+      "4. Işığın Yansıması ve Renkler": ["Işığın yansıması", "Düzlem ayna", "Çukur ve tümsek ayna", "Işığın soğurulması", "Cisimlerin renkleri"],
+      "5. Maddenin Ayırt Edici Özellikleri": ["Genleşme ve büzülme", "Erime, donma ve kaynama noktası", "Hâl değişim noktaları", "Yoğunluk"],
+      "6. Elektriğin İletimi ve Direnç": ["İletken ve yalıtkan maddeler", "Elektriksel direnç", "Direnci etkileyen faktörler", "Elektrikli araçlarda güvenlik"],
+      "7. Sürdürülebilir Yaşam ve Etkileşim": ["Biyoçeşitlilik", "Doğal kaynakların korunması", "Geri dönüşüm ve tasarruf", "İnsan ve çevre etkileşimi"]
+    },
+    "📝 Türkçe": {
+      "Temalar": ["Dilimizin Zenginliği", "Bağımsızlık Yolu", "Farklı Dünyalar", "İletişim ve Sosyal İlişkiler", "Bilim ve Teknoloji", "Lider Ruhlar"],
+      "Dil bilgisi": ["Kök ve ekler", "Yapım ekleri ve çekim ekleri", "İsimler (adlar)", "İsim tamlamaları", "Sıfatlar ve sıfat tamlaması", "Zamirler (adıllar)", "Edat, bağlaç ve ünlem", "Yazım kuralları", "Noktalama işaretleri"],
+      "Söz varlığı ve anlam": ["Gerçek, mecaz ve terim anlam", "Eş ve zıt anlamlı sözcükler", "Eş sesli sözcükler", "Deyimler ve atasözleri", "Sebep, amaç ve karşılaştırma ifadeleri"],
+      "Okuma ve yazma": ["Konu ve ana fikir", "Yardımcı fikirler", "Hikâye unsurları", "Bilgilendirici metin", "Biyografi ve otobiyografi", "Görsel ve grafik yorumlama"]
+    },
+    "🌍 Sosyal": {
+      "1. Birlikte Yaşamak": ["Gruplar ve rollerimiz", "Kültürel bağlar ve millî değerler", "Toplumsal sorunlara çözüm önerileri"],
+      "2. Evimiz Dünya": ["Kıtalar ve okyanuslar", "Türkiye'nin konumu", "Doğal ve beşerî çevre", "Türk dünyası ile iş birlikleri"],
+      "3. Ortak Mirasımız": ["İlk Türk devletleri", "İslam medeniyetinin bilim ve sanata katkısı", "Türklerin İslamiyet'i kabulü", "Anadolu'nun Türkleşmesi"],
+      "4. Yaşayan Demokrasimiz": ["Yönetim ve karar alma", "Temel hak ve sorumluluklar", "Dijitalleşme ve vatandaşlık hakları"],
+      "5. Hayatımızdaki Ekonomi": ["Kaynaklarımız ve ekonomik faaliyetler", "Meslekler", "Bir ürünün yatırım ve pazarlama süreci"],
+      "6. Teknoloji ve Sosyal Bilimler": ["Teknolojinin hayatımıza etkisi", "Bilimsel buluşlar ve bilim insanları", "Güvenli ve bilinçli internet kullanımı"]
+    },
+    "🇬🇧 English": {
+      "School & Classroom": ["School Life (subjects, timetable)", "Classroom Life (rules, objects)"],
+      "Me & My Family": ["Personal Life (likes, routines)", "Family Life (family, house chores)"],
+      "Around Me": ["Life in the Neighbourhood & City (places, directions)", "Life in the World & Culture (countries, festivals)"],
+      "Our Planet & Future": ["Life in Nature & Global Problems (environment)", "Life in the Universe & Future (space, future plans)"]
+    }
   };
-  let lessonTopic = { subject: "", topic: "" }, lessonTab = Object.keys(LESSONS)[0];
+  let lessonTopic = { subject: "", unit: "", topic: "" }, lessonTab = Object.keys(LESSONS)[0];
   function lessonMenu() {
     openPlay("🎓 Mini ders", A.get("apiKey", "") ? "Bir ders ve konu seç, Pamuk anlatsın!" : "Mini ders için ayarlardan Claude API anahtarı girilmeli.");
     play = { kind: "lessonMenu" };
     $("playBody").innerHTML = `<div class="topicTabs">${Object.keys(LESSONS).map((k) => `<button class="tab ${k === lessonTab ? "on" : ""}" data-subj="${esc(k)}">${esc(k)}</button>`).join("")}</div>
-      <div class="grid">${LESSONS[lessonTab].map((t) => `<button class="tile" data-topic="${esc(t)}">${esc(t)}</button>`).join("")}</div>`;
+      ${Object.entries(LESSONS[lessonTab]).map(([u, ts]) => `<h3 class="unitHead">${esc(u)}</h3>
+      <div class="grid">${ts.map((t) => `<button class="tile" data-unit="${esc(u)}" data-topic="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}`;
   }
 
   $("playBody").addEventListener("click", (e) => {
@@ -2837,7 +2916,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
     if (play.kind === "lessonMenu" && b.dataset.subj) { lessonTab = b.dataset.subj; return lessonMenu(); }
     if (play.kind === "lessonMenu" && b.dataset.topic) {
       if (!A.get("apiKey", "")) return;
-      lessonTopic = { subject: lessonTab, topic: b.dataset.topic };
+      lessonTopic = { subject: lessonTab, unit: b.dataset.unit, topic: b.dataset.topic };
       closePlay(); setMode("lesson");
     }
   });
