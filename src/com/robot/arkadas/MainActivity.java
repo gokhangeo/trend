@@ -52,6 +52,7 @@ import java.util.Set;
 public class MainActivity extends Activity {
 
     public static final String EXTRA_LISTEN = "listen";
+    public static final String EXTRA_OPEN = "open";
     static final String DEFAULT_MODEL = "claude-haiku-5-5";
 
     private static final int REQ_MIC = 7;
@@ -69,6 +70,7 @@ public class MainActivity extends Activity {
     private SharedPreferences prefs;
     private final Handler main = new Handler(Looper.getMainLooper());
     private boolean pageReady = false;
+    private String openWhenReady = null;
     private boolean listenWhenReady = false;
     private boolean wantOverlay = false;
     private MediaPlayer player;
@@ -114,6 +116,10 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 pageReady = true;
+                if (openWhenReady != null) {
+                    js("openFromNotice", openWhenReady);
+                    openWhenReady = null;
+                }
                 if (listenWhenReady) {
                     listenWhenReady = false;
                     js("startTalk");
@@ -166,7 +172,15 @@ public class MainActivity extends Activity {
     }
 
     private void handleIntent(Intent intent) {
-        if (intent == null || !intent.getBooleanExtra(EXTRA_LISTEN, false)) return;
+        if (intent == null) return;
+        String open = intent.getStringExtra(EXTRA_OPEN);
+        if (open != null && !open.isEmpty()) {
+            intent.removeExtra(EXTRA_OPEN);
+            if (pageReady) js("openFromNotice", open);
+            else openWhenReady = open;
+            return;
+        }
+        if (!intent.getBooleanExtra(EXTRA_LISTEN, false)) return;
         intent.removeExtra(EXTRA_LISTEN);
         if (pageReady) js("startTalk");
         else listenWhenReady = true;
@@ -991,6 +1005,16 @@ public class MainActivity extends Activity {
                     }
                 }
             });
+        }
+
+        /** Plans reminders that appear as notifications even when the app is closed (exams etc.). */
+        @JavascriptInterface
+        public void scheduleNotices(String json) {
+            if (Build.VERSION.SDK_INT >= 33
+                    && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 11);
+            }
+            Notices.schedule(MainActivity.this, json);
         }
 
         @JavascriptInterface

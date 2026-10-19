@@ -1,5 +1,5 @@
 {
-  "_aciklama": "Gizem'e uzaktan mesaj ve talimat. mesajlar: her mesajın id'si farklı olmalı (aynı id bir kez okunur). gun: sadece o gün göster (isteğe bağlı, YYYY-AA-GG). yildiz: hediye yıldız (0-20). talimatlar: Gizem'in davranışına eklenir. Değiştirince version artırmaya gerek yok. kimden: mesajı kimin gönderdiği (örn. Annen, Baban); boş kalabilir.",
+  "_aciklama": "Gizem'e uzaktan mesaj ve talimat. mesajlar: her mesajın id'si farklı olmalı (aynı id bir kez okunur). gun: sadece o gün göster (isteğe bağlı, YYYY-AA-GG). yildiz: hediye yıldız (0-20). talimatlar: Gizem'in davranışına eklenir. Değiştirince version artırmaya gerek yok. kimden: mesajı kimin gönderdiği (örn. Annen, Baban); boş kalabilir. sinavlar: okul sınavları; her biri {\"id\":\"fen-1\",\"tarih\":\"2026-11-05\",\"ders\":\"Fen\",\"konular\":[\"Güneş tutulması\"],\"not\":\"\"}. ders: Matematik, Fen, Türkçe, Sosyal, English. konular boşsa tüm konular alınır. Ülke geneli sınavlar uygulamada hazır.",
   "kimden": "Baban",
   "talimatlar": "",
   "mesajlar": [
@@ -8,5 +8,6 @@
       "metin": "Dişlerini fırçalamayı unutma 😘",
       "yildiz": 0
     }
-  ]
+  ],
+  "sinavlar": []
 }

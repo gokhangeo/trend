@@ -310,6 +310,17 @@
   .figure.big svg { max-height: 78vh; }
   .figure .figX { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: #1b2433; color: #fff; font-size: 18px; }
   .figure small { display: block; text-align: center; color: #667; font-size: 12px; margin-top: 4px; }
+  .examCard { background: rgba(255,255,255,.06); border-radius: 16px; padding: 12px; margin-top: 12px; }
+  .examCard.soon { box-shadow: 0 0 0 2px #ffd43b inset; }
+  .examCard small { display: block; margin-top: 4px; }
+  .examTop { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 16px; }
+  .examDays { background: #ffd43b; color: #1b2433; font-weight: 800; border-radius: 999px; padding: 3px 10px; font-size: 13px; white-space: nowrap; }
+  .examPlan { margin-top: 8px; font-weight: 700; color: #b2f2bb; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { border: 0; border-radius: 999px; padding: 7px 11px; background: rgba(255,255,255,.12); color: inherit; font: inherit; font-size: 13px; }
+  .chip.on { background: #3ddba4; color: #1b2433; font-weight: 800; }
+  .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+  .check { display: flex; gap: 6px; align-items: flex-start; font-size: 13.5px; }
   .unitHead { margin: 14px 0 0; font-size: 15px; opacity: .85; }
   .topicTabs { display: flex; gap: 8px; overflow-x: auto; margin-top: 10px; padding-bottom: 4px; }
 
@@ -508,6 +519,7 @@
       <div class="grid">
         <button class="tile" data-mode="game"><b>🔢</b>Sayılar<small>Sayı soruları</small></button>
         <button class="tile" data-mode="riddle"><b>🧩</b>Bilmece<small>5 bilmece</small></button>
+        <button class="tile" id="examBtn"><b>📝</b>Sınavlarım<small>Plan ve deneme</small></button>
         <button class="tile" data-mode="letters"><b>🔤</b>Harfler<small>Harf ve kelime</small></button>
         <button class="tile" id="memoryBtn"><b>🃏</b>Hafıza<small>Eşini bul</small></button>
         <button class="tile" id="quizBtn"><b>🏆</b>Bilgi yarışması<small>~100 soru</small></button>
@@ -899,6 +911,13 @@ ${rules}`;
 - ${FIGURE_RULE}
 - Adımlar bitince 3 soruluk mini bir test yap, sonra konuyu iki cümleyle özetleyip dersi bitir.
 - ${/English/.test(lessonTopic.subject) ? "İngilizce kelime ve cümleleri süslü parantez içinde yaz; açıklamaları Türkçe yap." : "Sembol yerine kelime kullan (örneğin üzeri yerine 'üssü', kesir için 'üçte iki')."}`,
+    exam: (c, kid) => `Şu an deneme sınavı modundasınız. ${kid} yaklaşan ${examRun.exam.kind === "Ülke geneli" ? "ülke geneli ortak" : "okul"} ${subjName(examRun.exam.subject)} sınavına hazırlanıyor (6. sınıf, Türkiye Yüzyılı Maarif Modeli).
+Sınav konuları: ${examRun.exam.topics.join(", ")}.
+- MEB ortak yazılı sınavları gibi açık uçlu, 6. sınıf seviyesinde 8 soru sor; konulara dengeli dağıt. Soruları tek tek sor, her seferinde sadece bir soru ve cevabını bekle. Sorunun başında kaçıncı soru olduğunu söyle.
+- ${/Matematik/.test(examRun.exam.subject) ? "Günlük hayattan problemler sor ve işlemini nasıl yaptığını anlatmasını iste; sadece sonucu söylerse nasıl bulduğunu sor." : "Kısa yazılı cevap gerektiren sorular sor (açıklama, örnek verme, karşılaştırma)."}
+- Her cevaptan sonra 1-2 cümleyle değerlendir: doğruysa kısaca öv, yanlış ya da eksikse doğrusunu kısaca açıkla. Her soru 12,5 puan; yarım doğruya yarım puan ver. Bu modda [yıldız] etiketi kullanma.
+- 8. sorudan sonra toplam puanı söyle, iyi olduğu ve tekrar etmesi gereken konuları belirt, cesaret verici bir cümleyle bitir ve en sona [puan: 85] gibi puan etiketini ekle.
+- ${FIGURE_RULE}`,
     cowrite: (c, kid) => `Şu an ${kid} ile birlikte masal yazıyorsunuz, sırayla anlatıyorsunuz.
 - ${kid} bir iki cümle söyler; sen onun fikrini mutlaka kullanarak hikayeyi 1-2 kısa cümleyle sürdür ve "Sonra ne oldu?" gibi bir soruyla sözü ona bırak.
 - Onun fikirlerini her zaman kabul et ve kısaca öv. Hikaye neşeli ve çocuğa uygun kalsın.
@@ -985,6 +1004,7 @@ ${rules}`;
     if (coStory && /^ba[şs]l[ıi]k\s*:/.test(low)) { coStory.title = after.trim().slice(0, 60); return; }
     if (coStory && /^resim\s*:/.test(low)) { coStory.cover = after.trim().slice(0, 24); return; }
     if (coStory && low === "son") { coStory.done = true; return; }
+    if (/^puan\s*:/.test(low)) { const st = mode === "exam" && examScored(after); if (st) steps.push(st); return; }
     if (low === "yıldız" || low === "yildiz") {
       steps.push({ star: 1, fromTag: true });
       return;
@@ -1109,11 +1129,12 @@ ${rules}`;
     english: () => "[bipbip] {Hello! Let's speak English!} Hadi İngilizce konuşalım. {How are you today?}",
     story: () => "Masal zamanı. Bu gece ne hakkında bir masal istersin? Prensesler, uzay, hayvanlar ya da deniz altı olabilir.",
     lesson: () => `[yaşasın] ${lessonTopic.topic} dersine başlıyoruz! Hazırsan başlayalım.`,
+    exam: () => `[bipbip] ${subjName(examRun.exam.subject)} deneme sınavı başlıyor! Sekiz soru soracağım, acele etme, işlemlerini düşünerek cevap ver.`,
     cowrite: () => "[yaşasın] Hadi birlikte masal yazalım! Ben başlıyorum: Bir varmış, bir yokmuş... Şimdi sen söyle, masalımızın kahramanı kim?"
   };
   function markMode(m) {
     document.querySelectorAll("[data-mode]").forEach((b) => b.classList.toggle("on", b.dataset.mode === m));
-    $("gamesBtn").classList.toggle("on", ["game", "riddle", "letters", "lesson"].includes(m));
+    $("gamesBtn").classList.toggle("on", ["game", "riddle", "letters", "lesson", "exam"].includes(m));
     $("storyBtn").classList.toggle("on", ["story", "cowrite"].includes(m));
   }
   function setMode(m) {
@@ -1132,7 +1153,7 @@ ${rules}`;
     show("", cleanText(intro));
     updateModeButtons();
     // The lesson starts by itself; reading waits for a tap so she can take a photo first; the others start listening.
-    if (m === "lesson") return perform(intro, () => onHeard("Hazırım, başlayalım!"));
+    if (m === "lesson" || m === "exam") return perform(intro, () => onHeard("Hazırım, başlayalım!"));
     perform(intro, m === "read" ? () => {} : listenNow);
   }
   document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
@@ -2238,16 +2259,26 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
     const k = currentRoutine(), r = routineState(), el = $("reminder");
     const pending = k ? ROUTINES[k].items.filter(([id]) => !r.done.includes(id)) : [];
     const lines = pending.filter(([id]) => REMIND_TEXT[id]).map(([id]) => REMIND_TEXT[id]);
-    if (!pending.length) { el.classList.remove("show"); body.classList.remove("reminding"); return; }
+    if (!pending.length) {
+      let ex = null;
+      try { ex = allExams().find((e) => daysUntil(e.date) <= 3); } catch (e) { /* exam data not loaded yet */ }
+      if (ex) {
+        el.innerHTML = `📝 ${esc(subjName(ex.subject))} sınavı: ${whenText(daysUntil(ex.date))}<small>${esc(planText(ex))} · Dokun, birlikte çalışalım</small>`;
+        el.dataset.exam = "1"; el.classList.add("show"); body.classList.add("reminding"); return;
+      }
+      el.classList.remove("show"); body.classList.remove("reminding"); return;
+    }
+    delete el.dataset.exam;
     el.innerHTML = (lines.length ? lines.join("<br>") : `${ROUTINES[k].title}: ${pending.length} görev kaldı`) + `<small>Dokun, fotoğrafını çek, her biri 5 ⭐</small>`;
     el.classList.add("show"); body.classList.add("reminding");
   }
-  $("reminder").addEventListener("click", openTasks);
+  $("reminder").addEventListener("click", () => ($("reminder").dataset.exam ? openExams() : openTasks()));
   setInterval(updateReminder, 60000);
   // The floating robot can't ask the app, so the routine status rides along with its look.
+  function nextExamDate() { try { return (allExams()[0] || {}).date || ""; } catch (e) { return ""; } }
   function syncOverlay() {
     const c = cfg();
-    A.setLook(JSON.stringify(Object.assign({}, look, { reminder: { morning: c.morning, evening: c.evening, date: today(), done: routineState().done } })));
+    A.setLook(JSON.stringify(Object.assign({}, look, { reminder: { morning: c.morning, evening: c.evening, date: today(), done: routineState().done, exam: nextExamDate() } })));
   }
   function updateDots() {
     const d = stats.daily && stats.daily.date === today() ? stats.daily : null;
@@ -2508,6 +2539,15 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
       if (!res.ok) return;
       const data = await res.json();
       remoteRules = String(data.talimatlar || "").slice(0, 2000);
+      if (Array.isArray(data.sinavlar)) {
+        remoteExams = data.sinavlar.map((x, i) => {
+          const subject = Object.keys(LESSONS).find((k) => subjName(k).toLocaleLowerCase("tr") === String(x.ders || "").toLocaleLowerCase("tr").trim());
+          return subject && /^\d{4}-\d\d-\d\d$/.test(x.tarih || "") ? { id: "uz-" + (x.id || i), date: x.tarih, subject, title: String(x.baslik || subjName(subject) + " yazılısı").slice(0, 60), kind: "Okul sınavı", note: x.not ? String(x.not).slice(0, 200) : "",
+            topics: (Array.isArray(x.konular) && x.konular.length ? x.konular.map(String) : Object.values(LESSONS[subject]).flat()).slice(0, 30) } : null;
+        }).filter(Boolean);
+        A.set("remoteExams", JSON.stringify(remoteExams));
+        planExamNotices();
+      }
       A.set("remoteRules", remoteRules);
       const seen = loadJson("seenNotes", []);
       (data.mesajlar || []).forEach((m) => {
@@ -2525,11 +2565,11 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
     const m = inbox.shift();
     const seen = loadJson("seenNotes", []); seen.push(m.id); A.set("seenNotes", JSON.stringify(seen.slice(-200)));
     const kid = cfg().kidName || "tatlım";
-    celebrate("📩", m.from ? `Mesaj var! (${m.from})` : "Sana bir mesaj var!");
+    celebrate(m.icon || "📩", m.title || (m.from ? `Mesaj var! (${m.from})` : "Sana bir mesaj var!"));
     const spoken = m.text.replace(/[\p{Extended_Pictographic}\u200d\ufe0f]/gu, "").trim();
-    let say = `[bipbip] ${kid}, ${m.from ? m.from + " sana bir mesaj gönderdi" : "sana bir mesaj var"}! ${spoken}`;
+    let say = m.say || `[bipbip] ${kid}, ${m.from ? m.from + " sana bir mesaj gönderdi" : "sana bir mesaj var"}! ${spoken}`;
     if (m.stars) { awardStars(m.stars); say += ` Bir de sana ${m.stars} yıldız hediye var!`; }
-    show("", `📩 ${m.from ? m.from + ": " : ""}${m.text}`);
+    show("", m.say ? m.text : `📩 ${m.from ? m.from + ": " : ""}${m.text}`);
     perform(say, () => setTimeout(deliverNotes, 1500));
   }
   setTimeout(fetchParentNotes, 2500);
@@ -2538,7 +2578,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   // ---------- typing instead of talking; English/Turkish microphone ----------
   let englishMicTr = false;
   function updateModeButtons() {
-    const canType = ["chat", "english", "read", "cowrite", "lesson", "story"].includes(mode);
+    const canType = ["chat", "english", "read", "cowrite", "lesson", "story", "exam"].includes(mode);
     $("typeBtn").classList.toggle("show", canType);
     $("langBtn").classList.toggle("show", mode === "english");
     $("langBtn").textContent = englishMicTr ? "🎤 Türkçe" : "🎤 English";
@@ -2925,6 +2965,162 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   $("anagramBtn").addEventListener("click", anagramMenu);
   $("simonBtn").addEventListener("click", startSimon);
   $("lessonBtn").addEventListener("click", lessonMenu);
+
+  // ---------- exams: national exam days, study plan, practice tests and reminders ----------
+  // 2026-2027: 6. sınıf ülke geneli ortak yazılılar (MEB ÖDSGM takvimi). Diğer dersler okul geneli; tarihleri okul belirler.
+  const EXAMS_BUILTIN = [
+    { id: "ug-mat-2026", date: "2026-11-11", subject: "🔢 Matematik", title: "Matematik ortak sınavı", kind: "Ülke geneli",
+      note: "Tüm Türkiye'de aynı gün. Sorular açık uçlu: işlemlerini yazarak çözeceksin.",
+      topics: ["Çarpanlar ve katlar", "Bölünebilme kuralları", "Asal sayılar ve asal çarpanlar", "EBOB ve EKOK problemleri"] },
+    { id: "ug-tr-2027", date: "2027-06-08", subject: "📝 Türkçe", title: "Türkçe ortak sınavı", kind: "Ülke geneli",
+      note: "Tüm Türkiye'de aynı gün. Konu dağılımı MEB'in tablosu yayımlanınca güncellenecek.",
+      topics: ["Bilim ve Teknoloji", "Lider Ruhlar", "Zamirler (adıllar)", "Edat, bağlaç ve ünlem", "Yazım kuralları", "Noktalama işaretleri", "Deyimler ve atasözleri", "Konu ve ana fikir", "Biyografi ve otobiyografi"] }
+  ];
+  // For an exam she adds herself, these units are ticked first (what the 1st term 1st exam usually covers).
+  const EXAM_DEFAULT_UNITS = { "🔢 Matematik": 1, "🔬 Fen": 2, "📝 Türkçe": 2, "🌍 Sosyal": 2, "🇬🇧 English": 1 };
+  let remoteExams = loadJson("remoteExams", []), examRun = null;
+  const dayMs = 86400000;
+  const daysUntil = (d) => Math.round((new Date(d + "T00:00:00") - new Date(today() + "T00:00:00")) / dayMs);
+  function allExams() {
+    const removed = loadJson("examsHidden", []);
+    return [...EXAMS_BUILTIN, ...remoteExams, ...loadJson("examsMine", [])]
+      .filter((e) => e && e.date && e.subject && !removed.includes(e.id) && daysUntil(e.date) >= 0)
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
+  function unitOf(subject, topic) {
+    const units = LESSONS[subject] || {};
+    return Object.keys(units).find((u) => units[u].includes(topic)) || "";
+  }
+  const subjName = (s) => s.replace(/^\S+\s/, "");
+  // Topics spread over the 13 days before the exam; the last day is for review and a practice test.
+  function todaysTopics(e) {
+    const d = daysUntil(e.date), n = e.topics.length;
+    if (d <= 1 || !n) return [];
+    if (d > 14) return [];
+    const k = 14 - d;
+    const from = Math.floor(k * n / 13), to = Math.max(from + 1, Math.floor((k + 1) * n / 13));
+    return e.topics.slice(from, Math.min(to, n));
+  }
+  function whenText(d) { return d === 0 ? "Bugün!" : d === 1 ? "Yarın!" : `${d} gün kaldı`; }
+  function planText(e) {
+    const d = daysUntil(e.date), t = todaysTopics(e);
+    if (d === 0) return "Bugün sınav günü. Kahvaltını yap, sakin ol, sen hazırsın! 💪";
+    if (d === 1) return "Bugün genel tekrar günü: bir deneme sınavı çöz.";
+    if (d > 14) return "Çalışma planı sınava 14 gün kala başlar.";
+    return "Bugünün konusu: " + t.join(", ");
+  }
+  function examScores() { return loadJson("examScores", {}); }
+
+  function openExams() {
+    openPlay("📝 Sınavlarım", "Konuya dokun, Pamuk anlatsın. Deneme sınavı MEB ortak sınavları gibi açık uçludur.");
+    play = { kind: "exams" };
+    const list = allExams(), scores = examScores(), hasKey = !!A.get("apiKey", "");
+    $("playBody").innerHTML = (list.length ? list.map((e) => {
+      const d = daysUntil(e.date), last = (scores[e.id] || []).slice(-1)[0];
+      return `<div class="examCard ${d <= 3 ? "soon" : ""}">
+        <div class="examTop"><b>${esc(e.title || subjName(e.subject) + " sınavı")}</b><span class="examDays">${whenText(d)}</span></div>
+        <small>${esc(new Date(e.date + "T12:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "long", weekday: "long" }))} · ${esc(e.kind || "Okul sınavı")}${last ? ` · Son deneme: ${last.s} puan` : ""}</small>
+        ${e.note ? `<small>${esc(e.note)}</small>` : ""}
+        <div class="examPlan">${esc(planText(e))}</div>
+        <div class="chips">${e.topics.map((t) => `<button class="chip ${todaysTopics(e).includes(t) ? "on" : ""}" data-ex="${esc(e.id)}" data-extopic="${esc(t)}">${esc(t)}</button>`).join("")}</div>
+        <div class="btns"><button class="btn primary" data-extest="${esc(e.id)}" ${hasKey ? "" : "disabled"}>📝 Deneme sınavı</button>
+        ${e.mine ? `<button class="btn ghost" data-exdel="${esc(e.id)}">🗑️</button>` : ""}</div>
+      </div>`;
+    }).join("") : `<p>Yaklaşan sınav yok. 🎉</p>`) +
+      `<button class="btn ghost" id="examAddBtn" style="width:100%;margin-top:12px">➕ Okul sınavı ekle</button>` +
+      (hasKey ? "" : `<small>Ders anlatımı ve deneme sınavı için ayarlardan Claude API anahtarı girilmeli.</small>`);
+  }
+  function examAddForm(subject) {
+    subject = subject || Object.keys(LESSONS)[0];
+    play = { kind: "examAdd", subject };
+    const firstUnits = Object.keys(LESSONS[subject]).slice(0, EXAM_DEFAULT_UNITS[subject] || 1);
+    const tomorrow = new Date(Date.now() + 7 * dayMs).toISOString().slice(0, 10);
+    $("playTitle").textContent = "➕ Okul sınavı ekle";
+    $("playInfo").textContent = "Tarihi ve sınavda çıkacak konuları seç. Öğretmenin söylediği konulara göre işaretle.";
+    $("playBody").innerHTML = `<div class="row"><div><label for="exDate">Tarih</label><input id="exDate" type="date" value="${$("exDate") ? $("exDate").value : tomorrow}"></div>
+      <div><label for="exSubj">Ders</label><select id="exSubj">${Object.keys(LESSONS).map((s) => `<option ${s === subject ? "selected" : ""}>${esc(s)}</option>`).join("")}</select></div></div>
+      ${Object.entries(LESSONS[subject]).map(([u, ts]) => `<h3 class="unitHead">${esc(u)}</h3><div class="checks">${ts.map((t) =>
+        `<label class="check"><input type="checkbox" value="${esc(t)}" ${firstUnits.includes(u) ? "checked" : ""}> ${esc(t)}</label>`).join("")}</div>`).join("")}
+      <button class="btn primary" id="examSave" style="width:100%;margin-top:12px">Kaydet</button>`;
+  }
+  function saveExam() {
+    const date = $("exDate").value, subject = $("exSubj").value;
+    const topics = [...$("playBody").querySelectorAll(".checks input:checked")].map((i) => i.value);
+    if (!date || daysUntil(date) < 0) return alert("Bugün ya da sonrası bir tarih seç.");
+    if (!topics.length) return alert("En az bir konu seç.");
+    const mine = loadJson("examsMine", []);
+    mine.push({ id: "my-" + Date.now(), date, subject, title: subjName(subject) + " yazılısı", kind: "Okul sınavı", topics, mine: true });
+    A.set("examsMine", JSON.stringify(mine.slice(-30)));
+    planExamNotices(); updateReminder(); syncOverlay();
+    openExams();
+  }
+  function startExamLesson(e, topic) {
+    if (!A.get("apiKey", "")) return;
+    lessonTopic = { subject: e.subject, unit: unitOf(e.subject, topic), topic };
+    closePlay(); setMode("lesson");
+  }
+  function startExamTest(e) {
+    if (!A.get("apiKey", "")) return;
+    examRun = { exam: e, scored: false };
+    closePlay(); setMode("exam");
+  }
+  function examScored(raw) {
+    const s = Math.max(0, Math.min(100, parseInt(raw, 10)));
+    if (!examRun || examRun.scored || isNaN(s)) return null;
+    examRun.scored = true;
+    const all = examScores(); (all[examRun.exam.id] = all[examRun.exam.id] || []).push({ d: today(), s });
+    A.set("examScores", JSON.stringify(all));
+    return { star: s >= 85 ? 5 : s >= 70 ? 3 : 1, fromTag: true };
+  }
+  window.openFromNotice = (what) => { if (what === "exams") setTimeout(openExams, 600); };
+
+  // Reminders shown as phone notifications (APK 2.2+): 7, 3 and 1 day before at 18:30, and on the morning of the exam.
+  function planExamNotices() {
+    if (typeof A.scheduleNotices !== "function") return;
+    const kid = cfg().kidName || "", bot = cfg().botName, out = [];
+    allExams().forEach((e) => {
+      const name = subjName(e.subject);
+      [7, 3, 1].forEach((before) => {
+        const at = new Date(e.date + "T18:30:00").getTime() - before * dayMs;
+        out.push({ at, open: "exams", title: `📝 ${name} sınavına ${before === 1 ? "yarın!" : before + " gün kaldı"}`,
+          text: before === 1 ? `${kid}, yarın ${name} sınavın var. ${bot} ile kısa bir deneme sınavı çözelim mi?` : `${kid}, hadi ${bot} ile ${name} çalışalım! Konular: ${e.topics.slice(0, 4).join(", ")}${e.topics.length > 4 ? "…" : ""}` });
+      });
+      out.push({ at: new Date(e.date + "T07:10:00").getTime(), open: "exams", title: `🍀 Bugün ${name} sınavı!`, text: `${kid}, sen hazırsın! Sakin ol, soruları dikkatle oku. ${bot} seninle gurur duyuyor 💖` });
+    });
+    A.scheduleNotices(JSON.stringify(out.filter((n) => n.at > Date.now()).sort((a, b) => a.at - b.at).slice(0, 40)));
+  }
+  // When the app opens: Pamuk announces exams 14, 7, 3, 2, 1 days before and on the day (once each).
+  function announceExams() {
+    const kid = cfg().kidName || "tatlım";
+    allExams().forEach((e) => {
+      const d = daysUntil(e.date);
+      if (![14, 7, 3, 2, 1, 0].includes(d)) return;
+      const id = `exam-${e.id}-${d}`;
+      if (loadJson("seenNotes", []).includes(id) || inbox.some((m) => m.id === id)) return;
+      const name = subjName(e.subject), t = todaysTopics(e);
+      const say = d === 0 ? `[yaşasın] ${kid}, bugün ${name} sınavın var! Sen çok çalıştın, hazırsın. Soruları dikkatle oku, işlemlerini yaz. Başarılar!`
+        : `[bipbip] ${kid}, ${name} sınavına ${d === 1 ? "yarın" : d + " gün kaldı"}! ${d === 1 ? "Bugün birlikte bir deneme sınavı çözelim mi?" : t.length ? "Bugünün konusu " + t.join(" ve ") + ". Sınavlarım bölümünden birlikte çalışalım!" : "Sınavlarım bölümünden birlikte çalışalım!"}`;
+      inbox.push({ id, text: `📝 ${name} sınavı: ${whenText(d)}`, from: "", stars: 0, say, icon: "📝", title: `${name} sınavı: ${whenText(d)}` });
+    });
+    deliverNotes();
+  }
+
+  $("playBody").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b || !play) return;
+    const find = (id) => allExams().find((x) => x.id === id);
+    if (play.kind === "exams" && b.dataset.extopic) { const ex = find(b.dataset.ex); if (ex) startExamLesson(ex, b.dataset.extopic); }
+    else if (play.kind === "exams" && b.dataset.extest) { const ex = find(b.dataset.extest); if (ex) startExamTest(ex); }
+    else if (play.kind === "exams" && b.dataset.exdel) {
+      if (!confirm("Bu sınav silinsin mi?")) return;
+      A.set("examsMine", JSON.stringify(loadJson("examsMine", []).filter((x) => x.id !== b.dataset.exdel)));
+      planExamNotices(); openExams();
+    }
+    else if (play.kind === "exams" && b.id === "examAddBtn") examAddForm();
+    else if (play.kind === "examAdd" && b.id === "examSave") saveExam();
+  });
+  $("playBody").addEventListener("change", (e) => { if (play && play.kind === "examAdd" && e.target.id === "exSubj") examAddForm(e.target.value); });
+  $("examBtn").addEventListener("click", openExams);
+  setTimeout(() => { planExamNotices(); announceExams(); }, 4000);
 
   // ---------- parent settings ----------
   $("gear").addEventListener("click", () => {
