@@ -24,7 +24,7 @@ public class RobotWidget extends AppWidgetProvider {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent pi = PendingIntent.getActivity(ctx, 2, talk,
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        String name = ctx.getSharedPreferences("robot", Context.MODE_PRIVATE).getString("botName", "Gizem");
+        String name = ctx.getSharedPreferences("robot", Context.MODE_PRIVATE).getString("botName", "Pamuk");
         for (int id : ids) {
             RemoteViews rv = new RemoteViews(ctx.getPackageName(), R.layout.widget);
             rv.setTextViewText(R.id.widget_label, name + " ile konuş");

@@ -401,7 +401,7 @@
       <div class="zzz">z z</div>
       <button class="pet" id="pet" aria-label="Evcil hayvan"></button>
     </div>
-    <button class="name" id="name" aria-label="Robotun adını değiştir">Gizem</button>
+    <button class="name" id="name" aria-label="Robotun adını değiştir">Pamuk</button>
   </div>
 
   <button class="reminder" id="reminder"></button>
@@ -473,7 +473,7 @@
   <!-- clothes shop (for the child) -->
   <div class="sheet" id="shopSheet">
     <div class="panel">
-      <h2>🛍️ Gizem'in Dükkanı · <span class="price">⭐ <span id="shopCoins">0</span></span></h2>
+      <h2>🛍️ Pamuk'un Dükkanı · <span class="price">⭐ <span id="shopCoins">0</span></span></h2>
       <div class="shopPreview"><div class="ring" style="inset:0"></div><div class="disc" id="shopDisc"></div><div class="pet" id="shopPet"></div></div>
       <div class="tabs" id="shopTabs">
         <button class="tab on" data-tab="outfit">👗 Kıyafet</button>
@@ -516,7 +516,7 @@
     <div class="panel">
       <h2>🌙 Masal</h2>
       <div class="grid">
-        <button class="tile" data-mode="story"><b>🌙</b>Gizem anlatsın<small>Uyku masalı</small></button>
+        <button class="tile" data-mode="story"><b>🌙</b>Pamuk anlatsın<small>Uyku masalı</small></button>
         <button class="tile" data-mode="cowrite"><b>✍️</b>Birlikte yazalım<small>Sırayla anlatın</small></button>
         <button class="tile" id="booksBtn"><b>📚</b>Masallarım<small id="booksCount">0 masal</small></button>
       </div>
@@ -535,7 +535,7 @@
       <div class="cover" id="readerCover"></div>
       <h2 id="readerTitle"></h2>
       <div id="readerText"></div>
-      <div class="btns"><button class="btn ghost" id="readerDelete">🗑️ Sil</button><button class="btn primary" id="readerRead">🔊 Gizem okusun</button></div>
+      <div class="btns"><button class="btn ghost" id="readerDelete">🗑️ Sil</button><button class="btn primary" id="readerRead">🔊 Pamuk okusun</button></div>
       <div class="btns"><button class="btn ghost" data-close>Kapat</button></div>
     </div>
   </div>
@@ -543,7 +543,7 @@
   <!-- robot care -->
   <div class="sheet" id="careSheet">
     <div class="panel">
-      <h2>🐣 <span id="careName">Gizem</span>'e bak · <span class="price">⭐ <span id="careCoins">0</span></span></h2>
+      <h2>🐣 <span id="careName">Pamuk'a</span> bak · <span class="price">⭐ <span id="careCoins">0</span></span></h2>
       <div class="careTop">
         <div class="careBot" id="careBot"><div class="ring" style="inset:0"></div><div class="disc" id="careDisc"></div></div>
         <div class="bars">
@@ -652,11 +652,11 @@
         <div><label for="morningTime">Sabah rutini</label><input id="morningTime" type="time"></div>
         <div><label for="eveningTime">Akşam rutini</label><input id="eveningTime" type="time"></div>
       </div>
-      <small>Yaş doğum gününden hesaplanır. Doğum gününde Gizem sürpriz parti yapar ve özel bir elbise hediye eder.</small>
+      <small>Yaş doğum gününden hesaplanır. Doğum gününde Pamuk sürpriz parti yapar ve özel bir elbise hediye eder.</small>
 
-      <h3>Gizem'e özel talimatlar</h3>
+      <h3>Pamuk'a özel talimatlar</h3>
       <textarea id="parentRules" rows="4" style="width:100%;padding:12px;font-size:15px;border-radius:12px;border:1px solid var(--pill-border);background:#10141a;color:var(--text);font-family:inherit" placeholder="Örn: Bu hafta kesirler konusunu çalışıyor, sohbette ara sıra kesir soruları sor. Ekran süresine dikkat etmesini hatırlat."></textarea>
-      <small>Buraya yazdıklarınız Gizem'in davranışına eklenir. Uzaktan mesaj ve talimat için GitHub'daki assets/talimat.json dosyası kullanılır.</small>
+      <small>Buraya yazdıklarınız Pamuk'un davranışına eklenir. Uzaktan mesaj ve talimat için GitHub'daki assets/talimat.json dosyası kullanılır.</small>
 
       <h3>Robotun hafızası</h3>
       <small>Robot sohbetlerde öğrendiği önemli şeyleri burada not eder (sevdiği şeyler, evcil hayvanı, zorlandığı dersler). İstemediğinizi silebilirsiniz.</small>
@@ -791,9 +791,29 @@
     return n.getFullYear() - b.getFullYear() - (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate()) ? 1 : 0);
   }
   const isBirthday = () => { const b = cfg().birthday; return !!b && b.slice(5) === today().slice(5); };
+  // Turkish suffix after a name: ek("Pamuk","in") → "Pamuk'un", ek("Gizem","e") → "Gizem'e".
+  function ek(n, kind) {
+    const v = (n.toLocaleLowerCase("tr").match(/[aeıioöuü](?=[^aeıioöuü]*$)/) || ["e"])[0];
+    const endsVowel = /[aeıioöuü]$/i.test(n);
+    if (kind === "e") return `${n}'${endsVowel ? "y" : ""}${"aıou".includes(v) ? "a" : "e"}`;
+    const i = { a: "ı", ı: "ı", o: "u", u: "u", e: "i", i: "i", ö: "ü", ü: "ü" }[v];
+    return `${n}'${endsVowel ? "n" : ""}${i}n`;
+  }
+  // One-time move: the robot used to share the child's name; it is now Pamuk and Gizem is the child.
+  if (A.get("nameMig1", "") !== "1") {
+    if (A.get("botName", "Gizem") === "Gizem") A.set("botName", "Pamuk");
+    if (!A.get("kidName", "")) A.set("kidName", "Gizem");
+    A.set("nameMig1", "1");
+  }
+  // Adds the child's name to a short cheer: "Harika!" → "Harika Gizem!".
+  function nameIt(t) {
+    const k = cfg().kidName;
+    if (!k) return t;
+    return /^[^.!?]*[!]/.test(t) ? t.replace(/^([^.!?]*?)( sana)?!/, (m, a) => `${a} ${k}!`) : `${k}, ${t.charAt(0).toLocaleLowerCase("tr")}${t.slice(1)}`;
+  }
   function cfg() {
     return {
-      botName: A.get("botName", "Gizem"), kidName: A.get("kidName", "Gizem"), birthday: A.get("birthday", "2015-03-02"),
+      botName: A.get("botName", "Pamuk"), kidName: A.get("kidName", "Gizem"), birthday: A.get("birthday", "2015-03-02"),
       morning: A.get("morningTime", "07:30"), evening: A.get("eveningTime", "20:30"),
       grade: A.get("grade", "1"), auto: A.get("auto", "1") === "1", fx: A.get("fx", "1") === "1"
     };
@@ -806,7 +826,8 @@
     const who = c.kidName ? `${c.kidName} adında ${ageOf(c)} yaşında bir kız çocuğu` : `${ageOf(c)} yaşında bir kız çocuğu`;
     const school = c.grade === "0" ? "Henüz okula başlamadı." : `Türkiye'de ${c.grade}. sınıfa gidiyor (MEB müfredatı).`;
     let p = `Sen ${c.botName} adında sevimli, neşeli, tatlı bir kız robotsun; ona bir abla gibi davranırsın. ${who} ile sesli konuşuyorsun. ${school}
-
+${c.kidName ? `Ona hep adıyla seslen: neredeyse her cevabında "${c.kidName}" de (örneğin "Aferin ${c.kidName}!", "${c.kidName}, biliyor musun..."). Ona "tatlım", "canım" gibi isimsiz hitaplar yerine adını kullan.
+` : ""}
 Genel kurallar:
 - Türkçe konuş. Cevapların sesli okunacak: emoji, madde işareti, başlık, yıldız işareti veya matematik sembolü kullanma. "3+4=7" yerine "üç artı dört yedi eder" de.
 - İngilizce kelime ve cümleleri süslü parantez içine yaz, örneğin: Elma İngilizce {apple} demek. Uygulama parantez içini İngilizce sesle okur. Parantez içine sadece İngilizce koy.
@@ -1211,7 +1232,7 @@ ${rules}`;
       if (q.key && stats.weak[q.key]) stats.weak[q.key]--;
       bump("gameCorrect");
       awardStars(1);
-      reply = `[${game.streak % 3 === 0 ? "alkış" : "yaşasın"}] ${pick(["Harika!", "Doğru!", "Süpersin!", "Aferin sana!", "Bravo!", "Çok iyi!"])}`;
+      reply = `[${game.streak % 3 === 0 ? "alkış" : "yaşasın"}] ${nameIt(pick(["Harika!", "Doğru!", "Süpersin!", "Aferin sana!", "Bravo!", "Çok iyi!"]))}`;
       if (game.streak % 3 === 0) reply += ` Üst üste ${game.streak} doğru!`;
     } else {
       game.streak = 0;
@@ -1297,7 +1318,7 @@ ${rules}`;
     let reply, next = true;
     if (r[1].some((ans) => answerMatches(low, plain(ans)))) {
       riddle.correct++; bump("riddles"); awardStars(1);
-      reply = `[alkış] ${pick(["Bildin!", "Harikasın!", "Doğru cevap!", "Süper!"])} Cevap ${r[1][0]}!`;
+      reply = `[alkış] ${nameIt(pick(["Bildin!", "Harikasın!", "Doğru cevap!", "Süper!"]))} Cevap ${r[1][0]}!`;
     } else if (!riddle.hinted && !/bilmiyorum|bilmem/.test(low)) {
       riddle.hinted = true; next = false;
       reply = `[hmm] Hmm, değil. İpucu: ${r[2]} Bir daha dene!`;
@@ -1924,7 +1945,7 @@ ${rules}`;
   ];
   function moodText() {
     const n = cfg().botName;
-    if (care.hunger < 35) return `${n}'in karnı acıkmış 🍎`;
+    if (care.hunger < 35) return `${ek(n, "in")} karnı acıkmış 🍎`;
     if (care.energy < 35) return `${n} çok uykulu 😴`;
     if (care.joy < 35) return `${n} biraz sıkılmış, onunla oyna 💕`;
     if (care.hunger > 80 && care.energy > 80 && care.joy > 80) return `${n} çok mutlu! 🥰`;
@@ -1932,7 +1953,7 @@ ${rules}`;
   }
   function renderCare() {
     careTick();
-    $("careName").textContent = cfg().botName; $("careCoins").textContent = stats.coins;
+    $("careName").textContent = ek(cfg().botName, "e"); $("careCoins").textContent = stats.coins;
     $("barHunger").style.width = care.hunger + "%"; $("barEnergy").style.width = care.energy + "%"; $("barJoy").style.width = care.joy + "%";
     $("careMood").textContent = moodText();
     $("foodGrid").innerHTML = FOODS.map((f, i) => `<button class="tile" data-food="${i}"><b>${f.icon}</b>${f.name}<small><span class="price">⭐ ${f.price}</span></small></button>`).join("");
@@ -1962,7 +1983,7 @@ ${rules}`;
       care.hunger = Math.min(100, care.hunger + f.hunger); care.joy = Math.min(100, care.joy + (f.joy || 3));
       saveCare(); bump("feeds"); renderCare();
       if (cfg().fx) playFx("kikir");
-      careSay(pick(["Mmm, çok lezzetli!", "Ne güzel, teşekkür ederim!", "Nam nam nam!", "Bayıldım!"]));
+      careSay(nameIt(pick(["Mmm, çok lezzetli!", "Ne güzel, teşekkür ederim!", "Nam nam nam!", "Bayıldım!"])));
     }, 720);
   });
   $("careSleep").addEventListener("click", () => {
@@ -1981,7 +2002,7 @@ ${rules}`;
     const r = $("careBot").getBoundingClientRect();
     heartPop(r.left + r.width / 2, r.top + r.height / 3);
     care.joy = Math.min(100, care.joy + 5); saveCare(); renderCare();
-    careSay(pick(["Seni seviyorum! 💖", "Hihi, çok tatlısın!", "Sarılmaya bayılıyorum!"]));
+    careSay(nameIt(pick(["Seni seviyorum! 💖", "Hihi, çok tatlısın!", "Sarılmaya bayılıyorum!"])));
   });
   $("careBtn").addEventListener("click", openCare);
 
@@ -1989,14 +2010,14 @@ ${rules}`;
   const TASK_POOL = [
     { id: "riddle", icon: "🧩", text: "1 bilmece bil", stat: "riddles", need: 1 },
     { id: "memory", icon: "🃏", text: "Hafıza oyununu bitir", stat: "memWins", need: 1 },
-    { id: "dance", icon: "💃", text: "Gizem ile dans et", stat: "dances", need: 1 },
+    { id: "dance", icon: "💃", text: "Pamuk ile dans et", stat: "dances", need: 1 },
     { id: "numbers", icon: "🔢", text: "5 sayı sorusu bil", stat: "gameCorrect", need: 5 },
     { id: "letters", icon: "🔤", text: "3 harf sorusu bil", stat: "letters", need: 3 },
     { id: "draw", icon: "🎨", text: "Bir resim boya ve kaydet", stat: "drawings", need: 1 },
-    { id: "feed", icon: "🍎", text: "Gizem'i besle", stat: "feeds", need: 1 },
+    { id: "feed", icon: "🍎", text: "Pamuk'u besle", stat: "feeds", need: 1 },
     { id: "read", icon: "📖", text: "Bir okuma yap", stat: "read", need: 1, ai: true },
     { id: "english", icon: "🇬🇧", text: "3 kez İngilizce konuş", stat: "english", need: 3, ai: true },
-    { id: "chat", icon: "💬", text: "Gizem ile 3 kez sohbet et", stat: "chats", need: 3, ai: true },
+    { id: "chat", icon: "💬", text: "Pamuk ile 3 kez sohbet et", stat: "chats", need: 3, ai: true },
     { id: "cowrite", icon: "✍️", text: "Birlikte bir masal yaz", stat: "cowrites", need: 1, ai: true },
     { id: "quiz", icon: "🏆", text: "Bilgi yarışmasında 5 doğru yap", stat: "quiz", need: 5 },
     { id: "words", icon: "🇬🇧", text: "4 İngilizce kelime kartı bil", stat: "wordsOk", need: 4 },
@@ -2066,7 +2087,7 @@ ${rules}`;
         const ok = r.done.includes(id);
         return `<button class="task routineItem ${ok ? "done" : ""}" data-routine="${id}"><b>${icon}</b><div class="info">${text}<small>${ok ? "Aferin! +5 ⭐" : "Yapınca dokun, fotoğrafını çek 📸"}</small></div><span class="check">${ok ? "✅" : "📸"}</span></button>`;
       }).join("");
-      $("routineNote").textContent = A.get("apiKey", "") ? "Her biri 5 yıldız! Gizem fotoğrafa bakıp kontrol eder." : "Her biri 5 yıldız! Bir büyüğün onayıyla.";
+      $("routineNote").textContent = A.get("apiKey", "") ? "Her biri 5 yıldız! Pamuk fotoğrafa bakıp kontrol eder." : "Her biri 5 yıldız! Bir büyüğün onayıyla.";
     } else {
       $("routineTitle").textContent = "Rutinler";
       $("routineList").innerHTML = "";
@@ -2088,7 +2109,7 @@ ${rules}`;
     const k = currentRoutine();
     const finished = k && ROUTINES[k].items.every(([x]) => r.done.includes(x));
     const msg = finished ? (k === "morning" ? "[yaşasın] Bütün sabah görevlerini yaptın! Harika bir gün olacak!" : "[yaşasın] Hepsi tamam! Şimdi tatlı rüyalar zamanı!")
-      : `[yaşasın] Aferin sana! ${ROUTINE_STARS} yıldız kazandın!`;
+      : `[yaşasın] Aferin ${cfg().kidName || "sana"}! ${ROUTINE_STARS} yıldız kazandın!`;
     show("", cleanText(msg));
     perform(msg, () => { renderTasks(); $("tasksSheet").classList.add("open"); });
     renderTasks(); updateDots();
@@ -2315,7 +2336,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
     if (paint.actions >= 6) {
       paint.actions = 0; bump("drawings"); awardStars(2); msg += " +2 ⭐";
       celebrate("🎨", "+2 yıldız!");
-      A.speak(pick(["Vay, harika bir resim! Çok yeteneklisin!", "Bu resim çok güzel olmuş! Duvara asalım!", "Renkleri çok güzel seçmişsin!"]));
+      A.speak(nameIt(pick(["Vay, harika bir resim! Çok yeteneklisin!", "Bu resim çok güzel olmuş! Duvara asalım!", "Renkleri çok güzel seçmişsin!"])));
     }
     $("paintMsg").textContent = msg;
   });
@@ -2369,7 +2390,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
     let reply, next = true;
     if (ok) {
       letters.correct++; bump("letters"); awardStars(1);
-      reply = `[alkış] ${pick(["Doğru!", "Harika!", "Süpersin!", "Bravo!"])} ${q.type === "which" ? `${q.word} ${q.L} harfiyle başlar.` : ""}`;
+      reply = `[alkış] ${nameIt(pick(["Doğru!", "Harika!", "Süpersin!", "Bravo!"]))} ${q.type === "which" ? `${q.word} ${q.L} harfiyle başlar.` : ""}`;
     } else if (!letters.hinted) {
       letters.hinted = true; next = false;
       reply = q.type === "start" ? `[hmm] Hmm, bir daha dene. Örneğin ${LETTER_EXAMPLES[q.L]} gibi.` : `[hmm] İpucu: ${q.word} kelimesini yavaşça söyle. İlk sesi ne?`;
@@ -2799,7 +2820,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   };
   let lessonTopic = { subject: "", topic: "" }, lessonTab = Object.keys(LESSONS)[0];
   function lessonMenu() {
-    openPlay("🎓 Mini ders", A.get("apiKey", "") ? "Bir ders ve konu seç, Gizem anlatsın!" : "Mini ders için ayarlardan Claude API anahtarı girilmeli.");
+    openPlay("🎓 Mini ders", A.get("apiKey", "") ? "Bir ders ve konu seç, Pamuk anlatsın!" : "Mini ders için ayarlardan Claude API anahtarı girilmeli.");
     play = { kind: "lessonMenu" };
     $("playBody").innerHTML = `<div class="topicTabs">${Object.keys(LESSONS).map((k) => `<button class="tab ${k === lessonTab ? "on" : ""}" data-subj="${esc(k)}">${esc(k)}</button>`).join("")}</div>
       <div class="grid">${LESSONS[lessonTab].map((t) => `<button class="tile" data-topic="${esc(t)}">${esc(t)}</button>`).join("")}</div>`;
@@ -2940,13 +2961,13 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   function testVoice() {
     A.setVoice($("rate").value, $("pitch").value, $("voice").value);
     saveCloudFields();
-    A.speak(`Merhaba! Ben ${$("botName").value || "Gizem"}. Seninle ders çalışmak çok eğlenceli olacak!`);
+    A.speak(`Merhaba! Ben ${$("botName").value || "Pamuk"}. Seninle ders çalışmak çok eğlenceli olacak!`);
   }
   function saveSettings() {
     A.set("apiKey", $("apiKey").value.trim());
     A.set("model", $("model").value);
-    A.set("botName", $("botName").value.trim() || "Gizem");
-    A.set("kidName", $("kidName").value.trim());
+    A.set("botName", $("botName").value.trim() || "Pamuk");
+    A.set("kidName", $("kidName").value.trim() || "Gizem");
     A.set("birthday", $("birthday").value);
     A.set("parentRules", $("parentRules").value.trim().slice(0, 2000));
     A.set("morningTime", $("morningTime").value || "07:30");
@@ -3015,7 +3036,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   updateGift();
   updateHint();
   if (!A.get("apiKey", "")) show("", "Merhaba! Benimle konuşabilmek için bir büyüğün sağ üstteki ayarlardan API anahtarını girmeli. Sayı oyunu ve süsleme anahtarsız da çalışır!");
-  else if (care.hunger < 35) show("", `${cfg().botName}'in karnı acıkmış 🍎 Bakım'dan ona yiyecek verebilirsin.`);
+  else if (care.hunger < 35) show("", `${ek(cfg().botName, "in")} karnı acıkmış 🍎 Bakım'dan ona yiyecek verebilirsin.`);
   // Birthday party first; otherwise the morning/evening routine greeting.
   if (!birthdayCheck()) routineGreet();
   syncOverlay();

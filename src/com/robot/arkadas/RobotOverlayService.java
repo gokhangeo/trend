@@ -161,7 +161,7 @@ public class RobotOverlayService extends Service {
                 PendingIntent.FLAG_IMMUTABLE);
         Notification n = new Notification.Builder(this, CHANNEL)
                 .setSmallIcon(R.drawable.ic_stat)
-                .setContentTitle(prefs.getString("botName", "Gizem") + " ekranda")
+                .setContentTitle(prefs.getString("botName", "Pamuk") + " ekranda")
                 .setContentText("Dokun: uyandır · Çift dokun: konuş · Uzun bas: uyut")
                 .setContentIntent(open)
                 .addAction(new Notification.Action.Builder(null, "Robotu kapat", stop).build())
