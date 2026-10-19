@@ -311,6 +311,7 @@
   .figure .figX { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: #1b2433; color: #fff; font-size: 18px; }
   .figure small { display: block; text-align: center; color: #667; font-size: 12px; margin-top: 4px; }
   .examCard { background: rgba(255,255,255,.06); border-radius: 16px; padding: 12px; margin-top: 12px; }
+  .examCard.national { background: rgba(255,212,59,.1); }
   .examCard.soon { box-shadow: 0 0 0 2px #ffd43b inset; }
   .examCard small { display: block; margin-top: 4px; }
   .examTop { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 16px; }
@@ -319,8 +320,6 @@
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .chip { border: 0; border-radius: 999px; padding: 7px 11px; background: rgba(255,255,255,.12); color: inherit; font: inherit; font-size: 13px; }
   .chip.on { background: #3ddba4; color: #1b2433; font-weight: 800; }
-  .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
-  .check { display: flex; gap: 6px; align-items: flex-start; font-size: 13.5px; }
   .unitHead { margin: 14px 0 0; font-size: 15px; opacity: .85; }
   .topicTabs { display: flex; gap: 8px; overflow-x: auto; margin-top: 10px; padding-bottom: 4px; }
 
@@ -519,7 +518,7 @@
       <div class="grid">
         <button class="tile" data-mode="game"><b>🔢</b>Sayılar<small>Sayı soruları</small></button>
         <button class="tile" data-mode="riddle"><b>🧩</b>Bilmece<small>5 bilmece</small></button>
-        <button class="tile" id="examBtn"><b>📝</b>Sınavlarım<small>Plan ve deneme</small></button>
+        <button class="tile" id="examBtn"><b>📝</b>Sınavlarım<small>Tüm dersler</small></button>
         <button class="tile" data-mode="letters"><b>🔤</b>Harfler<small>Harf ve kelime</small></button>
         <button class="tile" id="memoryBtn"><b>🃏</b>Hafıza<small>Eşini bul</small></button>
         <button class="tile" id="quizBtn"><b>🏆</b>Bilgi yarışması<small>~100 soru</small></button>
@@ -911,7 +910,7 @@ ${rules}`;
 - ${FIGURE_RULE}
 - Adımlar bitince 3 soruluk mini bir test yap, sonra konuyu iki cümleyle özetleyip dersi bitir.
 - ${/English/.test(lessonTopic.subject) ? "İngilizce kelime ve cümleleri süslü parantez içinde yaz; açıklamaları Türkçe yap." : "Sembol yerine kelime kullan (örneğin üzeri yerine 'üssü', kesir için 'üçte iki')."}`,
-    exam: (c, kid) => `Şu an deneme sınavı modundasınız. ${kid} yaklaşan ${examRun.exam.kind === "Ülke geneli" ? "ülke geneli ortak" : "okul"} ${subjName(examRun.exam.subject)} sınavına hazırlanıyor (6. sınıf, Türkiye Yüzyılı Maarif Modeli).
+    exam: (c, kid) => `Şu an deneme sınavı modundasınız. ${kid} yaklaşan ${examRun.exam.national ? "ülke geneli ortak" : "okul"} ${subjName(examRun.exam.subject)} sınavına (${EXAM_LABEL[examRun.exam.term]}) hazırlanıyor (6. sınıf, Türkiye Yüzyılı Maarif Modeli).
 Sınav konuları: ${examRun.exam.topics.join(", ")}.
 - MEB ortak yazılı sınavları gibi açık uçlu, 6. sınıf seviyesinde 8 soru sor; konulara dengeli dağıt. Soruları tek tek sor, her seferinde sadece bir soru ve cevabını bekle. Sorunun başında kaçıncı soru olduğunu söyle.
 - ${/Matematik/.test(examRun.exam.subject) ? "Günlük hayattan problemler sor ve işlemini nasıl yaptığını anlatmasını iste; sadece sonucu söylerse nasıl bulduğunu sor." : "Kısa yazılı cevap gerektiren sorular sor (açıklama, örnek verme, karşılaştırma)."}
@@ -2263,7 +2262,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
       let ex = null;
       try { ex = allExams().find((e) => daysUntil(e.date) <= 3); } catch (e) { /* exam data not loaded yet */ }
       if (ex) {
-        el.innerHTML = `📝 ${esc(subjName(ex.subject))} sınavı: ${whenText(daysUntil(ex.date))}<small>${esc(planText(ex))} · Dokun, birlikte çalışalım</small>`;
+        el.innerHTML = `📝 ${esc(ex.title)}: ${whenText(ex)}<small>${esc(planText(ex))} · Dokun, birlikte çalışalım</small>`;
         el.dataset.exam = "1"; el.classList.add("show"); body.classList.add("reminding"); return;
       }
       el.classList.remove("show"); body.classList.remove("reminding"); return;
@@ -2540,10 +2539,9 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
       const data = await res.json();
       remoteRules = String(data.talimatlar || "").slice(0, 2000);
       if (Array.isArray(data.sinavlar)) {
-        remoteExams = data.sinavlar.map((x, i) => {
+        remoteExams = data.sinavlar.map((x) => {
           const subject = Object.keys(LESSONS).find((k) => subjName(k).toLocaleLowerCase("tr") === String(x.ders || "").toLocaleLowerCase("tr").trim());
-          return subject && /^\d{4}-\d\d-\d\d$/.test(x.tarih || "") ? { id: "uz-" + (x.id || i), date: x.tarih, subject, title: String(x.baslik || subjName(subject) + " yazılısı").slice(0, 60), kind: "Okul sınavı", note: x.not ? String(x.not).slice(0, 200) : "",
-            topics: (Array.isArray(x.konular) && x.konular.length ? x.konular.map(String) : Object.values(LESSONS[subject]).flat()).slice(0, 30) } : null;
+          return subject && EXAM_WEEKS[x.sinav] && /^\d{4}-\d\d-\d\d$/.test(x.tarih || "") ? { subject, term: x.sinav, date: x.tarih } : null;
         }).filter(Boolean);
         A.set("remoteExams", JSON.stringify(remoteExams));
         planExamNotices();
@@ -2966,45 +2964,81 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   $("simonBtn").addEventListener("click", startSimon);
   $("lessonBtn").addEventListener("click", lessonMenu);
 
-  // ---------- exams: national exam days, study plan, practice tests and reminders ----------
-  // 2026-2027: 6. sınıf ülke geneli ortak yazılılar (MEB ÖDSGM takvimi). Diğer dersler okul geneli; tarihleri okul belirler.
-  const EXAMS_BUILTIN = [
-    { id: "ug-mat-2026", date: "2026-11-11", subject: "🔢 Matematik", title: "Matematik ortak sınavı", kind: "Ülke geneli",
-      note: "Tüm Türkiye'de aynı gün. Sorular açık uçlu: işlemlerini yazarak çözeceksin.",
-      topics: ["Çarpanlar ve katlar", "Bölünebilme kuralları", "Asal sayılar ve asal çarpanlar", "EBOB ve EKOK problemleri"] },
-    { id: "ug-tr-2027", date: "2027-06-08", subject: "📝 Türkçe", title: "Türkçe ortak sınavı", kind: "Ülke geneli",
-      note: "Tüm Türkiye'de aynı gün. Konu dağılımı MEB'in tablosu yayımlanınca güncellenecek.",
-      topics: ["Bilim ve Teknoloji", "Lider Ruhlar", "Zamirler (adıllar)", "Edat, bağlaç ve ünlem", "Yazım kuralları", "Noktalama işaretleri", "Deyimler ve atasözleri", "Konu ve ana fikir", "Biyografi ve otobiyografi"] }
-  ];
-  // For an exam she adds herself, these units are ticked first (what the 1st term 1st exam usually covers).
-  const EXAM_DEFAULT_UNITS = { "🔢 Matematik": 1, "🔬 Fen": 2, "📝 Türkçe": 2, "🌍 Sosyal": 2, "🇬🇧 English": 1 };
+  // ---------- exams: every subject's written exams, study plan, practice tests and reminders ----------
+  // 2026-2027: ülke geneli ortak sınavlar (MEB ÖDSGM) yalnızca 6. sınıf Matematik (11 Kasım) ve Türkçe (8 Haziran).
+  // Diğer yazılılar okul geneli; MEB'in sınav haftaları içinde, günü okul belirler.
+  const EXAM_WEEKS = { "1-1": ["2026-11-02", "2026-11-13"], "1-2": ["2027-01-04", "2027-01-15"], "2-1": ["2027-03-29", "2027-04-09"], "2-2": ["2027-06-07", "2027-06-18"] };
+  const EXAM_LABEL = { "1-1": "1. dönem 1. yazılı", "1-2": "1. dönem 2. yazılı", "2-1": "2. dönem 1. yazılı", "2-2": "2. dönem 2. yazılı" };
+  const NATIONAL = { "🔢 Matematik": { "1-1": "2026-11-11" }, "📝 Türkçe": { "2-2": "2027-06-08" } };
+  // Which topics each exam covers, in teaching order (Maarif Modeli yıllık planına göre yaklaşık).
+  const U = (subject, ...units) => units.flatMap((n) => Object.values(LESSONS[subject])[n - 1]);
+  const EXAM_TOPICS = {
+    "🔢 Matematik": {
+      "1-1": ["Çarpanlar ve katlar", "Bölünebilme kuralları", "Asal sayılar ve asal çarpanlar", "EBOB ve EKOK problemleri"],
+      "1-2": ["Kesirlerle toplama ve çıkarma", "Kesirlerle çarpma ve bölme", "Ondalık gösterimlerle işlemler", "Yüzdeler ve yüzde problemleri", ...U("🔢 Matematik", 2)],
+      "2-1": U("🔢 Matematik", 3, 4),
+      "2-2": U("🔢 Matematik", 5, 6)
+    },
+    "🔬 Fen": { "1-1": U("🔬 Fen", 1, 2), "1-2": U("🔬 Fen", 3), "2-1": U("🔬 Fen", 4, 5), "2-2": U("🔬 Fen", 6, 7) },
+    "📝 Türkçe": {
+      "1-1": ["Dilimizin Zenginliği", "Bağımsızlık Yolu", "Kök ve ekler", "Yapım ekleri ve çekim ekleri", "Gerçek, mecaz ve terim anlam", "Eş ve zıt anlamlı sözcükler", "Konu ve ana fikir"],
+      "1-2": ["Farklı Dünyalar", "İsimler (adlar)", "İsim tamlamaları", "Sıfatlar ve sıfat tamlaması", "Eş sesli sözcükler", "Hikâye unsurları", "Yardımcı fikirler"],
+      "2-1": ["İletişim ve Sosyal İlişkiler", "Bilim ve Teknoloji", "Zamirler (adıllar)", "Edat, bağlaç ve ünlem", "Deyimler ve atasözleri", "Sebep, amaç ve karşılaştırma ifadeleri", "Bilgilendirici metin"],
+      "2-2": ["Lider Ruhlar", "Yazım kuralları", "Noktalama işaretleri", "Biyografi ve otobiyografi", "Görsel ve grafik yorumlama", "Zamirler (adıllar)", "Sıfatlar ve sıfat tamlaması"]
+    },
+    "🌍 Sosyal": { "1-1": U("🌍 Sosyal", 1, 2), "1-2": U("🌍 Sosyal", 3), "2-1": U("🌍 Sosyal", 4), "2-2": U("🌍 Sosyal", 5, 6) },
+    "🇬🇧 English": { "1-1": U("🇬🇧 English", 1), "1-2": U("🇬🇧 English", 2), "2-1": U("🇬🇧 English", 3), "2-2": U("🇬🇧 English", 4) }
+  };
+  // talimat.json "sinavlar" can set the exact day the school picked: {"ders": "Fen", "sinav": "1-1", "tarih": "2026-11-05"}.
   let remoteExams = loadJson("remoteExams", []), examRun = null;
   const dayMs = 86400000;
   const daysUntil = (d) => Math.round((new Date(d + "T00:00:00") - new Date(today() + "T00:00:00")) / dayMs);
+  const subjName = (s) => s.replace(/^\S+\s/, "");
+  // Only the next exam of each subject is shown; the 2nd one appears once the 1st is over.
   function allExams() {
-    const removed = loadJson("examsHidden", []);
-    return [...EXAMS_BUILTIN, ...remoteExams, ...loadJson("examsMine", [])]
-      .filter((e) => e && e.date && e.subject && !removed.includes(e.id) && daysUntil(e.date) >= 0)
-      .sort((a, b) => a.date.localeCompare(b.date));
+    const list = [];
+    Object.keys(EXAM_TOPICS).forEach((subject) => {
+      for (const term of Object.keys(EXAM_WEEKS)) {
+        const nat = (NATIONAL[subject] || {})[term];
+        const set = remoteExams.find((r) => r.subject === subject && r.term === term);
+        const exact = nat || (set && set.date);
+        const date = exact || EXAM_WEEKS[term][0], end = exact || EXAM_WEEKS[term][1];
+        if (daysUntil(end) < 0) continue;
+        list.push({ id: subjName(subject) + "-" + term, subject, term, date, end, exact: !!exact, national: !!nat,
+          kind: nat ? "Ülke geneli ortak sınav" : "Okul sınavı", title: `${subjName(subject)} · ${EXAM_LABEL[term]}`,
+          note: nat ? "Tüm Türkiye'de aynı gün. Sorular açık uçlu: işlemlerini ve cevaplarını yazarak vereceksin." : exact ? "" : "Sınav bu hafta aralığında; günü okul belirler.",
+          topics: EXAM_TOPICS[subject][term] });
+        break;
+      }
+    });
+    return list.sort((a, b) => a.date.localeCompare(b.date));
   }
   function unitOf(subject, topic) {
     const units = LESSONS[subject] || {};
     return Object.keys(units).find((u) => units[u].includes(topic)) || "";
   }
-  const subjName = (s) => s.replace(/^\S+\s/, "");
-  // Topics spread over the 13 days before the exam; the last day is for review and a practice test.
+  const fmtDay = (d, opt) => new Date(d + "T12:00:00").toLocaleDateString("tr-TR", opt);
+  function dateText(e) {
+    if (e.exact) return fmtDay(e.date, { day: "numeric", month: "long", weekday: "long" });
+    return `${fmtDay(e.date, { day: "numeric" })}–${fmtDay(e.end, { day: "numeric", month: "long" })} arası`;
+  }
+  // Topics spread over the 13 days before the exam (or exam week); the last day is for review and a practice test.
   function todaysTopics(e) {
     const d = daysUntil(e.date), n = e.topics.length;
-    if (d <= 1 || !n) return [];
-    if (d > 14) return [];
+    if (d <= 1 || d > 14 || !n) return [];
     const k = 14 - d;
     const from = Math.floor(k * n / 13), to = Math.max(from + 1, Math.floor((k + 1) * n / 13));
     return e.topics.slice(from, Math.min(to, n));
   }
-  function whenText(d) { return d === 0 ? "Bugün!" : d === 1 ? "Yarın!" : `${d} gün kaldı`; }
+  function whenText(e) {
+    const d = daysUntil(e.date);
+    if (d < 0) return "Yazılı haftası";
+    if (!e.exact) return d === 0 ? "Hafta başladı" : `${d} gün kaldı`;
+    return d === 0 ? "Bugün!" : d === 1 ? "Yarın!" : `${d} gün kaldı`;
+  }
   function planText(e) {
     const d = daysUntil(e.date), t = todaysTopics(e);
-    if (d === 0) return "Bugün sınav günü. Kahvaltını yap, sakin ol, sen hazırsın! 💪";
+    if (d <= 0) return e.exact ? "Bugün sınav günü. Kahvaltını yap, sakin ol, sen hazırsın! 💪" : "Yazılı haftasındayız: her gün kısa bir tekrar ve deneme sınavı yap.";
     if (d === 1) return "Bugün genel tekrar günü: bir deneme sınavı çöz.";
     if (d > 14) return "Çalışma planı sınava 14 gün kala başlar.";
     return "Bugünün konusu: " + t.join(", ");
@@ -3012,47 +3046,21 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   function examScores() { return loadJson("examScores", {}); }
 
   function openExams() {
-    openPlay("📝 Sınavlarım", "Konuya dokun, Pamuk anlatsın. Deneme sınavı MEB ortak sınavları gibi açık uçludur.");
+    openPlay("📝 Sınavlarım", "Konuya dokun, Pamuk anlatsın. Deneme sınavı MEB yazılıları gibi açık uçludur.");
     play = { kind: "exams" };
     const list = allExams(), scores = examScores(), hasKey = !!A.get("apiKey", "");
     $("playBody").innerHTML = (list.length ? list.map((e) => {
       const d = daysUntil(e.date), last = (scores[e.id] || []).slice(-1)[0];
-      return `<div class="examCard ${d <= 3 ? "soon" : ""}">
-        <div class="examTop"><b>${esc(e.title || subjName(e.subject) + " sınavı")}</b><span class="examDays">${whenText(d)}</span></div>
-        <small>${esc(new Date(e.date + "T12:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "long", weekday: "long" }))} · ${esc(e.kind || "Okul sınavı")}${last ? ` · Son deneme: ${last.s} puan` : ""}</small>
+      return `<div class="examCard ${d <= 3 ? "soon" : ""} ${e.national ? "national" : ""}">
+        <div class="examTop"><b>${esc(e.title)}</b><span class="examDays">${whenText(e)}</span></div>
+        <small>${esc(dateText(e))} · ${esc(e.kind)}${last ? ` · Son deneme: ${last.s} puan` : ""}</small>
         ${e.note ? `<small>${esc(e.note)}</small>` : ""}
         <div class="examPlan">${esc(planText(e))}</div>
         <div class="chips">${e.topics.map((t) => `<button class="chip ${todaysTopics(e).includes(t) ? "on" : ""}" data-ex="${esc(e.id)}" data-extopic="${esc(t)}">${esc(t)}</button>`).join("")}</div>
-        <div class="btns"><button class="btn primary" data-extest="${esc(e.id)}" ${hasKey ? "" : "disabled"}>📝 Deneme sınavı</button>
-        ${e.mine ? `<button class="btn ghost" data-exdel="${esc(e.id)}">🗑️</button>` : ""}</div>
+        <div class="btns"><button class="btn primary" data-extest="${esc(e.id)}" ${hasKey ? "" : "disabled"}>📝 Deneme sınavı</button></div>
       </div>`;
     }).join("") : `<p>Yaklaşan sınav yok. 🎉</p>`) +
-      `<button class="btn ghost" id="examAddBtn" style="width:100%;margin-top:12px">➕ Okul sınavı ekle</button>` +
       (hasKey ? "" : `<small>Ders anlatımı ve deneme sınavı için ayarlardan Claude API anahtarı girilmeli.</small>`);
-  }
-  function examAddForm(subject) {
-    subject = subject || Object.keys(LESSONS)[0];
-    play = { kind: "examAdd", subject };
-    const firstUnits = Object.keys(LESSONS[subject]).slice(0, EXAM_DEFAULT_UNITS[subject] || 1);
-    const tomorrow = new Date(Date.now() + 7 * dayMs).toISOString().slice(0, 10);
-    $("playTitle").textContent = "➕ Okul sınavı ekle";
-    $("playInfo").textContent = "Tarihi ve sınavda çıkacak konuları seç. Öğretmenin söylediği konulara göre işaretle.";
-    $("playBody").innerHTML = `<div class="row"><div><label for="exDate">Tarih</label><input id="exDate" type="date" value="${$("exDate") ? $("exDate").value : tomorrow}"></div>
-      <div><label for="exSubj">Ders</label><select id="exSubj">${Object.keys(LESSONS).map((s) => `<option ${s === subject ? "selected" : ""}>${esc(s)}</option>`).join("")}</select></div></div>
-      ${Object.entries(LESSONS[subject]).map(([u, ts]) => `<h3 class="unitHead">${esc(u)}</h3><div class="checks">${ts.map((t) =>
-        `<label class="check"><input type="checkbox" value="${esc(t)}" ${firstUnits.includes(u) ? "checked" : ""}> ${esc(t)}</label>`).join("")}</div>`).join("")}
-      <button class="btn primary" id="examSave" style="width:100%;margin-top:12px">Kaydet</button>`;
-  }
-  function saveExam() {
-    const date = $("exDate").value, subject = $("exSubj").value;
-    const topics = [...$("playBody").querySelectorAll(".checks input:checked")].map((i) => i.value);
-    if (!date || daysUntil(date) < 0) return alert("Bugün ya da sonrası bir tarih seç.");
-    if (!topics.length) return alert("En az bir konu seç.");
-    const mine = loadJson("examsMine", []);
-    mine.push({ id: "my-" + Date.now(), date, subject, title: subjName(subject) + " yazılısı", kind: "Okul sınavı", topics, mine: true });
-    A.set("examsMine", JSON.stringify(mine.slice(-30)));
-    planExamNotices(); updateReminder(); syncOverlay();
-    openExams();
   }
   function startExamLesson(e, topic) {
     if (!A.get("apiKey", "")) return;
@@ -3074,51 +3082,58 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   }
   window.openFromNotice = (what) => { if (what === "exams") setTimeout(openExams, 600); };
 
-  // Reminders shown as phone notifications (APK 2.2+): 7, 3 and 1 day before at 18:30, and on the morning of the exam.
+  // Exams sharing an exam week are announced together: [{date, exact, names, exams}].
+  function examGroups() {
+    const groups = [];
+    allExams().forEach((e) => {
+      const g = !e.exact && groups.find((x) => !x.exact && x.date === e.date);
+      if (g) { g.names.push(subjName(e.subject)); g.exams.push(e); }
+      else groups.push({ date: e.date, exact: e.exact, names: [subjName(e.subject)], exams: [e] });
+    });
+    return groups;
+  }
+  const joinTr = (a) => a.length > 1 ? a.slice(0, -1).join(", ") + " ve " + a[a.length - 1] : a[0];
+  // Phone notifications (APK 2.2+): 7, 3 and 1 day before at 18:30, and on the morning of the exam.
   function planExamNotices() {
     if (typeof A.scheduleNotices !== "function") return;
     const kid = cfg().kidName || "", bot = cfg().botName, out = [];
-    allExams().forEach((e) => {
-      const name = subjName(e.subject);
+    examGroups().forEach((g) => {
+      const names = joinTr(g.names), what = g.exact ? `${names} sınavına` : "Yazılı haftasına";
       [7, 3, 1].forEach((before) => {
-        const at = new Date(e.date + "T18:30:00").getTime() - before * dayMs;
-        out.push({ at, open: "exams", title: `📝 ${name} sınavına ${before === 1 ? "yarın!" : before + " gün kaldı"}`,
-          text: before === 1 ? `${kid}, yarın ${name} sınavın var. ${bot} ile kısa bir deneme sınavı çözelim mi?` : `${kid}, hadi ${bot} ile ${name} çalışalım! Konular: ${e.topics.slice(0, 4).join(", ")}${e.topics.length > 4 ? "…" : ""}` });
+        out.push({ at: new Date(g.date + "T18:30:00").getTime() - before * dayMs, open: "exams",
+          title: `📝 ${what} ${before === 1 ? "1 gün kaldı!" : before + " gün kaldı"}`,
+          text: g.exact ? (before === 1 ? `${kid}, yarın ${names} sınavın var. ${bot} ile kısa bir deneme sınavı çözelim mi?`
+              : `${kid}, hadi ${bot} ile ${names} çalışalım! Konular: ${g.exams[0].topics.slice(0, 4).join(", ")}${g.exams[0].topics.length > 4 ? "…" : ""}`)
+            : `${kid}, ${before === 1 ? "yarın" : before + " gün sonra"} yazılı haftası başlıyor: ${names}. ${bot} ile her gün biraz çalışalım!` });
       });
-      out.push({ at: new Date(e.date + "T07:10:00").getTime(), open: "exams", title: `🍀 Bugün ${name} sınavı!`, text: `${kid}, sen hazırsın! Sakin ol, soruları dikkatle oku. ${bot} seninle gurur duyuyor 💖` });
+      if (g.exact) out.push({ at: new Date(g.date + "T07:10:00").getTime(), open: "exams", title: `🍀 Bugün ${names} sınavı!`, text: `${kid}, sen hazırsın! Sakin ol, soruları dikkatle oku. ${bot} seninle gurur duyuyor 💖` });
     });
     A.scheduleNotices(JSON.stringify(out.filter((n) => n.at > Date.now()).sort((a, b) => a.at - b.at).slice(0, 40)));
   }
   // When the app opens: Pamuk announces exams 14, 7, 3, 2, 1 days before and on the day (once each).
   function announceExams() {
     const kid = cfg().kidName || "tatlım";
-    allExams().forEach((e) => {
-      const d = daysUntil(e.date);
+    examGroups().forEach((g) => {
+      const d = daysUntil(g.date);
       if (![14, 7, 3, 2, 1, 0].includes(d)) return;
-      const id = `exam-${e.id}-${d}`;
+      const id = `exam-${g.names.join("+")}-${g.date}-${d}`;
       if (loadJson("seenNotes", []).includes(id) || inbox.some((m) => m.id === id)) return;
-      const name = subjName(e.subject), t = todaysTopics(e);
-      const say = d === 0 ? `[yaşasın] ${kid}, bugün ${name} sınavın var! Sen çok çalıştın, hazırsın. Soruları dikkatle oku, işlemlerini yaz. Başarılar!`
-        : `[bipbip] ${kid}, ${name} sınavına ${d === 1 ? "yarın" : d + " gün kaldı"}! ${d === 1 ? "Bugün birlikte bir deneme sınavı çözelim mi?" : t.length ? "Bugünün konusu " + t.join(" ve ") + ". Sınavlarım bölümünden birlikte çalışalım!" : "Sınavlarım bölümünden birlikte çalışalım!"}`;
-      inbox.push({ id, text: `📝 ${name} sınavı: ${whenText(d)}`, from: "", stars: 0, say, icon: "📝", title: `${name} sınavı: ${whenText(d)}` });
+      const names = joinTr(g.names), t = g.exams.flatMap((e) => todaysTopics(e).slice(0, 1));
+      const say = d === 0 ? (g.exact ? `[yaşasın] ${kid}, bugün ${names} sınavın var! Sen çok çalıştın, hazırsın. Soruları dikkatle oku, cevaplarını yaz. Başarılar!`
+          : `[bipbip] ${kid}, bu hafta yazılı haftası başladı: ${names}. Her gün biraz tekrar yapalım!`)
+        : `[bipbip] ${kid}, ${g.exact ? names + " sınavına" : "yazılı haftasına"} ${d === 1 ? "bir gün kaldı" : d + " gün kaldı"}!${g.exact ? "" : " Dersler: " + names + "."} ${d === 1 ? "Bugün birlikte bir deneme sınavı çözelim mi?" : t.length ? "Bugünün konuları: " + joinTr(t) + ". Sınavlarım bölümünden birlikte çalışalım!" : "Sınavlarım bölümünden birlikte çalışalım!"}`;
+      const label = g.exact ? `${names} sınavı` : "Yazılı haftası";
+      inbox.push({ id, text: `📝 ${label}: ${whenText(g.exams[0])}`, from: "", stars: 0, say, icon: "📝", title: `${label}: ${whenText(g.exams[0])}` });
     });
     deliverNotes();
   }
 
   $("playBody").addEventListener("click", (e) => {
-    const b = e.target.closest("button"); if (!b || !play) return;
+    const b = e.target.closest("button"); if (!b || !play || play.kind !== "exams") return;
     const find = (id) => allExams().find((x) => x.id === id);
-    if (play.kind === "exams" && b.dataset.extopic) { const ex = find(b.dataset.ex); if (ex) startExamLesson(ex, b.dataset.extopic); }
-    else if (play.kind === "exams" && b.dataset.extest) { const ex = find(b.dataset.extest); if (ex) startExamTest(ex); }
-    else if (play.kind === "exams" && b.dataset.exdel) {
-      if (!confirm("Bu sınav silinsin mi?")) return;
-      A.set("examsMine", JSON.stringify(loadJson("examsMine", []).filter((x) => x.id !== b.dataset.exdel)));
-      planExamNotices(); openExams();
-    }
-    else if (play.kind === "exams" && b.id === "examAddBtn") examAddForm();
-    else if (play.kind === "examAdd" && b.id === "examSave") saveExam();
+    if (b.dataset.extopic) { const ex = find(b.dataset.ex); if (ex) startExamLesson(ex, b.dataset.extopic); }
+    else if (b.dataset.extest) { const ex = find(b.dataset.extest); if (ex) startExamTest(ex); }
   });
-  $("playBody").addEventListener("change", (e) => { if (play && play.kind === "examAdd" && e.target.id === "exSubj") examAddForm(e.target.value); });
   $("examBtn").addEventListener("click", openExams);
   setTimeout(() => { planExamNotices(); announceExams(); }, 4000);
 
