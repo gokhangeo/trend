@@ -3042,8 +3042,18 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   const EXAM_WEEKS = { "1-1": ["2026-11-02", "2026-11-13"], "1-2": ["2027-01-04", "2027-01-15"], "2-1": ["2027-03-29", "2027-04-09"], "2-2": ["2027-06-07", "2027-06-18"] };
   const EXAM_LABEL = { "1-1": "1. dönem 1. yazılı", "1-2": "1. dönem 2. yazılı", "2-1": "2. dönem 1. yazılı", "2-2": "2. dönem 2. yazılı" };
   const NATIONAL = { "🔢 Matematik": { "1-1": "2026-11-11" }, "📝 Türkçe": { "2-2": "2027-06-08" } };
-  // MEB okul geneli ortak yazılı uygulama takvimi (5, 6, 7. sınıf), açıklandıkça eklenir.
-  const SCHOOL_DATES = { "🔬 Fen": { "1-1": "2026-11-03" }, "🌍 Sosyal": { "1-1": "2026-11-06" }, "📝 Türkçe": { "1-1": "2026-11-10" }, "🇬🇧 English": { "1-1": "2026-11-12" } };
+  // Şehit Fatih Soydan Ortaokulu 6. sınıf yazılı takvimi (okulun duyurusu), açıklandıkça eklenir.
+  const SCHOOL_DATES = { "📝 Türkçe": { "1-1": "2026-11-02" }, "🇬🇧 English": { "1-1": "2026-11-03" }, "🔬 Fen": { "1-1": "2026-11-04" }, "🌍 Sosyal": { "1-1": "2026-11-06" } };
+  const EXAM_PERIOD = { "📝 Türkçe-1-1": "2. ders", "🇬🇧 English-1-1": "2. ders", "🔬 Fen-1-1": "5. ders", "🌍 Sosyal-1-1": "2. ders" };
+  // Other lessons' exams: shown with date only.
+  const OTHER_EXAMS = [
+    ["Din Kültürü ve Ahlak Bilgisi", "2026-11-02", "5. ders"], ["Matematik ve Bilim Uygulamaları", "2026-11-03", "5. ders"],
+    ["Teknoloji Tasarım / Bilişim", "2026-11-04", "2. ders"], ["Kültür ve Medeniyet", "2026-11-05", "2. ders"],
+    ["Beden Eğitimi", "2026-11-05", "5. ders"], ["Ahlak ve Yurttaşlık", "2026-11-06", "5. ders"],
+    ["Sportif Etkinlikler", "2026-11-09", "3. ders"], ["Müzik", "2026-11-09", "6. ders"],
+    ["Peygamberimizin Hayatı", "2026-11-12", "3. ders"], ["Proje Uygulamaları", "2026-11-12", "6. ders"],
+    ["Görgü Kuralları ve Nezaket", "2026-11-13", "3. ders"]
+  ];
   // Which topics each exam covers, in teaching order (Maarif Modeli yıllık planına göre yaklaşık).
   const U = (subject, ...units) => units.flatMap((n) => Object.values(LESSONS[subject])[n - 1]);
   const EXAM_TOPICS = {
@@ -3080,7 +3090,7 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
         if (daysUntil(end) < 0) continue;
         list.push({ id: subjName(subject) + "-" + term, subject, term, date, end, exact: !!exact, national: !!nat,
           kind: nat ? "Ülke geneli ortak sınav" : "Okul sınavı", title: `${subjName(subject)} · ${EXAM_LABEL[term]}`,
-          note: nat ? "Tüm Türkiye'de aynı gün. Sorular açık uçlu: işlemlerini ve cevaplarını yazarak vereceksin." : exact ? "Okul geneli ortak yazılı, 40 dakika." : "Sınav bu hafta aralığında; günü okul belirler.",
+          note: nat ? "Tüm Türkiye'de aynı gün. Sorular açık uçlu: işlemlerini ve cevaplarını yazarak vereceksin." : exact ? `Okul yazılısı${EXAM_PERIOD[subject + "-" + term] ? ", " + EXAM_PERIOD[subject + "-" + term] : ""}, 40 dakika.` : "Sınav bu hafta aralığında; günü okul belirler.",
           topics: EXAM_TOPICS[subject][term] });
         break;
       }
@@ -3133,8 +3143,14 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
         <div class="chips">${e.topics.map((t) => `<button class="chip ${todaysTopics(e).includes(t) ? "on" : ""}" data-ex="${esc(e.id)}" data-extopic="${esc(t)}">${esc(t)}</button>`).join("")}</div>
         <div class="btns"><button class="btn primary" data-extest="${esc(e.id)}" ${hasKey ? "" : "disabled"}>📝 Deneme sınavı</button></div>
       </div>`;
-    }).join("") : `<p>Yaklaşan sınav yok. 🎉</p>`) +
+    }).join("") : `<p>Yaklaşan sınav yok. 🎉</p>`) + otherExamsHtml() +
       (hasKey ? "" : `<small>Ders anlatımı ve deneme sınavı için ayarlardan Claude API anahtarı girilmeli.</small>`);
+  }
+  function otherExamsHtml() {
+    const rows = OTHER_EXAMS.filter(([, d]) => daysUntil(d) >= 0);
+    if (!rows.length) return "";
+    return `<h3 class="unitHead">Diğer dersler</h3><div class="examCard">${rows.map(([n, d, h]) =>
+      `<div class="examTop" style="font-size:14px;margin:4px 0"><span>${esc(n)}</span><span class="examDays" title="${esc(h)}">${esc(fmtDay(d, { day: "numeric", month: "short" }))} · ${esc(h)}</span></div>`).join("")}</div>`;
   }
   function startExamLesson(e, topic) {
     if (!A.get("apiKey", "")) return;
