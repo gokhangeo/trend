@@ -1502,7 +1502,14 @@ Sınav konuları: ${examRun.exam.topics.join(", ")}.
   window.onPaused = () => { if (state !== "idle") setState("idle"); stopParty(); autoTurns = 0; updateGift(); careTick(); updateDots(); };
   window.startTalk = () => { if (anySheetOpen()) return; A.stopSpeaking(); autoTurns = 0; listenNow(); };
 
+  // If Android closed the app while the camera was open, the routine step waiting for its photo is restored.
+  function restoreRoutine() {
+    const p = loadJson("pendingRoutine", null);
+    A.set("pendingRoutine", "");
+    if (!routineVerify && p && Date.now() - p.t < 15 * 60000) routineVerify = { id: p.id, text: p.text, icon: p.icon, asked: false };
+  }
   window.onPhoto = (b64) => {
+    restoreRoutine();
     if (routineVerify && !routineVerify.asked) return verifyRoutinePhoto(b64);
     pendingImage = b64;
     bump("photos");
@@ -1512,7 +1519,7 @@ Sınav konuları: ${examRun.exam.topics.join(", ")}.
     autoTurns = 0;
     perform(msg, mode === "read" ? () => {} : listenNow);
   };
-  window.onPhotoCancel = () => { if (routineVerify && !routineVerify.asked) { routineVerify = null; show("", "Fotoğraf çekilmedi. Hazır olunca Görevler'den tekrar dene!"); } };
+  window.onPhotoCancel = () => { restoreRoutine(); if (routineVerify && !routineVerify.asked) { routineVerify = null; show("", "Fotoğraf çekilmedi. Hazır olunca Görevler'den tekrar dene!"); } };
   window.onPhotoError = (msg) => show("", msg);
   window.onOverlayDenied = () => show("", "Robotun ekranda gezmesi için izin verilmedi.");
 
@@ -2195,6 +2202,7 @@ Sınav konuları: ${examRun.exam.topics.join(", ")}.
       return;
     }
     routineVerify = { id, text, icon, asked: false };
+    A.set("pendingRoutine", JSON.stringify({ id, text, icon, t: Date.now() }));
     $("tasksSheet").classList.remove("open");
     const msg = `${icon} Harika! Şimdi bana göster: "${text}". Fotoğrafını çek!`;
     show("", msg);

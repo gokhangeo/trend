@@ -77,12 +77,17 @@ public class MainActivity extends Activity {
     private int speakSeq = 0;
     private boolean cloudErrorShown = false;
     private Uri photoUri;
+    /** A photo (or cancel) that came back before the page finished loading, e.g. after Android restarted the app. */
+    private String pendingPhoto = null;
+    private boolean pendingCancel = false, cameraOpen = false;
     private PermissionRequest pendingCameraRequest;
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         prefs = getSharedPreferences("robot", MODE_PRIVATE);
+        // The camera app may push us out of memory; keep where its photo goes so the result is not lost.
+        if (state != null && state.getString("photoUri") != null) photoUri = Uri.parse(state.getString("photoUri"));
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getWindow().setStatusBarColor(Color.parseColor("#141414"));
         getWindow().setNavigationBarColor(Color.parseColor("#141414"));
@@ -116,6 +121,8 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 pageReady = true;
+                if (pendingPhoto != null) { js("onPhoto", pendingPhoto); pendingPhoto = null; }
+                if (pendingCancel) { js("onPhotoCancel"); pendingCancel = false; }
                 if (openWhenReady != null) {
                     js("openFromNotice", openWhenReady);
                     openWhenReady = null;
@@ -213,10 +220,17 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle out) {
+        super.onSaveInstanceState(out);
+        if (photoUri != null) out.putString("photoUri", photoUri.toString());
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
-        // Leaving the app (home button, switching apps) brings the floating robot back if it was stopped.
-        ensureOverlay(this);
+        // Leaving the app (home button, switching apps) brings the floating robot back if it was stopped,
+        // but not while the camera is open: it needs the memory and the robot would cover it.
+        if (!cameraOpen) ensureOverlay(this);
     }
 
     /** Starts the floating robot when the parent turned it on and the permission is still granted. */
@@ -395,6 +409,7 @@ public class MainActivity extends Activity {
             Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             i.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
             i.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            cameraOpen = true;
             startActivityForResult(i, REQ_CAMERA);
         } catch (Exception e) {
             deletePhoto();
@@ -419,10 +434,11 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int req, int result, Intent data) {
         super.onActivityResult(req, result, data);
         if (req != REQ_CAMERA && req != REQ_PICK) return;
+        cameraOpen = false;
         final Uri uri = req == REQ_CAMERA ? photoUri : (data != null ? data.getData() : null);
         if (result != RESULT_OK || uri == null) {
             if (req == REQ_CAMERA) deletePhoto();
-            js("onPhotoCancel");
+            if (pageReady) js("onPhotoCancel"); else pendingCancel = true;
             return;
         }
         final boolean fromCamera = req == REQ_CAMERA;
@@ -430,10 +446,12 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 try {
-                    String b64 = encodePhoto(uri);
-                    js("onPhoto", b64);
-                } catch (Exception e) {
-                    js("onPhotoError", "Fotoğrafı okuyamadım.");
+                    final String b64 = encodePhoto(uri);
+                    main.post(new Runnable() {
+                        @Override public void run() { if (pageReady) js("onPhoto", b64); else pendingPhoto = b64; }
+                    });
+                } catch (Throwable e) { // OutOfMemoryError on big photos must not close the app
+                    js("onPhotoError", "Fotoğrafı okuyamadım. Bir daha dener misin?");
                 } finally {
                     if (fromCamera) main.post(new Runnable() {
                         @Override public void run() { deletePhoto(); }
