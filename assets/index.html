@@ -2061,7 +2061,23 @@ Sınav konuları: ${examRun.exam.topics.join(", ")}.
   const FOODS = [
     { icon: "🍎", name: "Elma", price: 1, hunger: 15 }, { icon: "🍉", name: "Karpuz", price: 2, hunger: 20, joy: 4 },
     { icon: "🥛", name: "Süt", price: 2, hunger: 22 }, { icon: "🥪", name: "Sandviç", price: 3, hunger: 35 },
-    { icon: "🍦", name: "Dondurma", price: 3, hunger: 20, joy: 15 }, { icon: "🍰", name: "Pasta", price: 4, hunger: 40, joy: 12 }
+    { icon: "🍦", name: "Dondurma", price: 3, hunger: 20, joy: 15 }, { icon: "🍰", name: "Pasta", price: 4, hunger: 40, joy: 12 },
+    { icon: "🍌", name: "Muz", price: 1, hunger: 14 }, { icon: "🍓", name: "Çilek", price: 1, hunger: 10, joy: 5 },
+    { icon: "🍇", name: "Üzüm", price: 1, hunger: 12, joy: 3 }, { icon: "🍊", name: "Portakal", price: 1, hunger: 14 },
+    { icon: "🍑", name: "Şeftali", price: 1, hunger: 13, joy: 3 }, { icon: "🍒", name: "Kiraz", price: 1, hunger: 10, joy: 5 },
+    { icon: "🥕", name: "Havuç", price: 1, hunger: 12, energy: 3 }, { icon: "🥒", name: "Salatalık", price: 1, hunger: 10 },
+    { icon: "🥚", name: "Haşlanmış yumurta", price: 2, hunger: 22, energy: 5 }, { icon: "🧀", name: "Peynir", price: 2, hunger: 20 },
+    { icon: "🥐", name: "Kruvasan", price: 2, hunger: 25, joy: 4 }, { icon: "🥨", name: "Simit", price: 2, hunger: 28 },
+    { icon: "🥞", name: "Krep", price: 3, hunger: 30, joy: 8 }, { icon: "🧇", name: "Waffle", price: 3, hunger: 30, joy: 10 },
+    { icon: "🍝", name: "Makarna", price: 3, hunger: 40 }, { icon: "🍕", name: "Pizza", price: 4, hunger: 45, joy: 10 },
+    { icon: "🍔", name: "Hamburger", price: 4, hunger: 45, joy: 8 }, { icon: "🍲", name: "Çorba", price: 3, hunger: 35, energy: 5 },
+    { icon: "🍚", name: "Pilav", price: 3, hunger: 38 }, { icon: "🥗", name: "Salata", price: 2, hunger: 25, energy: 6 },
+    { icon: "🍿", name: "Patlamış mısır", price: 2, hunger: 15, joy: 10 }, { icon: "🍪", name: "Kurabiye", price: 2, hunger: 15, joy: 10 },
+    { icon: "🍩", name: "Donut", price: 3, hunger: 20, joy: 14 }, { icon: "🧁", name: "Kek", price: 3, hunger: 22, joy: 14 },
+    { icon: "🍫", name: "Çikolata", price: 2, hunger: 12, joy: 14 }, { icon: "🍭", name: "Lolipop", price: 2, hunger: 8, joy: 16 },
+    { icon: "🍬", name: "Şeker", price: 1, hunger: 5, joy: 10 }, { icon: "🧃", name: "Meyve suyu", price: 2, hunger: 15, joy: 6 },
+    { icon: "🍋", name: "Limonata", price: 2, hunger: 12, joy: 8 }, { icon: "🫖", name: "Ihlamur", price: 2, hunger: 8, energy: 12 },
+    { icon: "🍯", name: "Ballı ekmek", price: 3, hunger: 28, energy: 8 }, { icon: "🎂", name: "Doğum günü pastası", price: 6, hunger: 50, joy: 30 }
   ];
   function moodText() {
     const n = cfg().botName;
@@ -2100,7 +2116,7 @@ Sınav konuları: ${examRun.exam.topics.join(", ")}.
     requestAnimationFrame(() => { fly.style.transform = `translate(${to.left + to.width / 2 - from.left - from.width / 2}px, ${to.top + to.height * 0.55 - from.top - 10}px) scale(.4)`; fly.style.opacity = ".2"; });
     setTimeout(() => {
       fly.remove();
-      care.hunger = Math.min(100, care.hunger + f.hunger); care.joy = Math.min(100, care.joy + (f.joy || 3));
+      care.hunger = Math.min(100, care.hunger + f.hunger); care.joy = Math.min(100, care.joy + (f.joy || 3)); if (f.energy) care.energy = Math.min(100, care.energy + f.energy);
       saveCare(); bump("feeds"); renderCare();
       if (cfg().fx) playFx("kikir");
       careSay(nameIt(pick(["Mmm, çok lezzetli!", "Ne güzel, teşekkür ederim!", "Nam nam nam!", "Bayıldım!"])));
