@@ -1270,6 +1270,7 @@ Sınav konuları: ${examRun.exam.topics.join(", ")}.
       if (q.key && stats.weak[q.key]) stats.weak[q.key]--;
       bump("gameCorrect");
       awardStars(1);
+      if (window.fxCombo) fxCombo(game.streak);
       reply = `[${game.streak % 3 === 0 ? "alkış" : "yaşasın"}] ${nameIt(pick(["Harika!", "Doğru!", "Süpersin!", "Aferin sana!", "Bravo!", "Çok iyi!"]))}`;
       if (game.streak % 3 === 0) reply += ` Üst üste ${game.streak} doğru!`;
     } else {
@@ -2972,6 +2973,8 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   const EXAM_WEEKS = { "1-1": ["2026-11-02", "2026-11-13"], "1-2": ["2027-01-04", "2027-01-15"], "2-1": ["2027-03-29", "2027-04-09"], "2-2": ["2027-06-07", "2027-06-18"] };
   const EXAM_LABEL = { "1-1": "1. dönem 1. yazılı", "1-2": "1. dönem 2. yazılı", "2-1": "2. dönem 1. yazılı", "2-2": "2. dönem 2. yazılı" };
   const NATIONAL = { "🔢 Matematik": { "1-1": "2026-11-11" }, "📝 Türkçe": { "2-2": "2027-06-08" } };
+  // MEB okul geneli ortak yazılı uygulama takvimi (5, 6, 7. sınıf), açıklandıkça eklenir.
+  const SCHOOL_DATES = { "🔬 Fen": { "1-1": "2026-11-03" }, "🌍 Sosyal": { "1-1": "2026-11-06" }, "📝 Türkçe": { "1-1": "2026-11-10" }, "🇬🇧 English": { "1-1": "2026-11-12" } };
   // Which topics each exam covers, in teaching order (Maarif Modeli yıllık planına göre yaklaşık).
   const U = (subject, ...units) => units.flatMap((n) => Object.values(LESSONS[subject])[n - 1]);
   const EXAM_TOPICS = {
@@ -3003,12 +3006,12 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
       for (const term of Object.keys(EXAM_WEEKS)) {
         const nat = (NATIONAL[subject] || {})[term];
         const set = remoteExams.find((r) => r.subject === subject && r.term === term);
-        const exact = nat || (set && set.date);
+        const exact = nat || (set && set.date) || (SCHOOL_DATES[subject] || {})[term];
         const date = exact || EXAM_WEEKS[term][0], end = exact || EXAM_WEEKS[term][1];
         if (daysUntil(end) < 0) continue;
         list.push({ id: subjName(subject) + "-" + term, subject, term, date, end, exact: !!exact, national: !!nat,
           kind: nat ? "Ülke geneli ortak sınav" : "Okul sınavı", title: `${subjName(subject)} · ${EXAM_LABEL[term]}`,
-          note: nat ? "Tüm Türkiye'de aynı gün. Sorular açık uçlu: işlemlerini ve cevaplarını yazarak vereceksin." : exact ? "" : "Sınav bu hafta aralığında; günü okul belirler.",
+          note: nat ? "Tüm Türkiye'de aynı gün. Sorular açık uçlu: işlemlerini ve cevaplarını yazarak vereceksin." : exact ? "Okul geneli ortak yazılı, 40 dakika." : "Sınav bu hafta aralığında; günü okul belirler.",
           topics: EXAM_TOPICS[subject][term] });
         break;
       }
@@ -3439,6 +3442,43 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
     if (document.querySelector(".sheet.open") || document.body.classList.contains("sleeping")) return;
     bot.classList.remove("peek"); void bot.offsetWidth; bot.classList.add("peek");
   }, 18000);
+})();
+</script>
+<style>
+  .choice.right { animation: rightPop .5s cubic-bezier(.2,1.6,.4,1); box-shadow: 0 0 0 3px #51cf66, 0 0 22px #51cf66 !important; }
+  @keyframes rightPop { 40% { transform: scale(1.12) rotate(-2deg); } }
+  .choice.wrong, .shake { animation: shakeX .45s; }
+  @keyframes shakeX { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+  .card { transition: transform .45s cubic-bezier(.3,1.4,.5,1), background .2s; }
+  .card.done { animation: cardWin .6s ease-out; }
+  @keyframes cardWin { 50% { transform: rotateY(180deg) scaleX(-1) scale(1.15); box-shadow: 0 0 24px #ffd43b; } }
+  .slot.filled, .tileL:active { animation: rightPop .3s ease-out; }
+  .qEmoji { animation: emojiIn .6s cubic-bezier(.2,1.6,.4,1), bob 2.4s ease-in-out .6s infinite; display: inline-block; }
+  @keyframes emojiIn { from { transform: scale(0) rotate(-40deg); } }
+  @keyframes bob { 50% { transform: translateY(-6px) rotate(4deg); } }
+  .qText { animation: tileIn .45s ease-out; }
+  .combo { position: fixed; left: 50%; top: 38%; white-space: nowrap; z-index: 65; pointer-events: none; font: 900 42px sans-serif; color: #ffd43b; text-shadow: 0 0 18px #ff922b, 0 3px 0 #e8590c;
+    transform: translate(-50%, -50%); animation: combo 1.1s ease-out forwards; }
+  @keyframes combo { 0% { transform: translate(-50%, -50%) scale(.2); } 30% { transform: translate(-50%, -50%) scale(1.25); } 100% { transform: translate(-50%, -120%) scale(1); opacity: 0; } }
+  .pad.lit { animation: rightPop .3s ease-out; }
+</style>
+<script>
+(function () {
+  const burstAt = (el, icons, n) => { const r = el.getBoundingClientRect(); window.fxBurst && fxBurst(r.left + r.width / 2, r.top + r.height / 2, icons, n); };
+  new MutationObserver((ms) => ms.forEach((m) => {
+    const el = m.target, old = m.oldValue || "";
+    if (!(el instanceof HTMLElement)) return;
+    const gained = (c) => el.classList.contains(c) && !old.split(/\s+/).includes(c);
+    if (gained("right")) burstAt(el, ["🎉", "⭐", "✨", "🎊"], 8);
+    if (gained("done") && el.classList.contains("card")) burstAt(el, ["✨", "💖", "⭐"], 4);
+    if (gained("lit") && el.classList.contains("pad")) burstAt(el, ["✨"], 3);
+  })).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"], attributeOldValue: true });
+  window.fxCombo = (n) => {
+    if (n < 3) return;
+    const c = document.createElement("div"); c.className = "combo"; c.textContent = `🔥 ${n} doğru üst üste!`;
+    if (n >= 3) c.style.fontSize = Math.min(24 + n * 2, 34) + "px";
+    document.body.appendChild(c); setTimeout(() => c.remove(), 1150);
+  };
 })();
 </script>
 </body>
