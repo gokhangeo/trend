@@ -171,6 +171,9 @@
   .tile small { color: var(--muted); font-weight: 600; margin-top: 2px; }
   .preview { width: 140px; aspect-ratio: 1; position: relative; margin: 6px auto 0; }
 
+  .examTopBtn { height: 44px; padding: 0 12px; border-radius: 22px; border: 1px solid var(--gold); background: var(--pill); color: var(--text); font-size: 14px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; }
+  .examTopBtn span:not(:empty) { background: #ffd43b; color: #1b2433; border-radius: 999px; padding: 2px 7px; font-size: 12px; }
+  .examTopBtn.soon { animation: pop 1.6s ease-in-out infinite; box-shadow: 0 0 14px rgba(255,212,59,.6); }
   .gift { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--gold); background: var(--pill); font-size: 22px;
     display: none; place-items: center; animation: wiggle 1.2s ease-in-out infinite; }
   .gift.show { display: grid; }
@@ -414,6 +417,7 @@
     <div class="topLeft">
       <button class="stars" id="stars" aria-label="Yıldızlar ve rozetler">⭐ <span id="starCount">0</span></button>
       <button class="gift" id="gift" aria-label="Günlük hediye">🎁</button>
+      <button class="examTopBtn" id="examTop" aria-label="Ders ve sınavlar">📚 Ders<span id="examTopDays"></span></button>
     </div>
     <button class="gear" id="gear" aria-label="Ebeveyn ayarları">⚙</button>
   </div>
@@ -534,14 +538,12 @@
       <div class="grid">
         <button class="tile" data-mode="game"><b>🔢</b>Sayılar<small>Sayı soruları</small></button>
         <button class="tile" data-mode="riddle"><b>🧩</b>Bilmece<small>5 bilmece</small></button>
-        <button class="tile" id="examBtn"><b>📝</b>Sınavlarım<small>Tüm dersler</small></button>
         <button class="tile" data-mode="letters"><b>🔤</b>Harfler<small>Harf ve kelime</small></button>
         <button class="tile" id="memoryBtn"><b>🃏</b>Hafıza<small>Eşini bul</small></button>
         <button class="tile" id="quizBtn"><b>🏆</b>Bilgi yarışması<small>~100 soru</small></button>
         <button class="tile" id="wordsBtn"><b>🇬🇧</b>Kelime kartları<small>İngilizce</small></button>
         <button class="tile" id="anagramBtn"><b>🔠</b>Kelime avı<small>Harfleri diz</small></button>
         <button class="tile" id="simonBtn"><b>🎨</b>Renk hafızası<small>Sırayı tekrarla</small></button>
-        <button class="tile" id="lessonBtn"><b>🎓</b>Mini ders<small>6. sınıf konuları</small></button>
       </div>
       <div class="btns"><button class="btn ghost" data-close>Kapat</button></div>
     </div>
@@ -1152,7 +1154,7 @@ Sınav konuları: ${examRun.exam.topics.join(", ")}.
   };
   function markMode(m) {
     document.querySelectorAll("[data-mode]").forEach((b) => b.classList.toggle("on", b.dataset.mode === m));
-    $("gamesBtn").classList.toggle("on", ["game", "riddle", "letters", "lesson", "exam"].includes(m));
+    $("gamesBtn").classList.toggle("on", ["game", "riddle", "letters"].includes(m));
     $("storyBtn").classList.toggle("on", ["story", "cowrite"].includes(m));
   }
   function setMode(m) {
@@ -3038,7 +3040,6 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   $("wordsBtn").addEventListener("click", startWords);
   $("anagramBtn").addEventListener("click", anagramMenu);
   $("simonBtn").addEventListener("click", startSimon);
-  $("lessonBtn").addEventListener("click", lessonMenu);
 
   // ---------- exams: every subject's written exams, study plan, practice tests and reminders ----------
   // 2026-2027: ülke geneli ortak sınavlar (MEB ÖDSGM) yalnızca 6. sınıf Matematik (11 Kasım) ve Türkçe (8 Haziran).
@@ -3228,7 +3229,27 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
     if (b.dataset.extopic) { const ex = find(b.dataset.ex); if (ex) startExamLesson(ex, b.dataset.extopic); }
     else if (b.dataset.extest) { const ex = find(b.dataset.extest); if (ex) startExamTest(ex); }
   });
-  $("examBtn").addEventListener("click", openExams);
+  $("examTop").addEventListener("click", () => {
+    openPlay("📚 Ders çalışma", "Sınavlarına hazırlan ya da istediğin konuyu Pamuk anlatsın.");
+    play = { kind: "study" };
+    const e = allExams()[0];
+    $("playBody").innerHTML = `<div class="grid">
+      <button class="tile" id="studyExams"><b>📝</b>Sınavlarım<small>${e ? esc(subjName(e.subject)) + ": " + esc(whenText(e)) : "Plan ve deneme"}</small></button>
+      <button class="tile" id="studyLesson"><b>🎓</b>Mini ders<small>6. sınıf konuları</small></button></div>`;
+  });
+  $("playBody").addEventListener("click", (ev) => {
+    if (!play || play.kind !== "study") return;
+    if (ev.target.closest("#studyExams")) openExams();
+    else if (ev.target.closest("#studyLesson")) lessonMenu();
+  });
+  function updateExamTop() {
+    const e = allExams()[0], el = $("examTopDays");
+    if (!e) { el.textContent = ""; return; }
+    const d = daysUntil(e.date);
+    el.textContent = d <= 0 ? "bugün" : d + "g";
+    $("examTop").classList.toggle("soon", d <= 3);
+  }
+  updateExamTop(); setInterval(updateExamTop, 600000);
   setTimeout(() => { planExamNotices(); announceExams(); }, 4000);
 
   // ---------- parent settings ----------
