@@ -1064,11 +1064,13 @@ Sınav konuları: ${examRun.exam.topics.join(", ")}.
     setState("idle");
     if (then) return then();
     const c = cfg();
-    if (mode !== "story" && c.auto && autoTurns < 12 && !anySheetOpen()) {
+    // At start-up (greetings, messages) the mic stays off until she taps or talks herself.
+    if (userEngaged && mode !== "story" && c.auto && autoTurns < 12 && !anySheetOpen()) {
       autoTurns++;
       setTimeout(() => { if (state === "idle") listenNow(); }, 350);
     }
   }
+  let userEngaged = false;
   const anySheetOpen = () => !!document.querySelector(".sheet.open");
 
   function listenNow() {
@@ -1154,6 +1156,7 @@ Sınav konuları: ${examRun.exam.topics.join(", ")}.
     $("storyBtn").classList.toggle("on", ["story", "cowrite"].includes(m));
   }
   function setMode(m) {
+    userEngaged = true;
     A.stopSpeaking(); A.stopListening(); setState("idle");
     mode = m; game = null; riddle = null; letters = null; history = []; sessionCounted = false;
     body.classList.remove("numpadOn"); $("figure").classList.remove("show");
@@ -1545,7 +1548,7 @@ Sınav konuları: ${examRun.exam.topics.join(", ")}.
   window.onSpeakEnd = () => { stopMouth(); nextStep(); };
   window.onTtsError = (msg) => show("", msg);
   window.onPaused = () => { if (state !== "idle") setState("idle"); stopParty(); autoTurns = 0; updateGift(); careTick(); updateDots(); };
-  window.startTalk = () => { if (anySheetOpen()) return; A.stopSpeaking(); autoTurns = 0; listenNow(); };
+  window.startTalk = () => { userEngaged = true; if (anySheetOpen()) return; A.stopSpeaking(); autoTurns = 0; listenNow(); };
 
   // If Android closed the app while the camera was open, the routine step waiting for its photo is restored.
   function restoreRoutine() {
@@ -1571,6 +1574,7 @@ Sınav konuları: ${examRun.exam.topics.join(", ")}.
   // ---------- interaction ----------
   window.__tickle = () => { if (state === "idle") perform(pick(["[kıkır] Hihi, gıdıklanıyorum!", "[kıkır] Hahaha, dur dur, çok gıdıklanıyorum!", "[kıkır] Hihihi, bana gıdık yapma!"]), () => {}); };
   $("bot").addEventListener("click", () => {
+    userEngaged = true;
     audio();
     if (party) { stopParty(); return; } // tapping the robot ends the dance
     if (body.classList.contains("sleeping")) {
