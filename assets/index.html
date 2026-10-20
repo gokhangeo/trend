@@ -3005,6 +3005,13 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
       "5. Hayatımızdaki Ekonomi": ["Kaynaklarımız ve ekonomik faaliyetler", "Meslekler", "Bir ürünün yatırım ve pazarlama süreci"],
       "6. Teknoloji ve Sosyal Bilimler": ["Teknolojinin hayatımıza etkisi", "Bilimsel buluşlar ve bilim insanları", "Güvenli ve bilinçli internet kullanımı"]
     },
+    "🕌 Din Kültürü": {
+      "1. Peygamber ve İlahi Kitap İnancı": ["Peygamberlik ve peygamberlerin özellikleri", "Peygamberlerin görevleri", "İlahi kitaplar ve sahifeler", "Felak Suresi ve anlamı"],
+      "2. Ramazan ve Oruç": ["Ramazan ayı ve oruç ibadeti", "Orucun faydaları", "Kadir Gecesi ve bayram", "Fıtır sadakası ve paylaşma"],
+      "3. Ahlaki Davranışlar": ["Doğru sözlülük", "Merhamet", "Adap ve nezaket", "Vatan sevgisi"],
+      "4. Peygamberliğinden Önce Hz. Muhammed": ["Hz. Muhammed'in doğumu ve çocukluğu", "Gençliği ve evliliği", "Güvenilir (Muhammedül Emin) olması", "Hilfu'l-Fudul ve Kâbe hakemliği"],
+      "5. Kültürümüzdeki Dinî Motifler": ["Mimarimizde dinî motifler", "Edebiyat ve musikide dinî motifler", "Gelenek ve göreneklerimiz"]
+    },
     "🇬🇧 English": {
       "School & Classroom": ["School Life (subjects, timetable)", "Classroom Life (rules, objects)"],
       "Me & My Family": ["Personal Life (likes, routines)", "Family Life (family, house chores)"],
@@ -3048,11 +3055,11 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
   const EXAM_LABEL = { "1-1": "1. dönem 1. yazılı", "1-2": "1. dönem 2. yazılı", "2-1": "2. dönem 1. yazılı", "2-2": "2. dönem 2. yazılı" };
   const NATIONAL = { "🔢 Matematik": { "1-1": "2026-11-11" }, "📝 Türkçe": { "2-2": "2027-06-08" } };
   // Şehit Fatih Soydan Ortaokulu 6. sınıf yazılı takvimi (okulun duyurusu), açıklandıkça eklenir.
-  const SCHOOL_DATES = { "📝 Türkçe": { "1-1": "2026-11-02" }, "🇬🇧 English": { "1-1": "2026-11-03" }, "🔬 Fen": { "1-1": "2026-11-04" }, "🌍 Sosyal": { "1-1": "2026-11-06" } };
-  const EXAM_PERIOD = { "📝 Türkçe-1-1": "2. ders", "🇬🇧 English-1-1": "2. ders", "🔬 Fen-1-1": "5. ders", "🌍 Sosyal-1-1": "2. ders" };
+  const SCHOOL_DATES = { "📝 Türkçe": { "1-1": "2026-11-02" }, "🇬🇧 English": { "1-1": "2026-11-03" }, "🔬 Fen": { "1-1": "2026-11-04" }, "🌍 Sosyal": { "1-1": "2026-11-06" }, "🕌 Din Kültürü": { "1-1": "2026-11-02" } };
+  const EXAM_PERIOD = { "📝 Türkçe-1-1": "2. ders", "🇬🇧 English-1-1": "2. ders", "🔬 Fen-1-1": "5. ders", "🌍 Sosyal-1-1": "2. ders", "🕌 Din Kültürü-1-1": "5. ders" };
   // Other lessons' exams: shown with date only.
   const OTHER_EXAMS = [
-    ["Din Kültürü ve Ahlak Bilgisi", "2026-11-02", "5. ders"], ["Matematik ve Bilim Uygulamaları", "2026-11-03", "5. ders"],
+    ["Matematik ve Bilim Uygulamaları", "2026-11-03", "5. ders"],
     ["Teknoloji Tasarım / Bilişim", "2026-11-04", "2. ders"], ["Kültür ve Medeniyet", "2026-11-05", "2. ders"],
     ["Beden Eğitimi", "2026-11-05", "5. ders"], ["Ahlak ve Yurttaşlık", "2026-11-06", "5. ders"],
     ["Sportif Etkinlikler", "2026-11-09", "3. ders"], ["Müzik", "2026-11-09", "6. ders"],
@@ -3076,7 +3083,8 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
       "2-2": ["Lider Ruhlar", "Yazım kuralları", "Noktalama işaretleri", "Biyografi ve otobiyografi", "Görsel ve grafik yorumlama", "Zamirler (adıllar)", "Sıfatlar ve sıfat tamlaması"]
     },
     "🌍 Sosyal": { "1-1": U("🌍 Sosyal", 1, 2), "1-2": U("🌍 Sosyal", 3), "2-1": U("🌍 Sosyal", 4), "2-2": U("🌍 Sosyal", 5, 6) },
-    "🇬🇧 English": { "1-1": U("🇬🇧 English", 1), "1-2": U("🇬🇧 English", 2), "2-1": U("🇬🇧 English", 3), "2-2": U("🇬🇧 English", 4) }
+    "🇬🇧 English": { "1-1": U("🇬🇧 English", 1), "1-2": U("🇬🇧 English", 2), "2-1": U("🇬🇧 English", 3), "2-2": U("🇬🇧 English", 4) },
+    "🕌 Din Kültürü": { "1-1": U("🕌 Din Kültürü", 1, 2), "1-2": U("🕌 Din Kültürü", 3), "2-1": U("🕌 Din Kültürü", 4), "2-2": U("🕌 Din Kültürü", 5) }
   };
   // talimat.json "sinavlar" can set the exact day the school picked: {"ders": "Fen", "sinav": "1-1", "tarih": "2026-11-05"}.
   let remoteExams = loadJson("remoteExams", []), examRun = null;
@@ -3403,9 +3411,20 @@ Cevabının en başına yalnızca [onay] ya da [ret] yaz. Sonra Türkçe, sesli 
     $("checkUpdate").textContent = "Şimdi güncellemeleri kontrol et";
     tryApplyUpdate();
   };
+  // The app may stay open in the background for days, so it also looks for updates now and then, quietly.
+  function quietUpdateCheck() {
+    if (typeof A.checkUpdate !== "function" || updatePending) return;
+    const orig = window.onUpdateResult;
+    window.onUpdateResult = () => {};
+    A.checkUpdate();
+    setTimeout(() => { window.onUpdateResult = orig; }, 30000);
+  }
+  setInterval(quietUpdateCheck, 30 * 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - (window.__lastUpd || 0) > 10 * 60000) { window.__lastUpd = Date.now(); quietUpdateCheck(); } });
   function tryApplyUpdate() {
     if (!updatePending) return;
-    if (state !== "idle" || anySheetOpen() || game || riddle || letters || party || ar) { setTimeout(tryApplyUpdate, 3000); return; }
+    // Only wait during a game, party, camera or a lesson; an open menu is fine to close.
+    if (state !== "idle" || game || riddle || letters || party || ar || play || ["lesson", "exam", "cowrite"].includes(mode)) { setTimeout(tryApplyUpdate, 3000); return; }
     updatePending = false;
     celebrate("🎉", "Yeni özellikler geldi!");
     setTimeout(() => A.reloadApp(), 1800);
